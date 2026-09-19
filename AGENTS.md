@@ -25,7 +25,7 @@
 - [x] Task 6 Installer Token Safety
 - [x] Task 7 CI
 - [x] Task 8 GitHub Discoverability
-- [ ] Task 9 Milestone Verification
+- [x] Task 9 Milestone Verification
 
 ## V1 Future Work
 
@@ -55,4 +55,5 @@
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.
 - شاخه توسعه: `dev/tehran-edge-v1`.
+- Foundation در 2026-09-19 با Unit، Build، Desktop/Mobile E2E، Secret scan و تصاویر واقعی verify شد.
 - GitHub connector فعلی هنوز push ندارد؛ تا فعال شدن Write Access، توسعه روی workspace ایزوله سرور انجام می‌شود.
