@@ -1,0 +1,36 @@
+@import '@tehrannetwork/ui/tokens.css';
+@import '@tehrannetwork/ui/components.css';
+
+.dash-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+.dash-head h1 { margin: 11px 0 8px; max-width: 720px; font-size: clamp(28px, 4vw, 48px); line-height: 1.05; letter-spacing: -.045em; }
+.dash-head p { margin: 0; max-width: 650px; color: var(--tn-muted); line-height: 1.75; }
+.dash-eyebrow { display: inline-flex; align-items: center; gap: 7px; color: var(--tn-cyan); font-size: 12px; text-transform: uppercase; letter-spacing: .09em; }
+.dash-head__actions { display: flex; align-items: center; gap: 10px; }
+.language-button { border: 1px solid var(--tn-border); border-radius: 999px; padding: 8px 12px; color: var(--tn-text); background: rgba(255,255,255,.045); cursor: pointer; }
+.language-button:hover, .language-button:focus-visible { border-color: rgba(39,231,255,.5); outline: none; }
+
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .75fr); gap: 14px; margin-top: 14px; }
+.panel-card { position: relative; overflow: hidden; border: 1px solid var(--tn-border); border-radius: var(--tn-radius-lg); background: linear-gradient(145deg, rgba(18,28,62,.86), rgba(8,13,31,.78)); box-shadow: var(--tn-shadow); }
+.panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px 0; font-size: 13px; color: var(--tn-muted); }
+.panel-title strong { color: var(--tn-lime); font-size: 20px; }
+
+.map-stage { position: relative; height: 330px; margin: 8px 14px 14px; border-radius: 22px; overflow: hidden; background: radial-gradient(circle at 50% 37%, rgba(39,231,255,.09), transparent 17rem), linear-gradient(rgba(90,115,190,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(90,115,190,.045) 1px, transparent 1px); background-size: auto, 28px 28px, 28px 28px; }
+.map-stage::after { content: ''; position: absolute; inset: 12% 18%; border-radius: 50%; background: radial-gradient(circle, rgba(141,107,255,.09), transparent 65%); filter: blur(16px); }
+.map-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+.map-stage path { fill: none; stroke: rgba(39,231,255,.42); stroke-width: 1.5; stroke-dasharray: 5 8; }
+.edge-node { position: absolute; z-index: 3; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #fff; background: rgba(13,24,55,.92); border: 1px solid rgba(110,153,255,.38); box-shadow: 0 0 0 7px rgba(77,113,255,.05), 0 0 35px rgba(68,122,255,.2); }
+.edge-node--main { inset-inline-start: calc(50% - 27px); top: 65px; color: #041018; background: linear-gradient(135deg, var(--tn-cyan), #70a1ff); border: 0; box-shadow: 0 0 0 9px rgba(39,231,255,.07), 0 0 44px rgba(39,231,255,.34); }
+.edge-node--a { inset-inline-start: 12%; top: 190px; }
+.edge-node--b { inset-inline-start: 68%; top: 200px; }
+.edge-node--c { inset-inline-start: 84%; top: 138px; }
+
+.health-card { min-height: 378px; }
+.health-ring { width: 148px; height: 148px; margin: 28px auto 26px; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle at center, var(--tn-bg-1) 58%, transparent 60%), conic-gradient(var(--tn-lime) 0 94%, rgba(141,255,106,.1) 94% 100%); box-shadow: 0 0 42px rgba(141,255,106,.13); }
+.health-ring span { font-size: 33px; font-weight: 800; letter-spacing: -.05em; }
+.health-ring small { color: var(--tn-muted); font-size: 13px; margin-inline-start: 2px; }
+.health-list { display: grid; gap: 8px; padding: 0 20px 20px; }
+.health-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.025); color: #cdd6f5; font-size: 12px; }
+
+@media (max-width: 1100px) { .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .dashboard-grid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .dash-head { flex-direction: column; } .metric-grid { grid-template-columns: 1fr; } .dash-head__actions { width: 100%; justify-content: space-between; } .map-stage { height: 280px; } .edge-node--c { inset-inline-start: 78%; } }

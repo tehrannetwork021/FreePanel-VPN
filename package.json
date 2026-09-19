@@ -12,10 +12,12 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.4",
     "eslint": "^10.11.0",
     "prettier": "^3.9.8",
