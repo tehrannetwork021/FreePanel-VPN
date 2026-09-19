@@ -27,6 +27,17 @@
 - [x] Task 8 GitHub Discoverability
 - [x] Task 9 Milestone Verification
 
+## Cloudflare Auto Deployer Milestone
+
+- [ ] Task 1 Cloudflare API client + token verification
+- [ ] Task 2 Account discovery + explicit multi-account selection
+- [ ] Task 3 Idempotent KV provisioning
+- [ ] Task 4 Deployable Tehran Network bootstrap Worker
+- [ ] Task 5 Worker upload + KV binding + workers.dev enablement
+- [ ] Task 6 Local-only /api/install orchestrator
+- [ ] Task 7 Installer UX + full mocked deploy E2E
+- [ ] Task 8 Documentation + final verification
+
 ## V1 Future Work
 
 - [x] Installer links directly to official pre-filled Cloudflare Workers token template

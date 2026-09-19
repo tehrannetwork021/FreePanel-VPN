@@ -1,0 +1,161 @@
+# Cloudflare Auto Deployer Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** تبدیل Installer فعلی به نصب‌کننده واقعی: Token → Verify → Account → KV → Worker → workers.dev URL، بدون ذخیره دائمی Token.
+
+**Architecture:** یک سرویس local-only داخل `apps/installer-server` درخواست `/api/install` را می‌گیرد، Cloudflare API را با Token در RAM فراخوانی می‌کند و خروجی ساختاریافته برمی‌گرداند. کلاینت Browser هیچ تماس مستقیمی با Cloudflare API ندارد و Token پس از پایان request نگهداری نمی‌شود.
+
+**Tech Stack:** Node.js 22، TypeScript 5.9، native `fetch`/`FormData`، Vitest، React/Vite، Playwright.
+
+**Spec:** `docs/superpowers/specs/2026-09-19-tehran-network-edge-panel-design.md`
+
+## Global Constraints
+
+- Cloudflare Token فقط در RAM و هرگز در storage/log/KV/repo ذخیره نشود.
+- Installer برای کاربر عادی بدون نیاز به Wrangler/KV knowledge کار کند.
+- درخواست‌های Cloudflare فقط از local installer backend انجام شوند.
+- هر خطا باید بدون Token و Header حساس به UI برگردد.
+- نصب باید idempotent باشد: اجرای دوباره، namespace یا Worker بی‌دلیل تکراری نسازد.
+- هیچ resource موجودی بدون تشخیص ownership پروژه حذف نشود.
+
+## Review Focus
+
+- Token فعال ولی فاقد یکی از permissionها → قبل از mutation خطای قابل‌فهم برگردد.
+- چند Account در Token → نصب متوقف و انتخاب Account لازم شود؛ انتخاب تصادفی ممنوع.
+- KV هم‌نام از نصب قبلی → reuse شود، ولی namespace بی‌ربط تصاحب نشود.
+- Worker upload موفق ولی workers.dev enable شکست بخورد → نتیجه partial و repairable باشد، نه success جعلی.
+- retry پس از timeout → نصب idempotent ادامه پیدا کند و duplicate نسازد.
+
+## File Map
+
+- Create `apps/installer-server/src/cloudflare/client.ts`: HTTP client و envelope parser.
+- Create `apps/installer-server/src/cloudflare/token.ts`: verify token.
+- Create `apps/installer-server/src/cloudflare/accounts.ts`: account discovery/selection.
+- Create `apps/installer-server/src/cloudflare/kv.ts`: ensure namespace.
+- Create `apps/installer-server/src/cloudflare/worker.ts`: multipart Worker upload + subdomain.
+- Create `apps/installer-server/src/install.ts`: orchestration و rollback/partial-state contract.
+- Create `apps/installer-server/src/server.ts`: localhost-only `/api/install` endpoint.
+- Create `packages/worker-bootstrap/src/index.ts`: deployable Worker bootstrap.
+- Modify `apps/installer/src/installClient.ts`: typed result/error support.
+- Modify `apps/installer/src/App.tsx`: progress + account-selection/retry result UI.
+
+---
+
+### Task 1: Cloudflare API client + token verification
+
+**Interfaces:**
+
+- Produces `CloudflareClient`, `CloudflareApiError`, `verifyToken(token): Promise<TokenStatus>`.
+- `CloudflareClient.request<T>(path, init)` always injects `Authorization: Bearer` and never logs headers/body.
+
+- [ ] Write tests for active token, disabled/expired token, HTTP error, malformed Cloudflare envelope, and redacted error serialization.
+- [ ] Run tests and verify RED because modules do not exist.
+- [ ] Implement native-fetch client against `https://api.cloudflare.com/client/v4` and `GET /user/tokens/verify`.
+- [ ] Run focused tests GREEN, then `pnpm check`.
+- [ ] Commit `feat: add redacted Cloudflare API client and token verification`.
+
+### Task 2: Account discovery and explicit selection
+
+**Interfaces:**
+
+- Consumes `CloudflareClient`.
+- Produces `listAccounts(client): Promise<CloudflareAccount[]>` and `resolveAccount(accounts, requestedId?): AccountResolution`.
+
+- [ ] Write tests for zero, one, and multiple accessible accounts plus an invalid requested account ID.
+- [ ] Run focused tests RED.
+- [ ] Implement pagination-safe `GET /accounts?per_page=50` discovery; one account auto-selects, multiple accounts return `selection_required`.
+- [ ] Add installer response/UI contract for account choices without persisting Token.
+- [ ] Run focused tests + `pnpm check`; commit `feat: add safe Cloudflare account discovery`.
+
+### Task 3: Idempotent KV provisioning
+
+**Interfaces:**
+
+- Consumes account ID and `CloudflareClient`.
+- Produces `ensureKvNamespace(client, accountId, title): Promise<{ id: string; created: boolean }>`.
+
+- [ ] Write tests proving existing exact-title namespace is reused, missing namespace is created, pagination is handled, and unrelated namespaces are untouched.
+- [ ] Run focused tests RED.
+- [ ] Implement `GET /accounts/{id}/storage/kv/namespaces` then `POST` only when absent; namespace title is `tehran-network-edge-panel`.
+- [ ] Verify API errors expose Cloudflare error code/message but never request Authorization headers.
+- [ ] Run focused tests + `pnpm check`; commit `feat: add idempotent KV provisioning`.
+
+### Task 4: Deployable bootstrap Worker bundle
+
+**Interfaces:**
+
+- Produces `buildBootstrapWorker(config): string` and Worker routes `/`, `/health`, `/api/meta`.
+- Worker receives KV binding named `TN_CONFIG` and secrets generated by installer, never Cloudflare Token.
+
+- [ ] Write Worker unit tests for `/health`, branded `/`, unknown path, and missing KV binding behavior.
+- [ ] Run RED.
+- [ ] Implement a small module Worker with Tehran Network branded bootstrap response and stable health JSON.
+- [ ] Add deterministic build output so installer-server can upload the exact artifact.
+- [ ] Run Worker tests + full check; commit `feat: add Tehran Network bootstrap Worker`.
+
+### Task 5: Worker upload, KV binding and workers.dev enablement
+
+**Interfaces:**
+
+- Consumes Worker source, account ID, namespace ID, script name.
+- Produces `deployWorker(...): Promise<{ scriptName: string; workersDevEnabled: boolean }>`.
+
+- [ ] Write request-shape tests for multipart `metadata` + `main.js`, KV binding `TN_CONFIG`, compatibility date, and redaction.
+- [ ] Run RED.
+- [ ] Implement `PUT /accounts/{id}/workers/scripts/{script}` using `FormData`; metadata uses `main_module: "main.js"` and KV namespace binding.
+- [ ] Implement `POST /accounts/{id}/workers/scripts/{script}/subdomain` with `{ enabled: true, previews_enabled: false }`.
+- [ ] Test upload-success/subdomain-failure returns repairable partial state; run full check and commit `feat: deploy Worker and enable workers.dev`.
+
+### Task 6: Local-only install orchestrator and HTTP endpoint
+
+**Interfaces:**
+
+- Produces `runInstall(input): Promise<InstallResult>` and localhost server `POST /api/install`.
+- `InstallResult` contains stages, account, KV ID, script name, panel URL when known, and no credential material.
+
+- [ ] Write orchestration tests for happy path, permission failure before mutation, account selection required, retry/idempotency, and partial Worker deployment.
+- [ ] Run RED.
+- [ ] Implement ordered pipeline `verify → account → KV → worker → workers.dev`; bind HTTP server to `127.0.0.1` only.
+- [ ] Add request size limit, POST/content-type checks, no-cache headers, security headers and redacted error mapper.
+- [ ] Ensure Token references are dropped after request completion; run tests + secret/storage scans + full check.
+- [ ] Commit `feat: add local-only Cloudflare installation orchestrator`.
+
+### Task 7: Installer UX wiring + end-to-end mocked Cloudflare flow
+
+**Interfaces:**
+
+- Modify Browser client to consume typed `InstallResult` / `selection_required`.
+- UI shows stage-by-stage progress and final Panel URL; Token field clears after every terminal attempt.
+
+- [ ] Write React tests for success, permission error, account selection, retry and partial install.
+- [ ] Run RED.
+- [ ] Implement progress model and account chooser while keeping Token in component/vault memory only.
+- [ ] Add Playwright flow against local installer-server with a deterministic fake Cloudflare upstream; assert no horizontal overflow in FA/EN.
+- [ ] Run `pnpm check`, `pnpm test:e2e`, `pnpm audit --audit-level=high`, secret scan and `git diff --check`.
+- [ ] Commit `feat: complete one-token Cloudflare auto deploy flow`.
+
+### Task 8: Documentation, ledger and release-readiness verification
+
+**Files:**
+
+- Modify `README.md`, `docs/QUICKSTART_FA.md`, `docs/QUICKSTART_EN.md`, `AGENTS.md`.
+- Add real Installer success screenshot only after mocked full-flow E2E passes.
+
+- [ ] Update docs to explain exactly: create scoped token → paste → account choice only when needed → automatic deploy → receive URL.
+- [ ] Clearly distinguish tested mocked Cloudflare E2E from any live-account validation until a real disposable account test is performed.
+- [ ] Mark only verified Deployer checklist items `[x]` in `AGENTS.md`.
+- [ ] Run final `pnpm check`, `pnpm test:e2e`, dependency audit, secret scan and fresh-clone frozen install/check.
+- [ ] Commit `docs: document automatic Cloudflare deployment flow`.
+
+## Official API Contracts Used
+
+- `GET /user/tokens/verify` — token status.
+- `GET /accounts` — accessible account discovery.
+- `GET/POST /accounts/{account_id}/storage/kv/namespaces` — KV reuse/create.
+- `PUT /accounts/{account_id}/workers/scripts/{script_name}` — multipart Worker module upload.
+- `POST /accounts/{account_id}/workers/scripts/{script_name}/subdomain` — enable workers.dev.
+
+## Non-goals of this milestone
+
+VLESS/Trojan/XHTTP protocol implementations, subscriptions, Smart Endpoints and routing policy remain separate milestones. This deployer installs the Tehran Network bootstrap Worker and the infrastructure those later modules require; it must not pretend protocol functionality is already present.
