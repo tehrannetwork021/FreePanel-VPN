@@ -10,12 +10,12 @@
 - [x] تایید Clean Implementation
 - [x] تایید Spec توسط مالک — 2026-09-19
 - [x] تایید Scope V1 توسط مالک — 2026-09-19
-- [ ] MIT License
-- [ ] SECURITY.md دو زبانه
-- [ ] Third-party policy
+- [x] MIT License
+- [x] SECURITY.md دو زبانه
+- [x] Third-party policy
 
 ## Foundation Milestone
-- [ ] Task 1 Governance
+- [x] Task 1 Governance
 - [ ] Task 2 Monorepo & Toolchain
 - [ ] Task 3 i18n
 - [ ] Task 4 Design System
