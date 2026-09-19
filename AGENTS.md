@@ -19,7 +19,7 @@
 - [x] Task 2 Monorepo & Toolchain
 - [x] Task 3 i18n
 - [x] Task 4 Design System
-- [ ] Task 5 Dashboard Preview
+- [x] Task 5 Dashboard Preview
 - [ ] Task 6 Installer Token Safety
 - [ ] Task 7 CI
 - [ ] Task 8 GitHub Discoverability
