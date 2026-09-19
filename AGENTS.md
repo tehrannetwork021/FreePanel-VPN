@@ -20,12 +20,15 @@
 - [x] Task 3 i18n
 - [x] Task 4 Design System
 - [x] Task 5 Dashboard Preview
-- [ ] Task 6 Installer Token Safety
+- [x] Task 6 Installer Token Safety
 - [ ] Task 7 CI
 - [ ] Task 8 GitHub Discoverability
 - [ ] Task 9 Milestone Verification
 
 ## V1 Future Work
+- [x] Installer links directly to official pre-filled Cloudflare Workers token template
+- [x] Installer token stays volatile and clears after install handoff
+- [ ] Local /api/install deployer backend performs real Cloudflare installation
 - [ ] Cloudflare scoped-token verification
 - [ ] Account discovery
 - [ ] KV create/reuse/bind
