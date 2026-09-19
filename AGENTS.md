@@ -44,7 +44,7 @@
 - [x] Automatic KV provisioning (`C`)
 - [x] Persian installation guide
 - [x] English installation guide
-- [x] Graphical GitHub Pages installer landing
+- [ ] Publish graphical installer to GitHub Pages (workflow permission required)
 - [ ] Publish GitHub Release `v0.1.0`
 
 ## Three-Protocol Worker Milestone
@@ -60,7 +60,7 @@
 - [x] Owner panel + QR + protected subscription
 - [x] Workerd end-to-end test: VLESS-WS / Trojan-WS / XHTTP / negative auth
 - [x] Final release verification
-- [ ] Push tested release to GitHub
+- [x] Push tested release to GitHub
 - [ ] Publish GitHub Release `v0.1.0`
 
 ## V1 Future Work

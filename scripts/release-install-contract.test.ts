@@ -53,11 +53,10 @@ describe('public install and release contract', () => {
   });
 });
 
-describe('public installer page', () => {
-  it('ships a GitHub Pages workflow and public installer link', () => {
-    expect(existsSync('.github/workflows/pages.yml')).toBe(true);
+describe('public installer source', () => {
+  it('ships the static installer source without claiming a live Pages deployment', () => {
     const readme = readFileSync('README.md', 'utf8');
-    expect(readme).toContain('https://tehrannetwork021.github.io/FreePanel-VPN/');
+    expect(readme).not.toContain('https://tehrannetwork021.github.io/FreePanel-VPN/');
     expect(existsSync('docs/site/index.html')).toBe(true);
   });
 });

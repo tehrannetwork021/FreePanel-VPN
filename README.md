@@ -17,7 +17,7 @@
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
 
-**[باز کردن صفحه نصب گرافیکی](https://tehrannetwork021.github.io/FreePanel-VPN/)** · **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
+**[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
 </div>
 
@@ -35,7 +35,7 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 
 ### نصب برای کاربر عادی
 
-1. روی **Deploy to Cloudflare** یا **صفحه نصب گرافیکی** بزنید.
+1. روی **Deploy to Cloudflare** بزنید.
 2. وارد Cloudflare شوید و برای `ADMIN_PASSWORD` یک رمز قوی حداقل 16 کاراکتری تعیین کنید.
 3. Deploy را تأیید کنید؛ Cloudflare به‌صورت خودکار Worker و KV را می‌سازد و Binding `C` را متصل می‌کند.
 4. آدرس `*.workers.dev` را باز کنید، همان `ADMIN_PASSWORD` را وارد کنید و کانفیگ/QR/Subscription را بردارید.
@@ -68,7 +68,6 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 3. Cloudflare Worker و KV را خودکار می‌سازد و Binding `C` را متصل می‌کند.
 4. پس از Build، آدرس `*.workers.dev` را باز کنید.
 
-صفحه گرافیکی نصب: **https://tehrannetwork021.github.io/FreePanel-VPN/**
 آموزش کامل: [docs/INSTALL_FA.md](docs/INSTALL_FA.md)
 
 برای توسعه محلی UI، [docs/QUICKSTART_FA.md](docs/QUICKSTART_FA.md) را ببینید.
@@ -90,7 +89,7 @@ Tehran Network Edge Panel is a clean-room, modular Cloudflare Workers control pa
 
 ### One-click installation
 
-1. Click **Deploy to Cloudflare** or open the **graphical installer page**.
+1. Click **Deploy to Cloudflare**.
 2. Sign in to Cloudflare and set a strong `ADMIN_PASSWORD` of at least 16 characters.
 3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
 4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
@@ -115,7 +114,6 @@ See the [English installation guide](docs/INSTALL_EN.md) for details and the adv
 3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
 4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
 
-Graphical installer: **https://tehrannetwork021.github.io/FreePanel-VPN/**
 Full guide: [docs/INSTALL_EN.md](docs/INSTALL_EN.md)
 
 For local UI development, see [docs/QUICKSTART_EN.md](docs/QUICKSTART_EN.md).
@@ -140,7 +138,7 @@ packages/shared → product contracts shared across apps
 | Responsive dashboard               | ✅ Ready          |
 | Official Deploy to Cloudflare      | ✅ Ready          |
 | Automatic KV provisioning          | ✅ Ready          |
-| Graphical installer landing page   | ✅ Ready          |
+| Graphical installer source         | 📦 Source ready   |
 | One-click token creation UX        | ✅ Ready          |
 | Volatile token handling            | ✅ Ready          |
 | Advanced token verification/deploy | 🚧 In development |

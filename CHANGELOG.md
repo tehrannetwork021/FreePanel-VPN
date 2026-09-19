@@ -9,7 +9,7 @@
 - رابط گرافیکی فارسی/English با RTL/LTR واقعی.
 - Dashboard رنگی و Responsive.
 - Installer امن با Token موقت در حافظه.
-- صفحه عمومی نصب گرافیکی روی GitHub Pages.
+- سورس صفحه نصب گرافیکی در `docs/site` (انتشار GitHub Pages در این Release فعال نشده است).
 - دکمه رسمی **Deploy to Cloudflare**.
 - قالب مستقل `deploy/worker` برای نصب روی Cloudflare Workers.
 - Provision خودکار KV و Binding با نام `C`.
