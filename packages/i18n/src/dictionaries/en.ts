@@ -1,0 +1,16 @@
+export const en = {
+  'nav.overview': 'Overview',
+  'nav.protocols': 'Protocols',
+  'nav.endpoints': 'Smart Endpoints',
+  'nav.subscriptions': 'Subscriptions',
+  'nav.routing': 'Routing & Outbound',
+  'nav.networkLab': 'Network Lab',
+  'nav.security': 'Security',
+  'status.online': 'Online',
+  'status.offline': 'Offline',
+  'installer.token.title': 'Connect your Cloudflare account',
+  'installer.token.help': 'Your token is used only in memory during this session.',
+  'installer.token.placeholder': 'Paste scoped API token',
+  'installer.token.continue': 'Continue',
+  'installer.token.cancel': 'Cancel',
+} as const;

@@ -1,0 +1,16 @@
+export const fa = {
+  'nav.overview': 'نمای کلی',
+  'nav.protocols': 'پروتکل‌ها',
+  'nav.endpoints': 'اندپوینت‌های هوشمند',
+  'nav.subscriptions': 'اشتراک‌ها',
+  'nav.routing': 'مسیریابی و خروجی',
+  'nav.networkLab': 'آزمایشگاه شبکه',
+  'nav.security': 'امنیت',
+  'status.online': 'آنلاین',
+  'status.offline': 'آفلاین',
+  'installer.token.title': 'اتصال حساب Cloudflare',
+  'installer.token.help': 'توکن فقط در حافظه همین نشست استفاده می‌شود و ذخیره نخواهد شد.',
+  'installer.token.placeholder': 'Scoped API Token را وارد کنید',
+  'installer.token.continue': 'ادامه',
+  'installer.token.cancel': 'انصراف',
+} as const;
