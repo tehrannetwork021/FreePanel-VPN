@@ -1,0 +1,33 @@
+name: Feature request
+about: Suggest a focused improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user problem does this feature solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed experience
+      description: Describe the user flow rather than only the implementation.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Installer, Dashboard, Cloudflare deployer, Protocol core, Smart endpoints, Subscriptions, Security, Documentation]
+    validations:
+      required: true
+  - type: checkboxes
+    id: bilingual
+    attributes:
+      label: UX considerations
+      options:
+        - label: I considered Persian RTL and English LTR behavior.
+        - label: I did not include credentials or private configuration in this request.
+          required: true

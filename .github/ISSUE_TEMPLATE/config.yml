@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security reports / گزارش امنیتی
+    url: https://github.com/tehrannetwork021/FreePanel-VPN/blob/main/SECURITY.md
+    about: Read the security policy before sharing sensitive details.

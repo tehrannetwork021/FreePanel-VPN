@@ -1,0 +1,36 @@
+name: Bug report
+about: Report a reproducible problem without sharing secrets
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Never paste Cloudflare API tokens, UUIDs, subscription secrets, cookies, or proxy credentials.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Give the smallest safe set of steps that reproduces the issue.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Installer, Dashboard, RTL/i18n, CI/Build, Documentation, Other]
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Secret check
+      options:
+        - label: I removed all tokens, passwords, UUIDs, cookies and private endpoints from this report.
+          required: true
