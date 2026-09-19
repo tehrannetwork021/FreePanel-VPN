@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -44,4 +45,3 @@ const manifest = { version, sha256, bytes };
 
 await writeFile(generatedPath, generated, 'utf8');
 await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
-console.log(`edge-worker ${version} ${sha256} ${bytes} bytes`);

@@ -1,12 +1,5 @@
 export type InstallStage =
-  | 'oauth'
-  | 'account'
-  | 'kv'
-  | 'worker'
-  | 'secret'
-  | 'subdomain'
-  | 'health'
-  | 'complete';
+  'oauth' | 'account' | 'kv' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
 
 export type InstallErrorCode =
   | 'authorization-expired'

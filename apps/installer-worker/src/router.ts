@@ -3,11 +3,7 @@ import { CloudflareApiError, listAccounts } from './cloudflare';
 import type { InstallerEnv } from './env';
 import { finishOAuth, revokeOAuth, startOAuth } from './oauth';
 import { defaultProvisionDeps, ProvisionError, provisionPanel } from './provision';
-import {
-  INSTALL_SESSION_COOKIE,
-  clearInstallerCookies,
-  readInstallSessionCookie,
-} from './session';
+import { INSTALL_SESSION_COOKIE, clearInstallerCookies, readInstallSessionCookie } from './session';
 
 export type RouterDeps = {
   startOAuth: typeof startOAuth;
@@ -51,11 +47,7 @@ async function readSessionOrResponse(
   try {
     return await readInstallSessionCookie(request, env.COOKIE_KEY_B64);
   } catch {
-    return json(
-      { connected: false, error: 'authorization-expired' },
-      401,
-      clearInstallerCookies(),
-    );
+    return json({ connected: false, error: 'authorization-expired' }, 401, clearInstallerCookies());
   }
 }
 

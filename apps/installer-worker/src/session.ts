@@ -64,7 +64,7 @@ export async function openCookie<T extends { expiresAt: number }>(
     return payload;
   } catch (error) {
     if (error instanceof Error && error.message === 'expired-session') throw error;
-    throw new Error('invalid-session');
+    throw new Error('invalid-session', { cause: error });
   }
 }
 

@@ -18,7 +18,11 @@ function ok(result: unknown, resultInfo?: unknown) {
 
 function fail(status: number, code = 1000) {
   return new Response(
-    JSON.stringify({ success: false, result: null, errors: [{ code, message: 'SECRET RAW DETAIL' }] }),
+    JSON.stringify({
+      success: false,
+      result: null,
+      errors: [{ code, message: 'SECRET RAW DETAIL' }],
+    }),
     { status, headers: { 'content-type': 'application/json' } },
   );
 }
@@ -42,9 +46,11 @@ describe('Cloudflare provisioning API', () => {
   });
 
   it('reuses the deterministic KV namespace and creates only when absent', async () => {
-    const reuseFetch = vi.fn().mockResolvedValue(
-      ok([{ id: 'kv-existing', title: 'pvnetwork-client-config' }], { page: 1, total_pages: 1 }),
-    );
+    const reuseFetch = vi
+      .fn()
+      .mockResolvedValue(
+        ok([{ id: 'kv-existing', title: 'pvnetwork-client-config' }], { page: 1, total_pages: 1 }),
+      );
     vi.stubGlobal('fetch', reuseFetch);
     await expect(findOrCreateKvNamespace('token', 'acct', 'pvnetwork-client')).resolves.toEqual({
       id: 'kv-existing',
@@ -57,7 +63,9 @@ describe('Cloudflare provisioning API', () => {
       .mockResolvedValueOnce(ok([], { page: 1, total_pages: 1 }))
       .mockResolvedValueOnce(ok({ id: 'kv-new', title: 'pvnetwork-client-config' }));
     vi.stubGlobal('fetch', createFetch);
-    await expect(findOrCreateKvNamespace('token', 'acct', 'pvnetwork-client')).resolves.toMatchObject({
+    await expect(
+      findOrCreateKvNamespace('token', 'acct', 'pvnetwork-client'),
+    ).resolves.toMatchObject({
       id: 'kv-new',
     });
     expect(createFetch.mock.calls[1]?.[0]).toContain('/accounts/acct/storage/kv/namespaces');

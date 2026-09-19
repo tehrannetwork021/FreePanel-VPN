@@ -7,11 +7,11 @@
   "assets": {
     "directory": "../installer/dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
   },
   "vars": {
     "CF_OAUTH_CLIENT_ID": "set-at-deploy-time",
     "CF_OAUTH_SCOPES": "set-at-deploy-time",
-    "INSTALLER_ORIGIN": "set-at-deploy-time"
-  }
+    "INSTALLER_ORIGIN": "set-at-deploy-time",
+  },
 }

@@ -25,7 +25,9 @@ describe('Cloudflare OAuth', () => {
     expect(location.origin + location.pathname).toBe('https://dash.cloudflare.com/oauth2/auth');
     expect(location.searchParams.get('response_type')).toBe('code');
     expect(location.searchParams.get('client_id')).toBe('client-id');
-    expect(location.searchParams.get('redirect_uri')).toBe(`${env.INSTALLER_ORIGIN}/api/oauth/callback`);
+    expect(location.searchParams.get('redirect_uri')).toBe(
+      `${env.INSTALLER_ORIGIN}/api/oauth/callback`,
+    );
     expect(location.searchParams.get('scope')).toBe(env.CF_OAUTH_SCOPES);
     expect(location.searchParams.get('state')).toBeTruthy();
     expect(response.headers.get('set-cookie')).toContain('__Host-tn_oauth_state=');

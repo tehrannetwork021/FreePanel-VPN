@@ -42,16 +42,16 @@ async function cfRequest<T>(
 export async function listAccounts(token: string): Promise<CloudflareAccountView[]> {
   const accounts: CloudflareAccountView[] = [];
   let page = 1;
-  let totalPages = 1;
-  do {
+  while (true) {
     const { result, resultInfo } = await cfRequest<CloudflareAccountView[]>(
       token,
       `/accounts?per_page=50&page=${page}`,
     );
     accounts.push(...result.map(({ id, name }) => ({ id, name })));
-    totalPages = resultInfo?.total_pages ?? page;
+    const totalPages = resultInfo?.total_pages ?? page;
+    if (page >= totalPages) break;
     page += 1;
-  } while (page <= totalPages);
+  }
   return accounts;
 }
 
@@ -64,17 +64,17 @@ export async function findOrCreateKvNamespace(
 ): Promise<KvNamespace> {
   const title = `${workerName}-config`;
   let page = 1;
-  let totalPages = 1;
-  do {
+  while (true) {
     const { result, resultInfo } = await cfRequest<KvNamespace[]>(
       token,
       `/accounts/${encodeURIComponent(accountId)}/storage/kv/namespaces?per_page=100&page=${page}`,
     );
     const existing = result.find((namespace) => namespace.title === title);
     if (existing) return existing;
-    totalPages = resultInfo?.total_pages ?? page;
+    const totalPages = resultInfo?.total_pages ?? page;
+    if (page >= totalPages) break;
     page += 1;
-  } while (page <= totalPages);
+  }
 
   const { result } = await cfRequest<KvNamespace>(
     token,
