@@ -13,12 +13,14 @@
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:edge-artifact": "node scripts/build-edge-worker-artifact.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.4",
+    "esbuild": "0.28.1",
     "eslint": "^10.11.0",
     "prettier": "^3.9.8",
     "typescript": "^5.9.3",
