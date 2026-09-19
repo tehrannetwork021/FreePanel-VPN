@@ -21,7 +21,7 @@
 - [x] Task 4 Design System
 - [x] Task 5 Dashboard Preview
 - [x] Task 6 Installer Token Safety
-- [ ] Task 7 CI
+- [x] Task 7 CI
 - [ ] Task 8 GitHub Discoverability
 - [ ] Task 9 Milestone Verification
 
