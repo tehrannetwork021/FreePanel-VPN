@@ -16,7 +16,7 @@
 
 ## Foundation Milestone
 - [x] Task 1 Governance
-- [ ] Task 2 Monorepo & Toolchain
+- [x] Task 2 Monorepo & Toolchain
 - [ ] Task 3 i18n
 - [ ] Task 4 Design System
 - [ ] Task 5 Dashboard Preview
