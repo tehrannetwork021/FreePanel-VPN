@@ -62,11 +62,13 @@
 ### Task 1: Shared installer contracts and validation
 
 **Files:**
+
 - Create: `packages/shared/src/installer.ts`
 - Modify: `packages/shared/src/index.ts`
 - Test: `packages/shared/src/installer.test.ts`
 
 **Interfaces:**
+
 - Consumes: none.
 - Produces: `InstallStage`, `InstallErrorCode`, `InstallerSessionView`, `CloudflareAccountView`, `InstallRequest`, `InstallResult`, `validateWorkerName(name)`, `validateAdminPassword(password)`.
 
@@ -99,14 +101,7 @@ Expected: FAIL because `./installer` does not exist.
 
 ```ts
 export type InstallStage =
-  | 'oauth'
-  | 'account'
-  | 'kv'
-  | 'worker'
-  | 'secret'
-  | 'subdomain'
-  | 'health'
-  | 'complete';
+  'oauth' | 'account' | 'kv' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
 
 export type InstallErrorCode =
   | 'authorization-expired'
@@ -122,7 +117,11 @@ export type InstallErrorCode =
   | 'health-failed';
 
 export type CloudflareAccountView = { id: string; name: string };
-export type InstallerSessionView = { connected: boolean; expiresAt?: number; accounts?: CloudflareAccountView[] };
+export type InstallerSessionView = {
+  connected: boolean;
+  expiresAt?: number;
+  accounts?: CloudflareAccountView[];
+};
 export type InstallRequest = { accountId: string; workerName: string; adminPassword: string };
 export type InstallResult = { ok: true; workerUrl: string; workerName: string; version: string };
 
@@ -155,6 +154,7 @@ git commit -m "feat: add OAuth installer contracts"
 ### Task 2: Encrypted OAuth state and install session cookies
 
 **Files:**
+
 - Create: `apps/installer-worker/package.json`
 - Create: `apps/installer-worker/tsconfig.json`
 - Create: `apps/installer-worker/src/env.ts`
@@ -162,6 +162,7 @@ git commit -m "feat: add OAuth installer contracts"
 - Create: `apps/installer-worker/src/session.test.ts`
 
 **Interfaces:**
+
 - Consumes: Web Crypto `crypto.subtle`.
 - Produces: `InstallerEnv`, `sealCookie(payload, keyB64)`, `openCookie<T>(value, keyB64)`, `makeOAuthStateCookie()`, `readOAuthStateCookie()`, `makeInstallSessionCookie()`, `clearInstallerCookies()`.
 
@@ -199,9 +200,16 @@ Create `tsconfig.json` using `ES2022`, `module: ESNext`, `moduleResolution: Bund
 it('round-trips an encrypted session and rejects tampering/expiry', async () => {
   const key = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
   const now = 1_800_000_000_000;
-  const sealed = await sealCookie({ accessToken: 'secret-token', issuedAt: now, expiresAt: now + 600_000 }, key);
-  await expect(openCookie(sealed, key, now + 1)).resolves.toMatchObject({ accessToken: 'secret-token' });
-  await expect(openCookie(`${sealed.slice(0, -1)}x`, key, now + 1)).rejects.toThrow('invalid-session');
+  const sealed = await sealCookie(
+    { accessToken: 'secret-token', issuedAt: now, expiresAt: now + 600_000 },
+    key,
+  );
+  await expect(openCookie(sealed, key, now + 1)).resolves.toMatchObject({
+    accessToken: 'secret-token',
+  });
+  await expect(openCookie(`${sealed.slice(0, -1)}x`, key, now + 1)).rejects.toThrow(
+    'invalid-session',
+  );
   await expect(openCookie(sealed, key, now + 600_001)).rejects.toThrow('expired-session');
 });
 ```
@@ -244,11 +252,13 @@ git commit -m "feat: add encrypted installer sessions"
 ### Task 3: Cloudflare OAuth authorization, callback, and revoke
 
 **Files:**
+
 - Create: `apps/installer-worker/src/oauth.ts`
 - Create: `apps/installer-worker/src/oauth.test.ts`
 - Modify: `apps/installer-worker/src/env.ts`
 
 **Interfaces:**
+
 - Consumes: `InstallerEnv`, cookie helpers from Task 2.
 - Produces: `startOAuth(request, env)`, `finishOAuth(request, env)`, `revokeOAuth(accessToken, env)`.
 
@@ -257,7 +267,10 @@ git commit -m "feat: add encrypted installer sessions"
 Assert the start response redirects to `https://dash.cloudflare.com/oauth2/auth` with `response_type=code`, configured `client_id`, exact `redirect_uri`, space-delimited configured scopes, and random `state`; callback must reject mismatched/missing/expired state before any token endpoint call.
 
 ```ts
-expect(fetchMock).not.toHaveBeenCalledWith('https://dash.cloudflare.com/oauth2/token', expect.anything());
+expect(fetchMock).not.toHaveBeenCalledWith(
+  'https://dash.cloudflare.com/oauth2/token',
+  expect.anything(),
+);
 ```
 
 - [ ] **Step 2: Run tests and confirm RED**
@@ -268,6 +281,7 @@ Expected: FAIL because OAuth module does not exist.
 - [ ] **Step 3: Implement server-side Authorization Code flow**
 
 Use these current Cloudflare endpoints:
+
 - Authorization: `https://dash.cloudflare.com/oauth2/auth`
 - Token: `https://dash.cloudflare.com/oauth2/token`
 - Revoke: `https://dash.cloudflare.com/oauth2/revoke`
@@ -306,6 +320,7 @@ git commit -m "feat: add Cloudflare OAuth flow"
 ### Task 4: Immutable Worker artifact generation and hash verification
 
 **Files:**
+
 - Create: `scripts/build-edge-worker-artifact.mjs`
 - Create: `scripts/build-edge-worker-artifact.test.ts`
 - Create/generated: `apps/installer-worker/src/generated/edgeWorkerArtifact.ts`
@@ -314,6 +329,7 @@ git commit -m "feat: add Cloudflare OAuth flow"
 - Modify: `pnpm-lock.yaml`
 
 **Interfaces:**
+
 - Consumes: `deploy/worker/src/index.ts`, root version, esbuild.
 - Produces: `EDGE_WORKER_SOURCE`, `EDGE_WORKER_SHA256`, `EDGE_WORKER_VERSION`, and manifest `{version, sha256, bytes}`.
 
@@ -350,12 +366,14 @@ Provisioning must recompute SHA-256 before every upload and throw `artifact-inte
 - [ ] **Step 5: Run generator twice and prove deterministic hash**
 
 Run:
+
 ```bash
 pnpm build:edge-artifact
 cp dist/installer-artifacts/edge-worker-manifest.json /tmp/manifest-a.json
 pnpm build:edge-artifact
 diff -u /tmp/manifest-a.json dist/installer-artifacts/edge-worker-manifest.json
 ```
+
 Expected: no diff.
 
 - [ ] **Step 6: Run existing Worker checks**
@@ -373,16 +391,19 @@ git commit -m "build: generate immutable Worker install artifact"
 ### Task 5: Narrow Cloudflare provisioning API client
 
 **Files:**
+
 - Create: `apps/installer-worker/src/cloudflare.ts`
 - Create: `apps/installer-worker/src/cloudflare.test.ts`
 
 **Interfaces:**
+
 - Consumes: OAuth access token.
 - Produces: `listAccounts`, `findOrCreateKvNamespace`, `uploadWorkerModule`, `putAdminSecret`, `ensureAccountSubdomain`, `enableScriptSubdomain`.
 
 - [ ] **Step 1: Write mocked API contract tests**
 
 Cover exact methods/paths:
+
 - `GET /client/v4/accounts?per_page=50&page=N`
 - `GET /client/v4/accounts/{id}/storage/kv/namespaces?per_page=100&page=N`
 - `POST /client/v4/accounts/{id}/storage/kv/namespaces`
@@ -405,8 +426,13 @@ async function cfFetch<T>(token: string, path: string, init: RequestInit = {}): 
     ...init,
     headers: { authorization: `Bearer ${token}`, ...(init.headers ?? {}) },
   });
-  const body = await response.json() as { success: boolean; result: T; errors?: Array<{code:number; message:string}> };
-  if (!response.ok || !body.success) throw new CloudflareApiError(response.status, body.errors?.[0]?.code);
+  const body = (await response.json()) as {
+    success: boolean;
+    result: T;
+    errors?: Array<{ code: number; message: string }>;
+  };
+  if (!response.ok || !body.success)
+    throw new CloudflareApiError(response.status, body.errors?.[0]?.code);
   return body.result;
 }
 ```
@@ -452,10 +478,12 @@ git commit -m "feat: add Cloudflare provisioning client"
 ### Task 6: Retry-safe provisioning orchestrator and health verification
 
 **Files:**
+
 - Create: `apps/installer-worker/src/provision.ts`
 - Create: `apps/installer-worker/src/provision.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1 validators, Task 4 artifact, Task 5 API client.
 - Produces: `provisionPanel(session, request, deps): Promise<InstallResult>`.
 
@@ -495,6 +523,7 @@ git commit -m "feat: provision Cloudflare panel without GitHub"
 ### Task 7: Installer Worker API router and static application hosting
 
 **Files:**
+
 - Create: `apps/installer-worker/src/router.ts`
 - Create: `apps/installer-worker/src/router.test.ts`
 - Create: `apps/installer-worker/src/index.ts`
@@ -502,6 +531,7 @@ git commit -m "feat: provision Cloudflare panel without GitHub"
 - Modify: `apps/installer-worker/package.json`
 
 **Interfaces:**
+
 - Consumes: OAuth/session/provision modules and `env.ASSETS`.
 - Produces HTTP endpoints: `GET /api/oauth/start`, `GET /api/oauth/callback`, `GET /api/session`, `POST /api/install`, `POST /api/logout`; all other GETs fall through to static assets.
 
@@ -535,13 +565,13 @@ Create `wrangler.jsonc` with this structure (real production values are supplied
   "assets": {
     "directory": "../installer/dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
   },
   "vars": {
     "CF_OAUTH_CLIENT_ID": "set-at-deploy-time",
     "CF_OAUTH_SCOPES": "set-at-deploy-time",
-    "INSTALLER_ORIGIN": "set-at-deploy-time"
-  }
+    "INSTALLER_ORIGIN": "set-at-deploy-time",
+  },
 }
 ```
 
@@ -562,6 +592,7 @@ git commit -m "feat: serve OAuth installer control plane"
 ### Task 8: OAuth-first React installer wizard
 
 **Files:**
+
 - Modify: `apps/installer/src/installClient.ts`
 - Modify: `apps/installer/src/App.tsx`
 - Modify: `apps/installer/src/App.test.tsx`
@@ -571,6 +602,7 @@ git commit -m "feat: serve OAuth installer control plane"
 - Modify: `packages/i18n/src/parity.test.ts`.
 
 **Interfaces:**
+
 - Consumes installer API from Task 7.
 - Produces user flow: connect Cloudflare → select account → Worker name/admin password → progress → final URL; Advanced section exposes existing token/Git fallback separately.
 
@@ -621,12 +653,14 @@ git commit -m "feat: make OAuth the primary installer flow"
 ### Task 9: Operator setup, scope discovery, and real-account smoke gate
 
 **Files:**
+
 - Create: `scripts/cloudflare-oauth-scopes.mjs`
 - Create: `docs/OAUTH_OPERATOR_SETUP.md`
 - Create: `docs/ops/OAUTH_INSTALLER_SMOKE.md`
 - Modify: `.gitignore` only if local operator env files need exclusion.
 
 **Interfaces:**
+
 - Consumes: Cloudflare OAuth scope catalog `GET https://api.cloudflare.com/client/v4/oauth/scopes` during one-time operator setup.
 - Produces: exact configured `CF_OAUTH_SCOPES`, OAuth client registration checklist, production smoke acceptance record.
 
@@ -663,12 +697,14 @@ git commit -m "docs: add OAuth installer operator runbook"
 ### Task 10: Isolated Developer fallback template
 
 **Files:**
+
 - Create: `scripts/export-cloudflare-template.mjs`
 - Create: `scripts/export-cloudflare-template.test.ts`
 - Create/generated: `dist/cloudflare-template/*`
 - Modify: root scripts in `package.json`.
 
 **Interfaces:**
+
 - Consumes: `deploy/worker/*`.
 - Produces: a standalone root-level Cloudflare template containing only Worker package files, suitable for publication to orphan branch `cloudflare-template`.
 
@@ -707,6 +743,7 @@ git commit -m "build: export isolated Cloudflare developer template"
 ### Task 11: Public docs switch, final verification, and release
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `docs/INSTALL_FA.md`
 - Modify: `docs/INSTALL_EN.md`
@@ -715,6 +752,7 @@ git commit -m "build: export isolated Cloudflare developer template"
 - Modify: release/install contract tests.
 
 **Interfaces:**
+
 - Consumes: successful Task 9 smoke record and Task 10 developer fallback URL.
 - Produces: public OAuth-first install docs and release-ready branch.
 
