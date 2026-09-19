@@ -38,6 +38,31 @@
 - [ ] Task 7 Installer UX + full mocked deploy E2E
 - [ ] Task 8 Documentation + final verification
 
+## Release v0.1.0
+
+- [x] Official Deploy to Cloudflare template
+- [x] Automatic KV provisioning (`C`)
+- [x] Persian installation guide
+- [x] English installation guide
+- [x] Graphical GitHub Pages installer landing
+- [ ] Publish GitHub Release `v0.1.0`
+
+## Three-Protocol Worker Milestone
+
+- [x] Shared destination validation + constant-time auth primitives
+- [x] VLESS TCP parser
+- [x] Trojan TCP parser + SHA-224 auth
+- [x] Protected protocol config in KV
+- [x] WebSocket ↔ TCP bridge
+- [x] VLESS-WS runtime route
+- [x] Trojan-WS runtime route
+- [x] VLESS-XHTTP stream-one runtime route
+- [x] Owner panel + QR + protected subscription
+- [x] Workerd end-to-end test: VLESS-WS / Trojan-WS / XHTTP / negative auth
+- [x] Final release verification
+- [ ] Push tested release to GitHub
+- [ ] Publish GitHub Release `v0.1.0`
+
 ## V1 Future Work
 
 - [x] Installer links directly to official pre-filled Cloudflare Workers token template
@@ -48,23 +73,26 @@
 - [ ] KV create/reuse/bind
 - [ ] Worker upload/update/rollback
 - [ ] workers.dev enablement
-- [ ] Admin auth/session
-- [ ] VLESS core
-- [ ] Trojan core
-- [ ] XHTTP core
+- [x] Admin auth/session
+- [x] VLESS core
+- [x] Trojan core
+- [x] XHTTP core
 - [ ] Direct/SOCKS5/HTTP(S) outbound
 - [ ] Smart endpoints + rotation
-- [ ] Subscription generator
+- [x] Subscription generator
 - [ ] DNS/ECH
 - [ ] Network Lab
 - [ ] Redacted logs/diagnostics
 - [ ] Backup/Restore
 - [ ] Safe upgrade
-- [ ] Release + changelog
+- [x] Release + changelog
 
 ## Handoff Notes
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.
 - شاخه توسعه: `dev/tehran-edge-v1`.
 - Foundation در 2026-09-19 با Unit، Build، Desktop/Mobile E2E، Secret scan و تصاویر واقعی verify شد.
-- GitHub connector فعلی هنوز push ندارد؛ تا فعال شدن Write Access، توسعه روی workspace ایزوله سرور انجام می‌شود.
+- هسته سه‌موتوره در 2026-09-19 با Wrangler/workerd واقعی و اتصال TCP به مقصد عمومی verify شد.
+- VLESS-WS، Trojan-WS، VLESS-XHTTP stream-one و negative-auth همگی PASS شدند.
+- Xray-core v26.9.9 به‌عنوان کلاینت واقعی برای هر سه مسیر تست شد و هر سه از طریق SOCKS به مقصد HTTP واقعی متصل شدند.
+- انتشار فقط بعد از Quality Gate نهایی و Push انجام می‌شود.

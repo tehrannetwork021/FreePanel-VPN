@@ -2,7 +2,7 @@
 
 # Tehran Network Edge Panel
 
-**پنل Serverless رنگی و دو زبانه برای Cloudflare Workers — بدون VPS شخصی**  
+**پنل Serverless رنگی و دو زبانه برای Cloudflare Workers — بدون VPS شخصی**
 **A colorful bilingual serverless edge panel for Cloudflare Workers — no personal VPS required**
 
 [فارسی](#فارسی) · [English](#english) · [Security](SECURITY.md) · [Roadmap](#نقشه-راه--roadmap)
@@ -13,11 +13,17 @@
 ![pnpm](https://img.shields.io/badge/pnpm-10.15.1-ffad42)
 ![RTL](https://img.shields.io/badge/Persian-RTL-8dff6a)
 
+### 🚀 نصب / Install
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+
+**[باز کردن صفحه نصب گرافیکی](https://tehrannetwork021.github.io/FreePanel-VPN/)** · **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
+
 </div>
 
 > [!IMPORTANT]
-> **وضعیت فعلی:** Foundation، رابط فارسی/English، Dashboard و Installer امن ساخته شده‌اند. موتور نصب واقعی Cloudflare و هسته VLESS/Trojan/XHTTP هنوز **در حال توسعه** هستند.  
-> **Current status:** Foundation, bilingual UI, dashboard and secure installer UX are complete. Real Cloudflare provisioning and VLESS/Trojan/XHTTP cores are **in development**.
+> **وضعیت فعلی:** نسخه `v0.1.0` برای نصب مستقیم روی Cloudflare آماده است و هسته‌های **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** با تست end-to-end واقعی فعال هستند.
+> **Current status:** `v0.1.0` is ready for direct Cloudflare deployment with **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** verified end-to-end and through Xray-core v26.9.9.
 
 ![Tehran Network one-click installer](assets/readme/installer-fa.png)
 
@@ -25,18 +31,16 @@
 
 ### پروژه چیست؟
 
-Tehran Network Edge Panel قرار است تجربه‌ی پروژه‌های فنی Cloudflare را از «کپی اسکریپت و تنظیم دستی KV/Worker» به یک نصب ساده و قابل‌فهم تبدیل کند. هدف نهایی این است که کاربر فقط توکن محدود Cloudflare را بسازد، در Installer وارد کند و باقی مراحل به‌صورت خودکار انجام شوند.
+Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به نصب رسمی یک‌کلیکی Cloudflare تبدیل می‌کند. مسیر پیشنهادی از Deploy to Cloudflare استفاده می‌کند تا Worker و KV روی حساب خود کاربر ساخته شوند؛ مسیر پیشرفته‌ی API Token نیز جداگانه در حال توسعه است.
 
-### تجربه نصب هدف
+### نصب برای کاربر عادی
 
-1. روی **دریافت Cloudflare API Token** بزنید.
-2. صفحه رسمی Cloudflare با دسترسی‌های پیشنهادی Workers/KV/Routes از قبل پر می‌شود.
-3. Token را بسازید و Copy کنید.
-4. به Installer برگردید و Paste کنید.
-5. Installer محلی Token را بررسی می‌کند و مراحل Account → KV → Worker را انجام می‌دهد.
-6. Token بعد از پایان عملیات از حافظه پاک می‌شود و در LocalStorage/SessionStorage/Cookie ذخیره نمی‌شود.
+1. روی **Deploy to Cloudflare** یا **صفحه نصب گرافیکی** بزنید.
+2. وارد Cloudflare شوید و برای `ADMIN_PASSWORD` یک رمز قوی حداقل 16 کاراکتری تعیین کنید.
+3. Deploy را تأیید کنید؛ Cloudflare به‌صورت خودکار Worker و KV را می‌سازد و Binding `C` را متصل می‌کند.
+4. آدرس `*.workers.dev` را باز کنید، همان `ADMIN_PASSWORD` را وارد کنید و کانفیگ/QR/Subscription را بردارید.
 
-> موتور واقعی مرحله ۵ در Milestone بعدی پیاده‌سازی می‌شود؛ UI و قرارداد امنیتی آن همین حالا آماده و تست‌شده است.
+برای جزئیات و مسیر پیشرفته‌ی API Token، [آموزش کامل فارسی](docs/INSTALL_FA.md) را ببینید.
 
 ### چرا متفاوت است؟
 
@@ -57,22 +61,17 @@ Tehran Network Edge Panel قرار است تجربه‌ی پروژه‌های ف
 
 ### نصب سریع
 
-> برای توسعه محلی فعلی. Installer نهایی یک لانچر ساده خواهد داشت تا کاربر عادی نیاز به ابزار توسعه نداشته باشد.
+**برای کاربر عادی هیچ ابزار توسعه‌ای لازم نیست.**
 
-```bash
-git clone https://github.com/tehrannetwork021/FreePanel-VPN.git
-cd FreePanel-VPN
-corepack enable
-corepack prepare pnpm@10.15.1 --activate
-pnpm install --frozen-lockfile
-pnpm --filter @tehrannetwork/installer dev
-```
+1. روی دکمه **Deploy to Cloudflare** در بالای همین صفحه بزنید.
+2. وارد Cloudflare شوید و Deploy را تأیید کنید.
+3. Cloudflare Worker و KV را خودکار می‌سازد و Binding `C` را متصل می‌کند.
+4. پس از Build، آدرس `*.workers.dev` را باز کنید.
 
-سپس `http://127.0.0.1:4174` را باز کنید. برای مشاهده Dashboard:
+صفحه گرافیکی نصب: **https://tehrannetwork021.github.io/FreePanel-VPN/**
+آموزش کامل: [docs/INSTALL_FA.md](docs/INSTALL_FA.md)
 
-```bash
-pnpm --filter @tehrannetwork/panel dev
-```
+برای توسعه محلی UI، [docs/QUICKSTART_FA.md](docs/QUICKSTART_FA.md) را ببینید.
 
 ### تست‌ها
 
@@ -87,18 +86,16 @@ CI همین Quality Gateها را در Pull Request اجرا می‌کند.
 
 ### What is it?
 
-Tehran Network Edge Panel is a clean-room, modular Cloudflare Workers control panel focused on a simple local-first installation experience. The end goal is straightforward: create a scoped Cloudflare token, paste it into the installer, and let the installer provision the required Cloudflare resources automatically.
+Tehran Network Edge Panel is a clean-room, modular Cloudflare Workers control panel with an official one-click Cloudflare deployment path. The recommended flow lets Cloudflare create and bind the Worker and KV directly in the user’s own account; an advanced scoped-token installer is developed separately.
 
-### Target one-click flow
+### One-click installation
 
-1. Click **Get Cloudflare API Token**.
-2. Cloudflare opens its official token builder with Workers/KV/Routes permissions pre-filled.
-3. Create and copy the token.
-4. Return to the local installer and paste it.
-5. The local installer verifies the token and provisions Account → KV → Worker.
-6. The token is cleared from memory after the operation and is never written to LocalStorage, SessionStorage, or cookies.
+1. Click **Deploy to Cloudflare** or open the **graphical installer page**.
+2. Sign in to Cloudflare and set a strong `ADMIN_PASSWORD` of at least 16 characters.
+3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
+4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
 
-> Step 5's real provisioning backend is the next milestone. The installer UI and volatile-token security contract are already implemented and tested.
+See the [English installation guide](docs/INSTALL_EN.md) for details and the advanced API-token path.
 
 ### Why this project?
 
@@ -111,19 +108,23 @@ Tehran Network Edge Panel is a clean-room, modular Cloudflare Workers control pa
 
 ### Quick start
 
-```bash
-git clone https://github.com/tehrannetwork021/FreePanel-VPN.git
-cd FreePanel-VPN
-corepack enable
-corepack prepare pnpm@10.15.1 --activate
-pnpm install --frozen-lockfile
-pnpm --filter @tehrannetwork/installer dev
-```
+**Regular users do not need local development tools.**
+
+1. Click **Deploy to Cloudflare** at the top of this README.
+2. Sign in to Cloudflare and set a strong `ADMIN_PASSWORD` of at least 16 characters.
+3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
+4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
+
+Graphical installer: **https://tehrannetwork021.github.io/FreePanel-VPN/**
+Full guide: [docs/INSTALL_EN.md](docs/INSTALL_EN.md)
+
+For local UI development, see [docs/QUICKSTART_EN.md](docs/QUICKSTART_EN.md).
 
 ### Architecture
 
 ```text
-apps/installer  → local-first setup UI → /api/install (next milestone)
+deploy/worker   → isolated Cloudflare template → Worker + auto-provisioned KV
+apps/installer  → advanced local-first token setup UI
 apps/panel      → bilingual network dashboard
 packages/ui     → Prismatic Network Console design primitives
 packages/i18n   → Persian/English dictionaries + RTL/LTR rules
@@ -132,26 +133,28 @@ packages/shared → product contracts shared across apps
 
 ## نقشه راه / Roadmap
 
-| بخش / Area                          | وضعیت / Status    |
-| ----------------------------------- | ----------------- |
-| TypeScript monorepo + CI            | ✅ Ready          |
-| Persian/English RTL/LTR             | ✅ Ready          |
-| Responsive dashboard                | ✅ Ready          |
-| One-click token creation UX         | ✅ Ready          |
-| Volatile token handling             | ✅ Ready          |
-| Real Cloudflare token verification  | 🚧 In development |
-| Account discovery + KV provisioning | 🚧 In development |
-| Worker deployment / rollback        | 🚧 In development |
-| VLESS core                          | 🧭 Planned        |
-| Trojan core                         | 🧭 Planned        |
-| XHTTP core                          | 🧭 Planned        |
-| Smart endpoints / rotation          | 🧭 Planned        |
-| Subscription generator              | 🧭 Planned        |
-| DNS / ECH / Network Lab             | 🧭 Planned        |
+| بخش / Area                         | وضعیت / Status    |
+| ---------------------------------- | ----------------- |
+| TypeScript monorepo + CI           | ✅ Ready          |
+| Persian/English RTL/LTR            | ✅ Ready          |
+| Responsive dashboard               | ✅ Ready          |
+| Official Deploy to Cloudflare      | ✅ Ready          |
+| Automatic KV provisioning          | ✅ Ready          |
+| Graphical installer landing page   | ✅ Ready          |
+| One-click token creation UX        | ✅ Ready          |
+| Volatile token handling            | ✅ Ready          |
+| Advanced token verification/deploy | 🚧 In development |
+| Worker rollback                    | 🚧 In development |
+| VLESS-WS core                      | ✅ Ready          |
+| Trojan-WS core                     | ✅ Ready          |
+| VLESS-XHTTP stream-one             | ✅ Ready          |
+| Smart endpoints / rotation         | 🧭 Planned        |
+| Subscription + QR                  | ✅ Ready          |
+| DNS / ECH / Network Lab            | 🧭 Planned        |
 
 ## امنیت / Security
 
-اگر مشکل امنیتی پیدا کردید، Secret یا Token را داخل Issue عمومی قرار ندهید. قبل از گزارش، [SECURITY.md](SECURITY.md) را بخوانید.  
+اگر مشکل امنیتی پیدا کردید، Secret یا Token را داخل Issue عمومی قرار ندهید. قبل از گزارش، [SECURITY.md](SECURITY.md) را بخوانید.
 If you find a security issue, never paste tokens or secrets into a public issue. Read [SECURITY.md](SECURITY.md) first.
 
 ## مشارکت / Contributing

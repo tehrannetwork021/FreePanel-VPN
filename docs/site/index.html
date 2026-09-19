@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#060816" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Tehran Network · نصب Cloudflare Edge Panel</title>
+    <style>
+      :root {
+        font-family: Inter, Tahoma, system-ui, sans-serif;
+        color: #f4f7ff;
+        background: #060816;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 12% 8%, #7c3aed55, transparent 30%),
+          radial-gradient(circle at 90% 15%, #06b6d455, transparent 28%),
+          radial-gradient(circle at 55% 100%, #ec489933, transparent 35%), #060816;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: auto;
+        padding: 28px 20px 60px;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+      }
+      .brand {
+        font-weight: 950;
+        letter-spacing: 0.04em;
+      }
+      .lang {
+        border: 1px solid #ffffff25;
+        background: #101735;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 14px;
+        cursor: pointer;
+      }
+      .hero {
+        margin-top: 70px;
+        text-align: center;
+      }
+      .eyebrow {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #22d3ee18;
+        border: 1px solid #22d3ee55;
+        color: #67e8f9;
+      }
+      .hero h1 {
+        font-size: clamp(38px, 7vw, 80px);
+        margin: 20px auto 15px;
+        max-width: 920px;
+        line-height: 1.05;
+        background: linear-gradient(90deg, #67e8f9, #a78bfa, #f472b6, #fbbf24);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .hero p {
+        max-width: 780px;
+        margin: auto;
+        color: #cbd5e1;
+        line-height: 2;
+        font-size: 17px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="brand">TEHRAN NETWORK · EDGE PANEL</div>
+        <button class="lang" id="lang">English</button>
+      </header>
+      <main class="hero">
+        <span
+          class="eyebrow"
+          data-fa="بدون VPS · Cloudflare Workers"
+          data-en="No VPS · Cloudflare Workers"
+          >بدون VPS · Cloudflare Workers</span
+        >
+        <h1
+          data-fa="نصب پنل تهران نتورک روی Cloudflare"
+          data-en="Deploy Tehran Network Edge Panel to Cloudflare"
+        >
+          نصب پنل تهران نتورک روی Cloudflare
+        </h1>
+        <p
+          data-fa="روش پیشنهادی، نصب رسمی یک‌کلیکی Cloudflare است. KV و Worker روی حساب خودت ساخته می‌شوند و نیازی نیست Token را به سرور ما بدهی."
+          data-en="The recommended path is Cloudflare's official one-click deploy. Worker and KV are created in your own account without sending a token to our server."
+        >
+          روش پیشنهادی، نصب رسمی یک‌کلیکی Cloudflare است. KV و Worker روی حساب خودت ساخته می‌شوند و
+          نیازی نیست Token را به سرور ما بدهی.
+        </p>
+        <section class="actions">
+          <a
+            class="primary"
+            href="https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>☁</span
+            ><strong data-fa="نصب یک‌کلیکی روی Cloudflare" data-en="Deploy to Cloudflare"
+              >نصب یک‌کلیکی روی Cloudflare</strong
+            ><small data-fa="Worker + KV خودکار" data-en="Automatic Worker + KV"
+              >Worker + KV خودکار</small
+            >
+          </a>
+          <a
+            class="secondary"
+            href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=Tehran%20Network%20Installer"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>🔑</span
+            ><strong data-fa="ساخت Cloudflare API Token" data-en="Create Cloudflare API Token"
+              >ساخت Cloudflare API Token</strong
+            ><small data-fa="مسیر پیشرفته" data-en="Advanced path">مسیر پیشرفته</small>
+          </a>
+        </section>
+        <section class="cards">
+          <article>
+            <b>01</b>
+            <h2 data-fa="نصب" data-en="Deploy">نصب</h2>
+            <p
+              data-fa="دکمه بالا را بزن و در صفحه رسمی Cloudflare نصب را تأیید کن."
+              data-en="Click the button above and confirm deployment on Cloudflare's official page."
+            >
+              دکمه بالا را بزن و در صفحه رسمی Cloudflare نصب را تأیید کن.
+            </p>
+          </article>
+          <article>
+            <b>02</b>
+            <h2 data-fa="ساخت خودکار" data-en="Auto provision">ساخت خودکار</h2>
+            <p
+              data-fa="Cloudflare فضای KV و Worker را روی حساب خودت می‌سازد و bind می‌کند."
+              data-en="Cloudflare provisions and binds the Worker and KV in your own account."
+            >
+              Cloudflare فضای KV و Worker را روی حساب خودت می‌سازد و bind می‌کند.
+            </p>
+          </article>
+          <article>
+            <b>03</b>
+            <h2 data-fa="بازکردن پنل" data-en="Open panel">بازکردن پنل</h2>
+            <p
+              data-fa="بعد از Build، آدرس workers.dev را باز کن، ADMIN_PASSWORD را وارد کن و کانفیگ/QR/Subscription را بردار."
+              data-en="After the build, open the workers.dev URL, enter ADMIN_PASSWORD, then copy a config, QR or subscription."
+            >
+              بعد از Build، آدرس workers.dev را باز کن، ADMIN_PASSWORD را وارد کن و
+              کانفیگ/QR/Subscription را بردار.
+            </p>
+          </article>
+        </section>
+        <div
+          class="note"
+          data-fa="نسخه v0.1.0 قابل استفاده است: VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one با اتصال واقعی تست شده‌اند."
+          data-en="v0.1.0 is usable: VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one have passed real connectivity tests."
+        >
+          نسخه v0.1.0 قابل استفاده است: VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one با اتصال واقعی
+          تست شده‌اند.
+        </div>
+        <nav class="links">
+          <a href="https://github.com/tehrannetwork021/FreePanel-VPN/blob/main/docs/INSTALL_FA.md"
+            >راهنمای فارسی</a
+          ><a href="https://github.com/tehrannetwork021/FreePanel-VPN/blob/main/docs/INSTALL_EN.md"
+            >English guide</a
+          ><a href="https://github.com/tehrannetwork021/FreePanel-VPN">GitHub</a>
+        </nav>
+      </main>
+    </div>
+    <style>
+      .actions {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 18px;
+        max-width: 900px;
+        margin: 38px auto;
+      }
+      .actions a {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto;
+        column-gap: 15px;
+        align-items: center;
+        text-align: start;
+        padding: 23px;
+        border-radius: 24px;
+        transition:
+          0.2s transform,
+          0.2s border-color;
+      }
+      .actions a:hover {
+        transform: translateY(-3px);
+      }
+      .actions span {
+        grid-row: 1/3;
+        font-size: 32px;
+      }
+      .actions strong {
+        font-size: 18px;
+      }
+      .actions small {
+        color: #a7b0c5;
+      }
+      .primary {
+        background: linear-gradient(135deg, #0891b2, #7c3aed);
+        box-shadow: 0 20px 60px #7c3aed44;
+      }
+      .secondary {
+        background: #111936;
+        border: 1px solid #ffffff24;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        max-width: 980px;
+        margin: 48px auto 0;
+      }
+      .cards article {
+        padding: 24px;
+        border: 1px solid #ffffff1c;
+        background: #0c122bcc;
+        border-radius: 24px;
+        text-align: start;
+      }
+      .cards b {
+        color: #67e8f9;
+      }
+      .cards h2 {
+        margin: 10px 0;
+      }
+      .cards p {
+        font-size: 14px;
+      }
+      .note {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 18px;
+        border-radius: 18px;
+        background: #f59e0b16;
+        border: 1px solid #f59e0b55;
+        color: #fde68a;
+      }
+      .links {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 28px;
+        color: #93c5fd;
+      }
+      @media (max-width: 760px) {
+        .actions,
+        .cards {
+          grid-template-columns: 1fr;
+        }
+        .hero {
+          margin-top: 45px;
+        }
+        .top {
+          align-items: flex-start;
+        }
+        .actions a {
+          padding: 19px;
+        }
+      }
+    </style>
+    <script>
+      let locale = 'fa';
+      const button = document.getElementById('lang');
+      button.addEventListener('click', () => {
+        locale = locale === 'fa' ? 'en' : 'fa';
+        document.documentElement.lang = locale;
+        document.documentElement.dir = locale === 'fa' ? 'rtl' : 'ltr';
+        button.textContent = locale === 'fa' ? 'English' : 'فارسی';
+        document.querySelectorAll('[data-fa]').forEach((el) => {
+          el.textContent = el.dataset[locale];
+        });
+      });
+    </script>
+  </body>
+</html>
