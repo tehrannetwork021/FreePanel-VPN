@@ -28,7 +28,8 @@ export const fa = {
   'installer.token.continue': 'بررسی و نصب',
   'installer.token.cancel': 'انصراف',
   'installer.token.get': 'دریافت Cloudflare API Token',
-  'installer.token.getHelp': 'Cloudflare با دسترسی‌های پیشنهادی Worker از قبل تنظیم‌شده باز می‌شود.',
+  'installer.token.getHelp':
+    'Cloudflare با دسترسی‌های پیشنهادی Worker از قبل تنظیم‌شده باز می‌شود.',
   'installer.token.step1': '۱. Cloudflare را باز کنید',
   'installer.token.step2': '۲. توکن را بسازید و کپی کنید',
   'installer.token.step3': '۳. اینجا Paste کنید',

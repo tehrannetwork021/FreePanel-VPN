@@ -1,9 +1,11 @@
 # Quick Start — English
 
 ## Current status
+
 The current build is a Foundation/development preview. The one-click installer UI is ready, while the real `/api/install` backend that provisions Cloudflare resources is the next milestone.
 
 ## Run the installer
+
 ```bash
 git clone https://github.com/tehrannetwork021/FreePanel-VPN.git
 cd FreePanel-VPN
@@ -20,6 +22,7 @@ Click **Get Cloudflare API Token**. The official Cloudflare token builder opens 
 The token is never stored in LocalStorage, SessionStorage, or cookies. It is cleared from the UI's in-memory vault after handoff to the local installer service.
 
 ## Run the dashboard
+
 ```bash
 pnpm --filter @tehrannetwork/panel dev
 ```

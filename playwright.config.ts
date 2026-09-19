@@ -8,11 +8,22 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 980 } } },
+    {
+      name: 'desktop',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 980 } },
+    },
     { name: 'mobile', use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
   ],
   webServer: [
-    { command: 'pnpm --filter @tehrannetwork/panel dev -- --port 4173', url: 'http://127.0.0.1:4173', reuseExistingServer: false },
-    { command: 'pnpm --filter @tehrannetwork/installer dev -- --port 4174', url: 'http://127.0.0.1:4174', reuseExistingServer: false },
+    {
+      command: 'pnpm --filter @tehrannetwork/panel dev -- --port 4173',
+      url: 'http://127.0.0.1:4173',
+      reuseExistingServer: false,
+    },
+    {
+      command: 'pnpm --filter @tehrannetwork/installer dev -- --port 4174',
+      url: 'http://127.0.0.1:4174',
+      reuseExistingServer: false,
+    },
   ],
 });

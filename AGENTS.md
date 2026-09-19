@@ -3,6 +3,7 @@
 > قانون: قبل از هر کار این فایل خوانده شود. فقط کاری که واقعاً تست/تأیید شده `[x]` می‌شود. کار تکراری ممنوع.
 
 ## Phase 0 — Design & Governance
+
 - [x] انتخاب معماری Serverless / No VPS
 - [x] تایید برند Tehran Network
 - [x] تایید UI فارسی/English و RTL/LTR
@@ -15,6 +16,7 @@
 - [x] Third-party policy
 
 ## Foundation Milestone
+
 - [x] Task 1 Governance
 - [x] Task 2 Monorepo & Toolchain
 - [x] Task 3 i18n
@@ -26,6 +28,7 @@
 - [ ] Task 9 Milestone Verification
 
 ## V1 Future Work
+
 - [x] Installer links directly to official pre-filled Cloudflare Workers token template
 - [x] Installer token stays volatile and clears after install handoff
 - [ ] Local /api/install deployer backend performs real Cloudflare installation
@@ -49,6 +52,7 @@
 - [ ] Release + changelog
 
 ## Handoff Notes
+
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.
 - شاخه توسعه: `dev/tehran-edge-v1`.
 - GitHub connector فعلی هنوز push ندارد؛ تا فعال شدن Write Access، توسعه روی workspace ایزوله سرور انجام می‌شود.

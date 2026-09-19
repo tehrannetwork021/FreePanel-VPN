@@ -10,7 +10,8 @@ export const en = {
   'status.offline': 'Offline',
   'dashboard.eyebrow': 'Cloudflare Edge Control',
   'dashboard.title': 'Your edge network at a glance',
-  'dashboard.subtitle': 'A colorful, local-first control surface for connectivity, routing, and health.',
+  'dashboard.subtitle':
+    'A colorful, local-first control surface for connectivity, routing, and health.',
   'dashboard.cloudflare': 'Cloudflare',
   'dashboard.protocols': 'Protocols',
   'dashboard.endpoints': 'Endpoints',

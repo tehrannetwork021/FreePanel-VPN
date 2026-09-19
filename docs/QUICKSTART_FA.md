@@ -1,9 +1,11 @@
 # شروع سریع — فارسی
 
 ## وضعیت فعلی
+
 نسخه فعلی برای توسعه و تست Foundation است. UI نصب یک‌کلیکی آماده است، اما backend واقعی `/api/install` که منابع Cloudflare را می‌سازد در Milestone بعدی تکمیل می‌شود.
 
 ## اجرای Installer
+
 ```bash
 git clone https://github.com/tehrannetwork021/FreePanel-VPN.git
 cd FreePanel-VPN
@@ -20,6 +22,7 @@ pnpm --filter @tehrannetwork/installer dev
 Token در LocalStorage، SessionStorage یا Cookie ذخیره نمی‌شود و بعد از تحویل به سرویس نصب محلی از حافظه UI پاک می‌شود.
 
 ## اجرای Dashboard
+
 ```bash
 pnpm --filter @tehrannetwork/panel dev
 ```

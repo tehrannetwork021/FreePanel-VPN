@@ -20,7 +20,17 @@ body:
     id: area
     attributes:
       label: Area
-      options: [Installer, Dashboard, Cloudflare deployer, Protocol core, Smart endpoints, Subscriptions, Security, Documentation]
+      options:
+        [
+          Installer,
+          Dashboard,
+          Cloudflare deployer,
+          Protocol core,
+          Smart endpoints,
+          Subscriptions,
+          Security,
+          Documentation,
+        ]
     validations:
       required: true
   - type: checkboxes

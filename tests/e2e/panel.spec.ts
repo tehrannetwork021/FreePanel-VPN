@@ -4,7 +4,9 @@ test('dashboard is bilingual and has no horizontal overflow', async ({ page }, t
   await page.goto('/');
   await expect(page.getByText('نمای کلی')).toBeVisible();
 
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
   expect(overflow).toBeLessThanOrEqual(1);
 
   if (testInfo.project.name === 'desktop') {
