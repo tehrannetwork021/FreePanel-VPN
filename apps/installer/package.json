@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tehrannetwork/i18n": "workspace:*",
+    "@tehrannetwork/shared": "workspace:*",
     "@tehrannetwork/ui": "workspace:*",
     "lucide-react": "^1.47.0",
     "react": "^19.3.0",

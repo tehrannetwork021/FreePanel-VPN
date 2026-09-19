@@ -44,6 +44,9 @@ importers:
       '@tehrannetwork/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@tehrannetwork/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@tehrannetwork/ui':
         specifier: workspace:*
         version: link:../../packages/ui
