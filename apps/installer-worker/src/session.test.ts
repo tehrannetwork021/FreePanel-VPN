@@ -21,9 +21,10 @@ describe('encrypted installer session', () => {
     await expect(openCookie(sealed, KEY, now + 1)).resolves.toMatchObject({
       accessToken: 'secret-token',
     });
-    await expect(openCookie(`${sealed.slice(0, -1)}x`, KEY, now + 1)).rejects.toThrow(
-      'invalid-session',
-    );
+    const parts = sealed.split('.');
+    const cipher = parts[2]!;
+    parts[2] = `${cipher[0] === 'A' ? 'B' : 'A'}${cipher.slice(1)}`;
+    await expect(openCookie(parts.join('.'), KEY, now + 1)).rejects.toThrow('invalid-session');
     await expect(openCookie(sealed, KEY, now + 600_001)).rejects.toThrow('expired-session');
   });
 
