@@ -120,3 +120,20 @@ describe('VLESS parser', () => {
     });
   });
 });
+
+describe('VLESS candidate parser', () => {
+  it('exposes the presented UUID bytes without authorizing them', async () => {
+    const { parseVlessCandidate } = await import('./vless');
+    const packet = request({
+      uuid: OTHER,
+      host: 'candidate.example',
+      payload: new Uint8Array([9]),
+    });
+    const result = parseVlessCandidate(packet);
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') return;
+    expect([...result.value.presentedCredential]).toEqual([...uuidToBytes(OTHER)]);
+    expect(result.value.destination.host).toBe('candidate.example');
+    expect([...result.value.payload]).toEqual([9]);
+  });
+});

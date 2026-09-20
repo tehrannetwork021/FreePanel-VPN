@@ -3,6 +3,7 @@ import {
   CloudflareApiError,
   enableScriptSubdomain,
   ensureAccountSubdomain,
+  findOrCreateD1Database,
   findOrCreateKvNamespace,
   listAccounts,
   uploadWorkerModule,
@@ -99,6 +100,30 @@ describe('Cloudflare provisioning API', () => {
     );
   });
 
+  it('reuses a deterministic D1 database and creates it only when absent', async () => {
+    const reuseFetch = vi
+      .fn()
+      .mockResolvedValue(ok([{ uuid: 'db-existing', name: 'pvnetwork-client-control' }]));
+    vi.stubGlobal('fetch', reuseFetch);
+    await expect(findOrCreateD1Database('token', 'acct', 'pvnetwork-client')).resolves.toEqual({
+      uuid: 'db-existing',
+      name: 'pvnetwork-client-control',
+    });
+    expect(reuseFetch).toHaveBeenCalledTimes(1);
+
+    const createFetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok({ uuid: 'db-new', name: 'pvnetwork-client-control' }));
+    vi.stubGlobal('fetch', createFetch);
+    await expect(
+      findOrCreateD1Database('token', 'acct', 'pvnetwork-client'),
+    ).resolves.toMatchObject({
+      uuid: 'db-new',
+    });
+    expect((createFetch.mock.calls[1]?.[1] as RequestInit).method).toBe('POST');
+  });
+
   it('uploads KV and ADMIN_PASSWORD atomically in the deployed Worker version', async () => {
     const fetchMock = vi.fn().mockResolvedValue(ok({}));
     vi.stubGlobal('fetch', fetchMock);
@@ -107,8 +132,10 @@ describe('Cloudflare provisioning API', () => {
       'acct',
       'pvnetwork-client',
       'kv-id',
+      'db-id',
       'export default {};',
       'short-pass',
+      'gen-1',
     );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -121,7 +148,9 @@ describe('Cloudflare provisioning API', () => {
       compatibility_date: '2026-09-19',
       bindings: [
         { type: 'kv_namespace', name: 'C', namespace_id: 'kv-id' },
+        { type: 'd1', name: 'DB', database_id: 'db-id' },
         { type: 'secret_text', name: 'ADMIN_PASSWORD', text: 'short-pass' },
+        { type: 'plain_text', name: 'INSTALL_GENERATION', text: 'gen-1' },
       ],
     });
     expect(await (form.get('worker.mjs') as Blob).text()).toBe('export default {};');

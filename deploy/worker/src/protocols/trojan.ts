@@ -6,11 +6,13 @@ const MAX_HEADER_BYTES = 512;
 const HASH_LENGTH = 56;
 const CONNECT = 1;
 
-type ParsedTrojanRequest = {
+export type ParsedTrojanCandidate = {
+  presentedCredential: Uint8Array;
   destination: Destination;
   payload: Uint8Array;
 };
 
+type ParsedTrojanRequest = Omit<ParsedTrojanCandidate, 'presentedCredential'>;
 const fail = <T>(code: string): ParseResult<T> => ({ kind: 'error', code });
 const needMore = <T>(): ParseResult<T> => ({ kind: 'need-more' });
 
@@ -18,16 +20,13 @@ function asciiBytes(text: string): Uint8Array {
   return new TextEncoder().encode(text.toLowerCase());
 }
 
-export function parseTrojanRequest(
-  input: Uint8Array,
-  expectedHash: string,
-): ParseResult<ParsedTrojanRequest> {
-  if (!/^[0-9a-f]{56}$/i.test(expectedHash)) return fail('config');
+export function parseTrojanCandidate(input: Uint8Array): ParseResult<ParsedTrojanCandidate> {
   if (input.length < HASH_LENGTH + 2) return needMore();
-  const receivedHash = input.subarray(0, HASH_LENGTH);
-  if (!constantTimeEqual(receivedHash, asciiBytes(expectedHash))) return fail('auth');
+  const rawCredential = input.subarray(0, HASH_LENGTH);
+  const credentialText = new TextDecoder().decode(rawCredential).toLowerCase();
+  if (!/^[0-9a-f]{56}$/u.test(credentialText)) return fail('auth');
+  const presentedCredential = new TextEncoder().encode(credentialText);
   if (input[56] !== 13 || input[57] !== 10) return fail('malformed');
-
   let offset = 58;
   if (input.length < offset + 2) return needMore();
   const command = input[offset]!;
@@ -82,5 +81,24 @@ export function parseTrojanRequest(
   destination.port = port;
   if (input[offset + 2] !== 13 || input[offset + 3] !== 10) return fail('malformed');
   offset += 4;
-  return { kind: 'ok', value: { destination, payload: input.slice(offset) } };
+  return { kind: 'ok', value: { presentedCredential, destination, payload: input.slice(offset) } };
+}
+
+export function parseTrojanRequest(
+  input: Uint8Array,
+  expectedHash: string,
+): ParseResult<ParsedTrojanRequest> {
+  if (!/^[0-9a-f]{56}$/i.test(expectedHash)) return fail('config');
+  if (input.length < HASH_LENGTH + 2) return needMore();
+  if (!constantTimeEqual(input.subarray(0, HASH_LENGTH), asciiBytes(expectedHash)))
+    return fail('auth');
+  const candidate = parseTrojanCandidate(input);
+  if (candidate.kind !== 'ok') return candidate;
+  return {
+    kind: 'ok',
+    value: {
+      destination: candidate.value.destination,
+      payload: candidate.value.payload,
+    },
+  };
 }

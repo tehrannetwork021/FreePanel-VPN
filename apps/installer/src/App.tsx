@@ -18,6 +18,7 @@ import './app.css';
 const permissions = [
   { key: 'workers_scripts', type: 'edit' },
   { key: 'workers_kv_storage', type: 'edit' },
+  { key: 'd1', type: 'edit' },
   { key: 'account_settings', type: 'read' },
 ];
 
@@ -276,6 +277,7 @@ export function App({ api = browserInstallerApi }: Props) {
             </span>
             <div>
               <strong>{t('installer.free.ready')}</strong>
+              <p>{result.adminUrl}</p>
               <p>{result.workerUrl}</p>
               <p className="result-password">
                 <b>{t('installer.free.yourPassword')}:</b> <code>{usedPassword}</code>
@@ -295,11 +297,11 @@ export function App({ api = browserInstallerApi }: Props) {
               >
                 <Copy size={16} /> {t('installer.oauth.copy')}
               </button>
-              <a href={result.workerUrl} target="_blank" rel="noreferrer noopener">
-                {t('installer.free.open')} <ArrowUpRight size={16} />
+              <a href={result.adminUrl} target="_blank" rel="noreferrer noopener">
+                {t('installer.free.openAdmin')} <ArrowUpRight size={16} />
               </a>
               <a href={result.workerUrl} target="_blank" rel="noreferrer noopener">
-                {t('installer.free.qrSub')} <ArrowUpRight size={16} />
+                {t('installer.free.openWorker')} <ArrowUpRight size={16} />
               </a>
             </div>
           </div>

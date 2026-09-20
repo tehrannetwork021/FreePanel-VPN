@@ -1,94 +1,88 @@
 # آموزش نصب و استفاده — فارسی
 
-## نصب بدون ترمینال (پیشنهادی — فقط لینک و Paste)
+## نصب بدون ترمینال (مسیر رسمی Phase A)
 
-این مسیر رسمی برای کاربر عادی است: **بدون VPS، دامنه، GitHub account، Deploy Installer، Wrangler، PowerShell یا ترمینال**.
+این مسیر برای کاربر عادی است: **بدون VPS، دامنه پولی، GitHub connection، Wrangler، PowerShell یا ترمینال**.
 
-### گام ۱ — Installer آماده را باز کنید
+### گام ۱ — Installer عمومی را باز کنید
 
-[https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
+https://tehran-network-installer.honored-feather.workers.dev
 
-این Worker عمومی فقط کنترل‌پلین نصب است؛ ترافیک VPN شما از آن عبور نمی‌کند و پنل نهایی بعد از نصب مستقل است.
+Installer فقط کنترل‌پلین نصب است؛ ترافیک VPN شما از آن عبور نمی‌کند و پنل نهایی بعد از نصب مستقل است.
 
-### گام ۲ — ساخت کلید Cloudflare و نصب پنل
+### گام ۲ — ساخت کلید Cloudflare
 
-1. روی **ساخت کلید Cloudflare** بزنید؛ Cloudflare با `Workers Scripts: Edit`، `Workers KV Storage: Edit` و `Account Settings: Read` باز می‌شود.
-2. **Create Token** را بزنید و مقدار Token را که Cloudflare فقط یک بار نشان می‌دهد کپی کنید.
-3. به Installer برگردید، Token را Paste و Verify کنید.
-4. Account را انتخاب کنید. نام Worker و رمز مدیریت قابل تغییرند؛ رمز پیش‌فرض خودکار ساخته می‌شود و حتی یک مقدار کوتاهِ غیرخالی هم پذیرفته می‌شود.
-5. **Install** را بزنید. Installer به‌صورت خودکار KV، Worker، Secret و workers.dev را می‌سازد و `/health` را بررسی می‌کند.
-6. آدرس پنل و رمز مدیریت را بردارید؛ پنل را باز کنید و کانفیگ/QR/Subscription را بگیرید.
+روی **ساخت کلید Cloudflare / Generate Cloudflare Key** بزنید و توکن Scoped بسازید. دسترسی‌های لازم:
 
-### حریم خصوصی Token
+- `Workers Scripts: Edit`
+- `Workers KV Storage: Edit`
+- `D1 Write`
+- `Account Settings: Read`
 
-Token در درخواست HTTPS به Installer Worker ارسال می‌شود چون Cloudflare API از مرورگر CORS مستقیم نمی‌پذیرد. Token فقط در همان درخواست/حافظهٔ موقت استفاده می‌شود و در KV، DB، Cookie، localStorage، sessionStorage، analytics یا log ذخیره نمی‌شود. پس از موفقیت یا خطا، Token از state نصب‌کننده پاک می‌شود. پنل نصب‌شده به آن وابسته نیست و می‌توانید Token را از Cloudflare حذف کنید.
+از Global API Key استفاده نکنید. Token را Cloudflare فقط یک‌بار نمایش می‌دهد؛ آن را Copy کنید و به Installer برگردید.
 
-### معنی خطاهای رایج
+### گام ۳ — Verify و Install
 
-- `token-invalid` — توکن اشتباه، منقضی یا غیرفعال است؛ توکن تازه بسازید.
-- `insufficient-scope` — یکی از سه دسترسی بالا در توکن نیست؛ توکن را با همان لینک پیش‌پرشده دوباره بسازید.
-- `health-failed` — نصب انجام شده اما بررسی سلامت ناموفق بوده؛ چند لحظه بعد آدرس Worker را مستقیم باز کنید و در صورت نیاز Install را دوباره بزنید (نصب تکراری، منبع تکراری نمی‌سازد).
-- اگر `workers.dev` روی شبکهٔ شما محدود است، برای بازکردن صفحهٔ نصب‌کننده و پنل از یک شبکهٔ جایگزین کمک بگیرید؛ اتصال کلاینت VPN شما معمولاً مسیر دیگری دارد و تحت‌تأثیر همین محدودیت صفحه نیست.
+1. Token را Paste و Verify کنید.
+2. اگر چند Account دارید، حساب موردنظر را انتخاب کنید.
+3. نام Worker را تعیین کنید؛ برای Upgrade همان نام قبلی را نگه دارید.
+4. رمز مدیریت خودکار تولید می‌شود و قابل تغییر است؛ رمز قوی و یکتا را نگه دارید.
+5. **Install** را بزنید.
+6. Installer، KV + D1 + Worker + Secret + `workers.dev` را داخل حساب خودتان ایجاد یا reuse می‌کند.
+7. نتیجه شامل **Worker URL، آدرس `/admin` و رمز مدیریت** است.
 
-## نصب با اسکریپت (جایگزین برای ترمینال‌دوست‌ها)
+## Token و حریم خصوصی
 
-اگر ترمینال را ترجیح می‌دهید، اسکریپت خودش همه‌کار را می‌کند: بررسی توکن، ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز، فعال‌سازی workers.dev و چاپ کانفیگ‌ها. (اگر در ایران هستید و دانلود اسکریپت خطا داد، از روش بدون ترمینال بالا استفاده کنید.)
+Token فقط در درخواست HTTPS نصب استفاده می‌شود و نباید در KV، D1، Cookie، localStorage، sessionStorage، analytics یا log persist شود. بعد از موفقیت یا خطا، Installer آن را از state مرورگر پاک می‌کند. پنل نصب‌شده به Token نصب وابسته نیست و می‌توانید بعداً آن را revoke کنید.
 
-**ویندوز (PowerShell):**
+## داخل پنل `/admin`
 
-```powershell
-irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
-```
+پس از ورود با رمز مدیریت می‌توانید:
 
-اگر jsDelivr باز نشد از لینک مستقیم گیت‌هاب استفاده کن:
+- کاربر بسازید، ویرایش، Pause/Resume یا حذف کنید.
+- تاریخ انقضا، سهمیه کل و سهمیه روزانه UTC تعیین کنید.
+- VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one را برای هر کاربر فعال/غیرفعال کنید.
+- لینک Subscription خصوصی، QR و credentialهای همان کاربر را بگیرید.
+- Subscription token یا credentialهای VLESS/Trojan را rotate کنید.
+- Usage روزانه/تجمیعی، Audit و Login events را ببینید.
 
-```powershell
-irm https://raw.githubusercontent.com/tehrannetwork021/FreePanel-VPN/main/install.ps1 | iex
-```
+Subscription URL یک **Credential** است؛ آن را عمومی نکنید. Token قدیمی بعد از rotation فوراً 404 می‌شود و credential قدیمی بعد از rotation دیگر اجازه اتصال ندارد.
 
-**لینوکس / مک / WSL / Git Bash:**
+## سهمیه و Usage چگونه اعمال می‌شود؟
 
-```bash
-curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
-```
+مصرف upload/download برای کاربران D1 در checkpointهای درشت ثبت می‌شود: به‌طور پیش‌فرض هر `4 MiB`، هر `60 ثانیه` یا هنگام بسته‌شدن اتصال. این طراحی writeهای D1 را برای پلن رایگان محدود می‌کند.
 
-**مراحل:**
+این سیستم billing دقیق per-packet نیست. در اتصال‌های هم‌زمان، مصرف ممکن است تا حدود اندازه checkpoint × تعداد connectionها از quota عبور کند و سپس اتصال/شروع بعدی رد شود. `NULL` یعنی بدون سهمیه؛ `0` یعنی از ابتدا exhausted.
 
-1. اسکریپت لینک ساخت توکن (پیش‌تنظیم با سه دسترسی لازم) را نشان می‌دهد؛ باز کن و **Create Token** بزن.
-2. توکن را کپی و در اسکریپت Paste کن و Enter بزن.
-3. اگر چند حساب داشته باشی، شمارهٔ حساب را انتخاب کن؛ نام Worker و رمز مدیریت را وارد کن (یا Enter بزن تا رمز تصادفی ساخته شود).
-4. در پایان: آدرس پنل، رمز مدیریت، لینک‌های VLESS-WS / Trojan-WS / XHTTP و آدرس Subscription چاپ می‌شود — همان‌ها را در کلاینت وارد کن.
+**Speed limiting هنوز در Phase A پیاده‌سازی نشده است.**
 
-پرچم‌های اختیاری: `--name` برای نام Worker، `--password` برای رمز، `--account` برای انتخاب حساب در اجرای غیرتعاملی.
+## محل نگه‌داری داده‌ها
 
-## بعد از نصب چه می‌بینم؟
+- **D1 منبع اصلی control plane است:** installation state، credential index/version، users، quota/expiry، usage، audit، login events و admin sessions.
+- **KV برای state کم‌نوشتن است:** تنظیمات global پروتکل/owner و diagnostics/cacheهای محدود.
+- Secretهای خام هر کاربر در D1 ذخیره نمی‌شوند؛ از installation seed پایدار و version هر secret مشتق می‌شوند و فقط lookup hash/version نگه‌داری می‌شود.
 
-در نسخه `v0.2.0` سه مسیر اتصال فعال هستند: `VLESS over WebSocket`، `Trojan over WebSocket` و `VLESS XHTTP stream-one`. پنل بعد از احراز رمز مدیریت، لینک مستقیم، QR و Subscription (فرمت‌های base64، لینک، singbox و mihomo) را نمایش می‌دهد. مسیر `/api/status` فقط وضعیت عمودی بدون افشای Secret برمی‌گرداند.
+## Upgrade / Reinstall با همان Worker name
 
-## مسیر جایگزین برای توسعه‌دهندگان: Deploy to Cloudflare
+Installer نام‌های `${workerName}-config` برای KV و `${workerName}-control` برای D1 را reuse می‌کند. نصب دوباره:
 
-اگر ترجیح می‌دهید بدون نصب‌کننده و توکن، مستقیم قالب Worker را نصب کنید، دکمهٔ **Developer Install (Deploy to Cloudflare)** در README قالب `deploy/worker` را با خود Cloudflare دیپلوی می‌کند:
-[https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+- protocol config و owner credentialهای legacy در KV را بازنویسی نمی‌کند؛
+- installation seed و secret-version کاربران را در D1 حفظ می‌کند، پس لینک‌ها و credentialهای موجود کاربران ثابت می‌مانند؛
+- یک `INSTALL_GENERATION` تازه می‌فرستد تا رمز ادمین یک‌بار با رمز جدیدی که Installer نشان می‌دهد sync شود؛
+- sessionهای ادمین قبلی را نامعتبر می‌کند.
 
-1. روی دکمه بزنید و وارد حساب Cloudflare شوید.
-2. برای Secret با نام `ADMIN_PASSWORD` یک رمز قوی تعیین کنید و نگه دارید.
-3. Deploy را تأیید کنید؛ Cloudflare فضای KV را می‌سازد و با نام `C` متصل می‌کند.
-4. آدرس `*.workers.dev` را باز کنید و همان `ADMIN_PASSWORD` را وارد کنید.
+بنابراین بعد از reinstall باید با **رمز جدید نمایش‌داده‌شده در نتیجه Installer** وارد `/admin` شوید، درحالی‌که access کاربران قبلی نباید تغییر کند.
 
-این مسیر «توسعه‌دهنده/پیشرفته» محسوب می‌شود؛ مسیر پیشنهادی کاربر عادی همان نصب با توکن در بالای همین صفحه است.
+## محدودیت‌های فعلی Release Candidate 0.3.0
 
-## به‌روزرسانی
-
-هر Release در GitHub با شماره نسخه جدا منتشر می‌شود. قبل از Update، Release Notes را بخوانید. اجرای دوبارهٔ نصب با توکن، Worker را به نسخهٔ جدید به‌روز می‌کند و KV تنظیمات شما را دست‌نخورده نگه می‌دارد (idempotent). در نسخه‌های بعدی Safe Upgrade و rollback کامل اضافه می‌شود.
+- Backup/Restore کامل هنوز آماده نیست؛ حذف دستی D1/KV می‌تواند داده‌های control plane یا config را از بین ببرد.
+- Speed limiting وجود ندارد؛ فقط quota/expiry و checkpoint accounting اعمال می‌شوند.
+- Field gate واقعی Cloudflare برای v0.3.0 هنوز pending است؛ این نسخه تا تکمیل آن stable اعلام نمی‌شود.
 
 ## حذف
 
-برای حذف، از Cloudflare Dashboard به Workers & Pages بروید و Worker ساخته‌شده را حذف کنید. KV ساخته‌شده مستقل است؛ اگر دیگر به تنظیمات آن نیاز ندارید، KV Namespace مربوط را نیز حذف کنید. توکن نصب را هم از صفحهٔ API Tokens کلادفلر حذف کنید.
+برای حذف کامل، Worker، KV namespace مربوط، D1 database مربوط و در صورت عدم نیاز API Token نصب را از Cloudflare Dashboard حذف کنید. قبل از حذف D1/KV فرض کنید داده قابل بازیابی نیست مگر خودتان export مستقل داشته باشید.
 
 ## امنیت
 
-- Token یا Secret را در Issue عمومی نفرستید.
-- Token فقط برای درخواست HTTPS نصب روی Installer Worker استفاده می‌شود و هیچ‌جا ذخیره نمی‌شود؛ ترافیک VPN از Installer عبور نمی‌کند.
-- فقط Scoped Token بسازید؛ Global API Key هرگز ندهید.
-- دسترسی‌های پیشنهادی فقط همین سه مورد است: Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read.
-- فایل [SECURITY.md](../SECURITY.md) مرجع گزارش امنیتی پروژه است.
+Token، Subscription URL، UUID/Password پروتکل، session cookie یا اطلاعات D1/KV را در Issue یا Screenshot عمومی قرار ندهید. جزئیات بیشتر: [SECURITY.md](../SECURITY.md).

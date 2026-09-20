@@ -1,94 +1,88 @@
 # Installation and Usage — English
 
-## No-terminal install (recommended — one link + one paste)
+## No-terminal install (official Phase A path)
 
-This is the normal-user path: **no VPS, no custom domain, no GitHub connection, no installer deployment, no Wrangler, no PowerShell and no terminal**.
+This is the regular-user path: **no VPS, no custom domain, no GitHub connection, no Wrangler, no PowerShell, and no terminal**.
 
-### Step 1 — Open the ready public installer
+### Step 1 — Open the public installer
 
-[https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
+https://tehran-network-installer.honored-feather.workers.dev
 
-This public Worker is setup control-plane only. VPN traffic never traverses it, and the installed panel is independent after provisioning.
+The installer is setup control-plane only. VPN traffic never traverses it, and the installed panel is independent after provisioning.
 
-### Step 2 — Generate the Cloudflare key and install
+### Step 2 — Generate Cloudflare Key
 
-1. Click **Generate Cloudflare Key**. Cloudflare opens with `Workers Scripts: Edit`, `Workers KV Storage: Edit` and `Account Settings: Read`.
-2. Click **Create Token** and copy the value Cloudflare shows once.
-3. Return to the installer, paste the token and verify it.
-4. Pick an account. Worker name and admin password are editable; a password is generated automatically and any non-empty value is accepted.
-5. Click **Install**. The installer creates KV, Worker, secret and workers.dev automatically, then verifies `/health`.
-6. Copy the panel URL and admin password, open the panel and collect configs/QR/subscription.
+Click **Generate Cloudflare Key** and create a scoped token with only these permissions:
 
-### Token privacy
+- `Workers Scripts: Edit`
+- `Workers KV Storage: Edit`
+- `D1 Write`
+- `Account Settings: Read`
 
-The token is sent over HTTPS to the installer Worker because Cloudflare's API does not allow this provisioning flow directly from a browser via CORS. It is used only in the current request/volatile memory and is never written to KV, a database, cookies, localStorage, sessionStorage, analytics or logs. It is cleared after success or failure. The installed panel does not depend on it, so you may revoke it afterwards.
+Do not use the Global API Key. Cloudflare displays the token once; copy it and return to the installer.
 
-### Common errors explained
+### Step 3 — Verify and install
 
-- `token-invalid` — the token is wrong, expired or disabled; create a fresh one.
-- `insufficient-scope` — one of the three scopes above is missing; rebuild the token with the prefilled link.
-- `health-failed` — provisioning finished but the health check did not pass yet; wait a few seconds, open the Worker URL directly and rerun Install if needed (retries are idempotent and never create duplicates).
-- If `workers.dev` is restricted on your network, use an alternative network to open the installer and panel pages; your VPN client connection normally takes a different path and is not affected by that page restriction.
+1. Paste and verify the token.
+2. Select the target account if you have more than one.
+3. Choose the Worker name; keep the same name when upgrading an existing install.
+4. The installer generates an admin password automatically; keep a strong unique value.
+5. Click **Install**.
+6. The installer creates or reuses KV + D1, uploads the Worker, sets secrets and enables `workers.dev` inside your account.
+7. The result shows the **Worker URL, `/admin` URL, and admin password**.
 
-## Script install (alternative for terminal users)
+## Token privacy
 
-If you prefer a terminal, the script does everything itself: verifies the token, provisions KV, uploads the signed Worker, sets the admin secret, enables workers.dev and prints the configs. (If the script download fails — common behind Iranian filters — use the no-terminal path above.)
+The token is used only for the HTTPS installation request and must not be persisted to KV, D1, cookies, localStorage, sessionStorage, analytics, or logs. The installer clears it from browser state after success or failure. The deployed panel does not depend on the setup token, so you may revoke it afterwards.
 
-**Windows (PowerShell):**
+## Inside `/admin`
 
-```powershell
-irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
-```
+After logging in with the admin password you can:
 
-If jsDelivr is unreachable, use the direct GitHub link:
+- create, edit, pause/resume, and delete users;
+- set expiry, total quota, and UTC daily quota;
+- enable/disable VLESS-WS, Trojan-WS, and VLESS-XHTTP stream-one per user;
+- obtain each user's private subscription URL, QR payload, and credentials;
+- rotate the subscription token or VLESS/Trojan credentials;
+- inspect daily/aggregate usage, audit entries, and login events.
 
-```powershell
-irm https://raw.githubusercontent.com/tehrannetwork021/FreePanel-VPN/main/install.ps1 | iex
-```
+A subscription URL is a **credential**. Do not publish it. The old URL returns the same generic 404 immediately after rotation, and old protocol credentials stop authorizing after credential rotation.
 
-**Linux / macOS / WSL / Git Bash:**
+## How quota and usage enforcement works
 
-```bash
-curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
-```
+Per-user upload/download is checkpointed to D1 in coarse batches: by default at `4 MiB`, after `60 seconds`, or when a connection closes. This keeps D1 writes bounded for the free plan.
 
-**Steps:**
+This is not exact per-packet billing. With concurrent connections, bounded overshoot can be roughly checkpoint size × concurrent connections before the next checkpoint/start is denied. `NULL` means unlimited quota; numeric `0` means exhausted immediately.
 
-1. The script prints the token creation link (pre-configured with the three required scopes); open it and click **Create Token**.
-2. Copy the token and paste it into the script.
-3. If you have several accounts, pick one; enter a Worker name and an admin password (or press Enter for a random one).
-4. At the end the script prints the panel URL, the admin password, the VLESS-WS / Trojan-WS / XHTTP links and the Subscription URL — add them to your client.
+**Speed limiting is not implemented in Phase A.**
 
-Optional flags: `--name`, `--password`, `--account` for non-interactive runs.
+## Where data lives
 
-## What do I get after deployment?
+- **D1 is authoritative for control-plane state:** installation state, credential indexes/versions, users, quota/expiry, usage, audit, login events, and admin sessions.
+- **KV is for low-write state:** global protocol/legacy-owner configuration plus bounded diagnostics/cache state.
+- Raw per-user secrets are not stored in D1. They are derived from the persistent installation seed plus per-secret versions; only versions and lookup hashes are persisted.
 
-Release `v0.2.0` provides working `VLESS over WebSocket`, `Trojan over WebSocket` and `VLESS XHTTP stream-one` routes. After owner authentication the panel exposes direct configs, QR codes and a protected subscription (base64, links, singbox and mihomo formats). `/api/status` remains redacted and public-safe.
+## Upgrade / reinstall with the same Worker name
 
-## Developer alternative: Deploy to Cloudflare
+The installer reuses `${workerName}-config` for KV and `${workerName}-control` for D1. Reinstalling the same Worker name:
 
-If you prefer to install the Worker template directly without the installer and token flow, the **Developer Install (Deploy to Cloudflare)** button in the README deploys the isolated `deploy/worker` template through Cloudflare itself:
-[https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+- does not rewrite the legacy protocol config or owner credentials in KV;
+- preserves the D1 installation seed and per-user secret versions, so existing user links/credentials stay stable;
+- sends a fresh `INSTALL_GENERATION`, intentionally syncing the admin password once to the new password shown by the installer;
+- invalidates older admin sessions.
 
-1. Click the button and sign in to Cloudflare.
-2. Set a strong secret named `ADMIN_PASSWORD` and keep it.
-3. Approve the deployment; Cloudflare provisions KV and binds it as `C`.
-4. Open the generated `*.workers.dev` URL and enter the same `ADMIN_PASSWORD`.
+After reinstall, use the **new password shown on the installer result screen** for `/admin`; existing user access should remain unchanged.
 
-This is the developer/advanced path; the recommended path for regular users is the token installer at the top of this page.
+## Current v0.3.0 release-candidate limitations
 
-## Updating
-
-Every public update is published as a separate GitHub Release with its own version number. Read the release notes before updating. Re-running the token installer upgrades the Worker to the latest immutable artifact while keeping your KV configuration intact (idempotent). Safe Upgrade and full rollback arrive in later releases.
+- Full Backup/Restore is not implemented yet. Deleting D1/KV manually can destroy control-plane/config state.
+- Speed limiting is not implemented; only quota/expiry and checkpoint-based usage enforcement are present.
+- The real Cloudflare field gate for v0.3.0 is still pending, so the release is not described as stable yet.
 
 ## Uninstalling
 
-Open Cloudflare Dashboard → Workers & Pages and delete the deployed Worker. KV is a separate resource; delete the related namespace as well if you no longer need the stored configuration. Also delete the installation token from Cloudflare's API Tokens page.
+For a complete uninstall, delete the Worker, its KV namespace, its D1 database, and the setup API token if you no longer need it. Until Backup/Restore lands, assume deleted D1/KV state is unrecoverable unless you created an independent export.
 
 ## Security
 
-- Never paste tokens or secrets into public issues.
-- The token is used only for the HTTPS install request on the installer Worker and is never persisted; VPN traffic never traverses the installer.
-- Use scoped API tokens, never the Global API Key.
-- Keep the token scopes to exactly the three required: Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read.
-- See [SECURITY.md](../SECURITY.md) for vulnerability reporting.
+Never paste the Cloudflare token, subscription URL, protocol UUID/password, session cookie, or D1/KV secret material into a public issue or screenshot. See [SECURITY.md](../SECURITY.md).

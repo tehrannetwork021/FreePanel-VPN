@@ -42,6 +42,8 @@ describe('token installer contracts', () => {
       workerUrl: string;
       workerName: string;
       version: string;
+      schemaVersion: number;
+      adminUrl: string;
     }>();
   });
 });

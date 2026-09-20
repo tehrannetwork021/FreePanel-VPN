@@ -105,3 +105,15 @@ describe('Trojan parser', () => {
     });
   });
 });
+
+describe('Trojan candidate parser', () => {
+  it('exposes the exact lowercase SHA-224 wire credential before authorization', async () => {
+    const { parseTrojanCandidate } = await import('./trojan');
+    const wireHash = 'A'.repeat(56);
+    const result = parseTrojanCandidate(request({ hash: wireHash, host: 'candidate.example' }));
+    expect(result.kind).toBe('ok');
+    if (result.kind !== 'ok') return;
+    expect(new TextDecoder().decode(result.value.presentedCredential)).toBe(wireHash.toLowerCase());
+    expect(result.value.destination.host).toBe('candidate.example');
+  });
+});

@@ -10,6 +10,7 @@ import {
   CloudflareApiError,
   enableScriptSubdomain,
   ensureAccountSubdomain,
+  findOrCreateD1Database,
   findOrCreateKvNamespace,
   listAccounts,
   uploadWorkerModule,
@@ -32,22 +33,29 @@ export class ProvisionError extends Error {
 
 type Artifact = { source: string; sha256: string; version: string };
 type Kv = { id: string; title: string };
+type D1 = { uuid: string; name: string };
 
 export type ProvisionDeps = {
   artifact: Artifact;
   listAccounts(token: string): Promise<CloudflareAccountView[]>;
   findOrCreateKvNamespace(token: string, accountId: string, workerName: string): Promise<Kv>;
+  findOrCreateD1Database(token: string, accountId: string, workerName: string): Promise<D1>;
   uploadWorkerModule(
     token: string,
     accountId: string,
     workerName: string,
     namespaceId: string,
+    databaseId: string,
     source: string,
     adminPassword: string,
+    installGeneration: string,
   ): Promise<void>;
   ensureAccountSubdomain(token: string, accountId: string, workerName: string): Promise<string>;
   enableScriptSubdomain(token: string, accountId: string, workerName: string): Promise<void>;
-  fetchHealth(url: string): Promise<{ ok: boolean; version?: string }>;
+  fetchHealth(
+    url: string,
+  ): Promise<{ ok: boolean; version?: string; schemaVersion?: number; d1?: boolean }>;
+  generateInstallGeneration(): string;
   now(): number;
   sleep(ms: number): Promise<void>;
 };
@@ -72,14 +80,21 @@ export const defaultProvisionDeps: ProvisionDeps = {
   },
   listAccounts,
   findOrCreateKvNamespace,
+  findOrCreateD1Database,
   uploadWorkerModule,
   ensureAccountSubdomain,
   enableScriptSubdomain,
   async fetchHealth(url) {
     const response = await fetch(`${url}/health`, { cache: 'no-store' });
     if (!response.ok) return { ok: false };
-    return (await response.json()) as { ok: boolean; version?: string };
+    return (await response.json()) as {
+      ok: boolean;
+      version?: string;
+      schemaVersion?: number;
+      d1?: boolean;
+    };
   },
+  generateInstallGeneration: () => crypto.randomUUID(),
   now: () => Date.now(),
   sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 };
@@ -125,14 +140,20 @@ export async function provisionPanel(
   const kv = await stageCall('kv', 'kv-failed', () =>
     deps.findOrCreateKvNamespace(accessToken, request.accountId, worker.value),
   );
+  const d1 = await stageCall('d1', 'd1-failed', () =>
+    deps.findOrCreateD1Database(accessToken, request.accountId, worker.value),
+  );
+  const installGeneration = deps.generateInstallGeneration();
   await stageCall('worker', 'worker-upload-failed', () =>
     deps.uploadWorkerModule(
       accessToken,
       request.accountId,
       worker.value,
       kv.id,
+      d1.uuid,
       deps.artifact.source,
       request.adminPassword,
+      installGeneration,
     ),
   );
 
@@ -148,12 +169,19 @@ export async function provisionPanel(
   while (deps.now() < deadline) {
     try {
       const health = await deps.fetchHealth(workerUrl);
-      if (health.ok && health.version === deps.artifact.version) {
+      if (
+        health.ok &&
+        health.version === deps.artifact.version &&
+        health.schemaVersion === 1 &&
+        health.d1 === true
+      ) {
         return {
           ok: true,
           workerUrl,
           workerName: worker.value,
           version: deps.artifact.version,
+          schemaVersion: health.schemaVersion,
+          adminUrl: `${workerUrl}/admin`,
         };
       }
     } catch {

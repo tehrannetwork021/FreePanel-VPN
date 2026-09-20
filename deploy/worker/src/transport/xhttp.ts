@@ -1,6 +1,9 @@
 import { concatBytes } from '../core/bytes';
-import type { FirstPacketParser } from './websocket';
+import type { FirstPacketParser, ParsedFirstPacket } from './websocket';
+import type { ParseResult } from '../core/types';
 import type { ConnectTcp } from '../network/tcp';
+import type { TunnelPrincipal } from '../security/tunnelAuth';
+import type { UsageMeter } from './usageMeter';
 
 type XhttpInput = {
   body: ReadableStream<Uint8Array>;
@@ -8,6 +11,7 @@ type XhttpInput = {
   connectTcp: ConnectTcp;
   selfHost: string;
   maxHandshakeBytes?: number;
+  createUsageMeter?: (principal: TunnelPrincipal) => UsageMeter | null;
 };
 
 const response = (status: number, message: string) =>
@@ -20,14 +24,14 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
   const maxHandshakeBytes = input.maxHandshakeBytes ?? 64 * 1024;
   const bodyReader = input.body.getReader();
   let handshake: Uint8Array = new Uint8Array();
-  let parsed: ReturnType<FirstPacketParser>;
+  let parsed: ParseResult<ParsedFirstPacket>;
 
   while (true) {
     const next = await bodyReader.read();
     if (next.done) return response(400, 'Incomplete XHTTP handshake');
     handshake = concatBytes(handshake, next.value);
     if (handshake.byteLength > maxHandshakeBytes) return response(413, 'XHTTP handshake too large');
-    parsed = input.parseFirstPacket(handshake);
+    parsed = await input.parseFirstPacket(handshake);
     if (parsed.kind === 'need-more') continue;
     if (parsed.kind === 'error')
       return response(parsed.code === 'auth' ? 403 : 400, 'Invalid XHTTP handshake');
@@ -41,14 +45,41 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
     return response(502, 'TCP destination unavailable');
   }
   const writer = socket.writable.getWriter();
-  if (parsed.value.payload.byteLength) await writer.write(parsed.value.payload);
+  const usageMeter =
+    parsed.value.principal && input.createUsageMeter
+      ? input.createUsageMeter(parsed.value.principal)
+      : null;
+  if (parsed.value.payload.byteLength) {
+    await writer.write(parsed.value.payload);
+    usageMeter?.addUpload(parsed.value.payload.byteLength);
+    if (usageMeter) {
+      await usageMeter.flush();
+      if (usageMeter.exhausted()) {
+        await usageMeter.close();
+        bodyReader.releaseLock();
+        writer.releaseLock();
+        socket.close();
+        return response(403, 'Access unavailable');
+      }
+    }
+  }
 
   const pumpUpload = async () => {
     try {
       while (true) {
         const next = await bodyReader.read();
         if (next.done) break;
-        if (next.value.byteLength) await writer.write(next.value);
+        if (next.value.byteLength) {
+          await writer.write(next.value);
+          usageMeter?.addUpload(next.value.byteLength);
+          if (usageMeter) {
+            await usageMeter.flush();
+            if (usageMeter.exhausted()) {
+              socket.close();
+              break;
+            }
+          }
+        }
       }
     } catch {
       try {
@@ -76,13 +107,24 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
         while (true) {
           const next = await reader.read();
           if (next.done) break;
-          if (next.value.byteLength) controller.enqueue(next.value);
+          if (next.value.byteLength) {
+            controller.enqueue(next.value);
+            usageMeter?.addDownload(next.value.byteLength);
+            if (usageMeter) {
+              await usageMeter.flush();
+              if (usageMeter.exhausted()) {
+                socket.close();
+                break;
+              }
+            }
+          }
         }
         controller.close();
       } catch (error) {
         controller.error(error);
       } finally {
         reader.releaseLock();
+        await usageMeter?.close();
         try {
           socket.close();
         } catch {
@@ -91,6 +133,7 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
       }
     },
     cancel() {
+      void usageMeter?.close();
       try {
         socket.close();
       } catch {

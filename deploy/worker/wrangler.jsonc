@@ -7,9 +7,26 @@
   "secrets": {
     "required": ["ADMIN_PASSWORD"],
   },
+  "vars": {
+    "INSTALL_GENERATION": "local-dev",
+  },
   "kv_namespaces": [
     {
       "binding": "C",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tehran-network-edge-panel-control",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+    },
+  ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.sql"],
+      "fallthrough": true,
     },
   ],
   "observability": {

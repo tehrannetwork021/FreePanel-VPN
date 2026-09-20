@@ -1,5 +1,6 @@
 import { renderSVG } from 'uqr';
-import { verifyAdminPassword } from './config/admin';
+import { ensureAdminCredential, verifyAdminCredential } from './db/auth';
+import { ensureControlPlaneSchema } from './db/migrations';
 import type { Env, ProtocolConfig } from './config/model';
 import { ensureProtocolConfig } from './config/store';
 import {
@@ -101,7 +102,9 @@ export async function handleSetupForm(request: Request, env: Env): Promise<Respo
   } catch {
     return htmlResponse(renderPublicPanel(null, 'فرم نامعتبر است / Invalid form'), 400);
   }
-  if (!(await verifyAdminPassword(candidate, env.ADMIN_PASSWORD))) {
+  await ensureControlPlaneSchema(env.DB);
+  await ensureAdminCredential(env.DB, env.ADMIN_PASSWORD, env.INSTALL_GENERATION, Date.now());
+  if (!(await verifyAdminCredential(env.DB, candidate))) {
     return htmlResponse(
       renderPublicPanel(null, 'رمز مدیریت صحیح نیست / Invalid admin password'),
       401,
@@ -117,7 +120,9 @@ function bearer(request: Request): string {
 }
 
 export async function handleAdminApiSetup(request: Request, env: Env): Promise<Response> {
-  if (!(await verifyAdminPassword(bearer(request), env.ADMIN_PASSWORD))) {
+  await ensureControlPlaneSchema(env.DB);
+  await ensureAdminCredential(env.DB, env.ADMIN_PASSWORD, env.INSTALL_GENERATION, Date.now());
+  if (!(await verifyAdminCredential(env.DB, bearer(request)))) {
     return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), {
       status: 401,
       headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
@@ -152,6 +157,15 @@ export function javascriptResponse(): Response {
     },
   });
 }
+export function renderNeutralStatusPage(): string {
+  return `<!doctype html><html lang="en" dir="ltr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>Tehran Network</title>
+<style>:root{font-family:system-ui,sans-serif;color:#eef2ff;background:#050816}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 20%,#4338ca44,transparent 28rem),#050816}.status{width:min(680px,calc(100% - 32px));padding:36px;border:1px solid #ffffff1a;border-radius:28px;background:#0b1026cc;box-shadow:0 30px 90px #0008}.mark{color:#67e8f9;font-size:12px;letter-spacing:.13em;text-transform:uppercase}h1{margin:12px 0 10px;font-size:clamp(36px,8vw,70px);letter-spacing:-.05em}p{margin:0;color:#94a3b8;line-height:1.8}.ok{display:inline-flex;margin-top:22px;padding:8px 12px;border-radius:999px;border:1px solid #22c55e55;background:#22c55e14;color:#86efac;font-size:12px}</style>
+</head><body><main class="status"><div class="mark">Edge service</div><h1>Tehran Network</h1><p>Cloudflare edge service is running.</p><span class="ok">● Operational</span></main></body></html>`;
+}
+
 export function publicPanelResponse(config: ProtocolConfig | null): Response {
-  return htmlResponse(renderPublicPanel(config));
+  void config;
+  return htmlResponse(renderNeutralStatusPage());
 }

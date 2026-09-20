@@ -25,6 +25,7 @@ The API token is request-scoped in memory only. It must never be persisted in KV
 - `AGENTS.md` is the truth ledger; only verified work is checked.
 - Persian/English, RTL/LTR, mobile/desktop are first-class.
 - Third-party projects are behavior/architecture references unless license compatibility is verified.
+
 ## 3. Current baseline
 
 The repository already has a public no-terminal installer, VLESS-WS, Trojan-WS, VLESS-XHTTP stream-one, `cloudflare:sockets` TCP forwarding, admin auth, protected subscriptions, QR output, Workerd/Xray E2E tests, field-confirmed VLESS-WS, XHTTP diagnostics/fixes pending final field confirmation, and the installer password fix in `main`.
@@ -49,6 +50,7 @@ This phase extends that baseline; it must not replace working protocol code with
 `users`, `user_credentials`, `subscription_tokens`, `usage_daily`, `usage_events_compacted`, `sessions`, `audit_log`, `login_events`, `clean_endpoints`, `endpoint_test_history`, `schema_migrations`.
 
 D1 never stores the Cloudflare installer API token.
+
 ### KV: low-write config/cache layer
 
 Use KV for global protocol config, routing/DNS/ECH settings, endpoint-source definitions, feature flags, version markers, cached compiled subscription templates, short-lived diagnostics, and cache invalidation versions.
@@ -80,6 +82,7 @@ Design rules:
 Each user has internal ID, display name, enabled/paused state, created time, optional expiry, total quota, optional daily quota, usage summary, protocol permissions, endpoint/profile preferences, optional speed-policy metadata, notes, last subscription access and last tunnel activity.
 
 Required actions: create, edit, delete, enable, pause, extend expiry, add quota, reset usage, rotate subscription token, rotate protocol credential, copy subscription URL, show QR, duplicate profile.
+
 ### Private user links and credentials
 
 Every user gets an independent high-entropy subscription token. Usernames, numeric IDs and UUIDs are never used as predictable subscription secrets. Rotating the subscription token invalidates the old link at the control-plane layer.
@@ -115,6 +118,7 @@ Optional/experimental:
 - gRPC only where the actual Cloudflare deployment supports it; never required on `workers.dev`.
 
 Not claimed on normal Free Workers: native QUIC inbound, Hysteria2 server, TUIC server, native WireGuard server, native VLESS/Trojan UDP forwarding.
+
 ## 10. Outbound / ProxyIP / chain subsystem
 
 Introduce and test modes independently: direct TCP, ProxyIP/fallback where Worker architecture permits, SOCKS5 upstream, HTTP CONNECT and HTTPS CONNECT.
@@ -146,6 +150,7 @@ It must not store contributor Cloudflare token, panel secret, VPN credential, su
 Initial abuse resistance: per-endpoint write throttles, bounded payloads, deduplication, minimum confirmation thresholds, decay/expiry and server-side validation. If stronger protection requires identity tracking, defer that feature instead of silently collecting personal data.
 
 The local panel remains fully functional if this registry is off or unavailable.
+
 ## 13. Native subscription engine
 
 Normal outputs are generated inside the deployed Worker; no mandatory public sub-converter.
@@ -177,6 +182,7 @@ Features: UA auto-detection, explicit `?format=` override, per-user protocol sel
 - optional hidden admin path and decoy root as defense-in-depth, never as authentication.
 - diagnostics/audit logs redact API tokens, passwords, full subscription tokens, protocol credentials and upstream passwords.
 - optional Telegram alerts for new admin logins/security events; Telegram is never required.
+
 ## 16. Backup / restore / upgrades
 
 Backup is a versioned JSON package containing operator config and user records, excluding the installer token and excluding secrets by default. Restore validates schema version, size, types, duplicates and unsupported future versions.
@@ -210,6 +216,7 @@ Design system: Tehran Network branding, dark/light, Persian/English, RTL/LTR, re
 The public installer eventually creates/binds one customer Worker, one KV namespace, one D1 database, required secrets, initial admin password, initial protocol credentials and schema bootstrap/migrations.
 
 The user manually creates none of those resources. Permissions stay least-privilege. D1 permissions are added to the token template only when the D1 build is ready for end-to-end installation. Installation retries should reuse matching resources rather than blindly duplicating them.
+
 ## 19. Migration from current installs
 
 Existing VLESS/Trojan/XHTTP deployments must keep working.
@@ -233,20 +240,27 @@ A fixture representing current `main` must be part of migration tests.
 ## 21. Delivery phases
 
 ### Phase A — Control-plane foundation
+
 D1 installer provisioning, migrations, user CRUD, secure sessions, quota/expiry model, private user tokens, audit log and redesigned dashboard shell.
 
 ### Phase B — Native subscription engine
+
 Per-user node generation, Base64/Xray, Sing-box, Clash/Mihomo, UA detection, QR/deep links, caps/caching.
 
 ### Phase C — Endpoint / Clean-IP platform
+
 Manual library, URL import, browser scanner, latency sorting, IPv4/IPv6/ISP/region filters, apply/rotation/fallback, optional community-registry client.
 
 ### Phase D — Outbound / routing
+
 ProxyIP, SOCKS5, HTTP CONNECT, HTTPS CONNECT, DNS/ECH, routing presets and leak-safe fallback modes.
+
 ### Phase E — Advanced client features
+
 WARP profiles, Fragment output, external-subscription merge, extra client formats, Shadowsocks WS after clean-room protocol tests.
 
 ### Phase F — Hardening / release
+
 Route/auth/session/CSRF/XSS/SSRF/secrets review, Free-plan load/budget tests, migration/rollback tests, complete FA/EN docs and final clean-account installer field test.
 
 ## 22. Definition of done

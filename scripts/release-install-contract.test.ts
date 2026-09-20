@@ -33,6 +33,21 @@ describe('public install and release contract', () => {
     });
   });
 
+  it('keeps ADMIN_PASSWORD secret in the real installer upload metadata', () => {
+    const config = readFileSync('deploy/worker/wrangler.jsonc', 'utf8');
+    const uploader = readFileSync('apps/installer-worker/src/cloudflare.ts', 'utf8');
+    expect(config).toMatch(/"secrets"[\s\S]*"required"[\s\S]*"ADMIN_PASSWORD"/u);
+    expect(uploader).toContain(
+      "{ type: 'secret_text', name: 'ADMIN_PASSWORD', text: adminPassword }",
+    );
+    expect(uploader).toContain(
+      "{ type: 'plain_text', name: 'INSTALL_GENERATION', text: installGeneration }",
+    );
+    expect(uploader).not.toContain(
+      "{ type: 'plain_text', name: 'ADMIN_PASSWORD', text: adminPassword }",
+    );
+  });
+
   it('publishes one direct free installer path for regular users', () => {
     const readme = readFileSync('README.md', 'utf8');
     expect(readme).toContain(publicInstallerUrl);
@@ -48,6 +63,7 @@ describe('public install and release contract', () => {
     const readme = readFileSync('README.md', 'utf8');
     expect(readme).toContain('Workers Scripts Edit');
     expect(readme).toContain('Workers KV Storage Edit');
+    expect(readme).toContain('D1 Write');
     expect(readme).toContain('Account Settings Read');
   });
 
@@ -71,7 +87,7 @@ describe('public install and release contract', () => {
     const manifest = JSON.parse(
       readFileSync('dist/installer-artifacts/edge-worker-manifest.json', 'utf8'),
     ) as { version: string; sha256: string };
-    expect(manifest.version).toBe('0.2.0');
+    expect(manifest.version).toBe('0.3.0');
     expect(manifest.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(existsSync('apps/installer/dist/index.html')).toBe(true);
   });

@@ -26,8 +26,8 @@
 2. **Generate Cloudflare Key** → در Cloudflare روی **Create Token** بزنید → Copy.
 3. به Installer برگردید → Token را Paste کنید → **Install**.
 
-تمام. Installer خودش Account، KV، Worker، Secret و `workers.dev` را می‌سازد و **آدرس پنل + رمز مدیریت** را تحویل می‌دهد.
-Done. The installer provisions Account, KV, Worker, secret and `workers.dev`, then returns the **panel URL + admin password**.
+تمام. Installer خودش Account، KV، D1، Worker، Secret و `workers.dev` را آماده می‌کند و **آدرس `/admin` + آدرس Worker + رمز مدیریت** را تحویل می‌دهد.
+Done. The installer provisions Account, KV, D1, Worker, secret and `workers.dev`, then returns the **`/admin` URL + Worker URL + admin password**.
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
@@ -37,8 +37,8 @@ Done. The installer provisions Account, KV, Worker, secret and `workers.dev`, th
 </div>
 
 > [!IMPORTANT]
-> **وضعیت فعلی:** نسخه `v0.2.0` با **نصب‌کنندهٔ رایگان مبتنی بر توکن Cloudflare** منتشر شد: کلید بساز → Paste کن → Worker، KV، Secret و workers.dev خودکار نصب می‌شوند. هسته‌های **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** با تست end-to-end واقعی فعال هستند.
-> **Current status:** `v0.2.0` ships the **free Cloudflare token installer**: generate the key, paste it, and the Worker, KV, secret and workers.dev are provisioned automatically. **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** are verified end-to-end.
+> **وضعیت فعلی:** `v0.3.0` یک **Release Candidate برای Phase A** است. نصب عمومی Cloudflare، D1 control plane، مولتی‌یوزر، quota/expiry، لینک خصوصی، rotation، audit/usage و هر سه مسیر **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** در gate محلی واقعی تست شده‌اند. **Field gate واقعی Cloudflare هنوز pending است؛ تا پایان آن v0.3.0 را stable نمی‌نامیم.**
+> **Current status:** `v0.3.0` is a **Phase A release candidate**. The public Cloudflare installer, D1 control plane, multi-user lifecycle, quota/expiry, private subscriptions, rotation, audit/usage, and **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** have passed real local gates. **The real Cloudflare field gate is still pending; v0.3.0 is not called stable until it passes.**
 
 ![Tehran Network one-click installer](assets/readme/installer-fa.png)
 
@@ -53,10 +53,10 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 **فقط همین لینک را باز کنید:** [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
 1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه مرحلهٔ Deploy، نه Wrangler و نه ترمینال.
-2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit و Account Settings Read.
+2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit، D1 Write و Account Settings Read.
 3. **Create Token** را بزنید و Token را کپی کنید.
 4. به Installer برگردید، Token را Paste و Verify کنید. اگر چند Account دارید یکی را انتخاب کنید؛ نام Worker و رمز مدیریت هم قابل تغییر است و رمز پیش‌فرض خودکار ساخته می‌شود.
-5. **Install** را بزنید. KV + Worker + Secret + workers.dev به‌صورت خودکار داخل اکانت خودتان ساخته می‌شود.
+5. **Install** را بزنید. KV + D1 + Worker + Secret + workers.dev به‌صورت خودکار داخل اکانت خودتان ساخته می‌شود.
 6. آدرس پنل و رمز مدیریت را بردارید و وارد پنل شوید.
 
 Token فقط برای همین درخواست نصب از طریق HTTPS به Installer Worker ارسال می‌شود، در KV/DB/Cookie/localStorage/log ذخیره نمی‌شود و بعد از تلاش نصب پاک می‌شود. پنل نهایی هیچ وابستگی‌ای به Installer ندارد و می‌توانید Token نصب را بعداً از Cloudflare حذف کنید.
@@ -72,6 +72,10 @@ Token فقط برای همین درخواست نصب از طریق HTTPS به In
 - **Responsive:** تست خودکار در عرض موبایل و Desktop انجام می‌شود.
 - **کد ماژولار:** UI، i18n، Installer و Worker از هم جدا هستند.
 - **Security-first:** Artifact نصب‌شده SHA-256 امضادار است و Secretها از هم جدا طراحی می‌شوند.
+- **مولتی‌یوزر واقعی روی D1:** کاربر، انقضا، سهمیه کل/روزانه، لینک خصوصی و credential مستقل بدون VPS نگه‌داری می‌شوند.
+- **اعمال سهمیهٔ دوره‌ای روی Edge:** مصرف واقعی upload/download در checkpointهای ۴ MiB یا ۶۰ ثانیه ثبت می‌شود؛ این سیستم billing دقیقِ هر packet نیست و overshoot حداکثر به اندازهٔ checkpoint × اتصال‌های هم‌زمان است.
+- **Upgrade بدون تعویض credential کاربر:** نصب دوباره با همان Worker name، KV و D1 نام‌دار را reuse می‌کند؛ installation seed و نسخهٔ secretهای کاربران ثابت می‌ماند، اما `INSTALL_GENERATION` جدید رمز ادمین را به رمز تازهٔ نمایش‌داده‌شده در Installer sync می‌کند و sessionهای قبلی را باطل می‌کند.
+- **محدودیت‌های صریح Phase A:** Backup/Restore کامل و speed limiting هنوز آماده نیستند؛ quota فقط با checkpoint اجرا می‌شود.
 
 ### داشبورد فارسی
 
@@ -113,10 +117,10 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 **Open the public installer:** [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
 1. The ready-to-use installer opens directly. No GitHub account, installer deployment, Wrangler or terminal is required.
-2. Click **Generate Cloudflare Key**. Cloudflare opens the official token builder with Workers Scripts Edit, Workers KV Storage Edit and Account Settings Read.
+2. Click **Generate Cloudflare Key**. Cloudflare opens the official token builder with Workers Scripts Edit, Workers KV Storage Edit, D1 Write and Account Settings Read.
 3. Click **Create Token**, copy it, return to the installer and paste/verify it.
 4. Pick an account if needed; the Worker name and auto-generated admin password remain editable.
-5. Click **Install**. KV + Worker + secret + workers.dev are provisioned automatically inside your Cloudflare account.
+5. Click **Install**. KV + D1 + Worker + secret + workers.dev are provisioned automatically inside your Cloudflare account.
 6. Open the returned panel URL and keep the displayed admin password.
 
 The token is sent over HTTPS to the installer Worker only for the current install request. It is never persisted to KV/database/cookies/browser storage/logs and is cleared after the attempt. The installed panel is independent from the public installer, so you may revoke the setup token afterwards.
@@ -132,6 +136,10 @@ Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 - **Responsive by test** — browser tests cover desktop and mobile layouts.
 - **Modular codebase** — installer, dashboard, translations and worker core are isolated packages.
 - **Security-oriented boundaries** — the deployed artifact is SHA-256 pinned and secrets are separated by concern.
+- **Real D1 multi-user control** — users, expiry, total/daily quota, private subscriptions and independent credentials stay Cloudflare-only with no VPS.
+- **Periodic edge quota enforcement** — actual upload/download is checkpointed at 4 MiB or 60 seconds; this is not exact per-packet billing, and bounded overshoot is checkpoint size × concurrent connections.
+- **Credential-stable reinstall** — reinstalling the same Worker name reuses named KV/D1 state, preserving the installation seed and per-user secret versions; a fresh `INSTALL_GENERATION` intentionally synchronizes the admin password to the newly displayed installer password and invalidates older admin sessions.
+- **Explicit Phase A limits** — full Backup/Restore and speed limiting are not implemented yet; quota enforcement is checkpoint-based only.
 
 ### Quick start
 
@@ -148,7 +156,7 @@ For local UI development, see [docs/QUICKSTART_EN.md](docs/QUICKSTART_EN.md).
 ### Architecture
 
 ```text
-apps/installer-worker → token-based provisioning Worker (KV + Worker + secret + workers.dev)
+apps/installer-worker → token-based provisioning Worker (KV + D1 + Worker + secret + workers.dev)
 apps/installer        → free installer UI served by installer-worker
 deploy/worker         → isolated panel Worker template (developer path)
 apps/panel            → bilingual network dashboard
@@ -159,21 +167,23 @@ packages/shared       → product contracts shared across apps
 
 ## نقشه راه / Roadmap
 
-| بخش / Area                      | وضعیت / Status    |
-| ------------------------------- | ----------------- |
-| TypeScript monorepo + CI        | ✅ Ready          |
-| Persian/English RTL/LTR         | ✅ Ready          |
-| Responsive dashboard            | ✅ Ready          |
-| Free Cloudflare token installer | ✅ Ready          |
-| Automatic KV/secret/workers.dev | ✅ Ready          |
-| Volatile token handling         | ✅ Ready          |
-| Worker rollback                 | 🚧 In development |
-| VLESS-WS core                   | ✅ Ready          |
-| Trojan-WS core                  | ✅ Ready          |
-| VLESS-XHTTP stream-one          | 🧪 Field retest   |
-| Smart endpoints / rotation      | 🧭 Planned        |
-| Subscription + QR               | ✅ Ready          |
-| DNS / ECH / Network Lab         | 🧭 Planned        |
+| بخش / Area                         | وضعیت / Status    |
+| ---------------------------------- | ----------------- |
+| TypeScript monorepo + CI           | ✅ Ready          |
+| Persian/English RTL/LTR            | ✅ Ready          |
+| Responsive dashboard               | ✅ Ready          |
+| Free Cloudflare token installer    | ✅ Ready          |
+| Automatic KV/D1/secret/workers.dev | ✅ Ready          |
+| Volatile token handling            | ✅ Ready          |
+| Worker rollback                    | 🚧 In development |
+| VLESS-WS core                      | ✅ Ready          |
+| Trojan-WS core                     | ✅ Ready          |
+| VLESS-XHTTP stream-one             | 🧪 Field retest   |
+| Smart endpoints / rotation         | 🧭 Planned        |
+| Subscription + QR                  | ✅ Ready          |
+| D1 multi-user / quota / expiry     | ✅ Ready          |
+| Periodic usage accounting          | ✅ Ready          |
+| DNS / ECH / Network Lab            | 🧭 Planned        |
 
 ## امنیت / Security
 

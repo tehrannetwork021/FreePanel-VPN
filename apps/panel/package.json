@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "build": "vite build && node ../../scripts/build-panel-assets.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -13,7 +13,8 @@
     "@tehrannetwork/ui": "workspace:*",
     "lucide-react": "^1.47.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "uqr": "0.1.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

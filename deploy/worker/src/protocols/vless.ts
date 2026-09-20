@@ -6,40 +6,25 @@ const MAX_HEADER_BYTES = 512;
 const VERSION = 0;
 const COMMAND_TCP = 1;
 
-type ParsedVlessRequest = {
+export type ParsedVlessCandidate = {
+  presentedCredential: Uint8Array;
   destination: Destination;
   payload: Uint8Array;
   responseHeader: Uint8Array;
 };
 
-function needMore<T>(): ParseResult<T> {
-  return { kind: 'need-more' };
-}
+type ParsedVlessRequest = Omit<ParsedVlessCandidate, 'presentedCredential'>;
+const needMore = <T>(): ParseResult<T> => ({ kind: 'need-more' });
+const fail = <T>(code: string): ParseResult<T> => ({ kind: 'error', code });
 
-function fail<T>(code: string): ParseResult<T> {
-  return { kind: 'error', code };
-}
-
-export function parseVlessRequest(
-  input: Uint8Array,
-  expectedUuid: string,
-): ParseResult<ParsedVlessRequest> {
+export function parseVlessCandidate(input: Uint8Array): ParseResult<ParsedVlessCandidate> {
   if (input.length < 18) return needMore();
   if (input[0] !== VERSION) return fail('unsupported-version');
-
-  let expected: Uint8Array;
-  try {
-    expected = uuidToBytes(expectedUuid);
-  } catch {
-    return fail('config');
-  }
-  if (!constantTimeEqual(input.subarray(1, 17), expected)) return fail('auth');
-
+  const presentedCredential = input.slice(1, 17);
   const addonsLength = input[17]!;
   let offset = 18 + addonsLength;
   if (offset + 4 > MAX_HEADER_BYTES) return fail('header-too-large');
   if (input.length < offset + 4) return needMore();
-
   const command = input[offset]!;
   if (command !== COMMAND_TCP) return fail('unsupported-command');
   const port = (input[offset + 1]! << 8) | input[offset + 2]!;
@@ -51,9 +36,12 @@ export function parseVlessRequest(
   if (addressType === 1) {
     if (offset + 4 > MAX_HEADER_BYTES) return fail('header-too-large');
     if (input.length < offset + 4) return needMore();
-    const host = [...input.subarray(offset, offset + 4)].join('.');
+    destination = {
+      host: [...input.subarray(offset, offset + 4)].join('.'),
+      port,
+      addressType: 'ipv4',
+    };
     offset += 4;
-    destination = { host, port, addressType: 'ipv4' };
   } else if (addressType === 2) {
     if (input.length < offset + 1) return needMore();
     const length = input[offset]!;
@@ -74,9 +62,12 @@ export function parseVlessRequest(
   } else if (addressType === 3) {
     if (offset + 16 > MAX_HEADER_BYTES) return fail('header-too-large');
     if (input.length < offset + 16) return needMore();
-    const host = formatIpv6(input.subarray(offset, offset + 16));
+    destination = {
+      host: formatIpv6(input.subarray(offset, offset + 16)),
+      port,
+      addressType: 'ipv6',
+    };
     offset += 16;
-    destination = { host, port, addressType: 'ipv6' };
   } else {
     return fail('invalid-address-type');
   }
@@ -85,9 +76,35 @@ export function parseVlessRequest(
   return {
     kind: 'ok',
     value: {
+      presentedCredential,
       destination,
       payload: input.slice(offset),
       responseHeader: new Uint8Array([VERSION, 0]),
+    },
+  };
+}
+
+export function parseVlessRequest(
+  input: Uint8Array,
+  expectedUuid: string,
+): ParseResult<ParsedVlessRequest> {
+  if (input.length < 18) return needMore();
+  if (input[0] !== VERSION) return fail('unsupported-version');
+  let expected: Uint8Array;
+  try {
+    expected = uuidToBytes(expectedUuid);
+  } catch {
+    return fail('config');
+  }
+  if (!constantTimeEqual(input.subarray(1, 17), expected)) return fail('auth');
+  const candidate = parseVlessCandidate(input);
+  if (candidate.kind !== 'ok') return candidate;
+  return {
+    kind: 'ok',
+    value: {
+      destination: candidate.value.destination,
+      payload: candidate.value.payload,
+      responseHeader: candidate.value.responseHeader,
     },
   };
 }

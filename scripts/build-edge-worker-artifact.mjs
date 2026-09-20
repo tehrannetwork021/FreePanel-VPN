@@ -19,6 +19,7 @@ const result = await build({
   external: ['cloudflare:sockets'],
   legalComments: 'none',
   charset: 'utf8',
+  loader: { '.sql': 'text' },
 });
 
 if (result.outputFiles.length !== 1) {

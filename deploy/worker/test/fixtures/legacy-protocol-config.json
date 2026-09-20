@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-09-19T00:00:00.000Z",
+  "vless": {
+    "enabled": true,
+    "uuid": "44444444-5555-4666-8777-888888888888",
+    "path": "/legacy-vless"
+  },
+  "trojan": {
+    "enabled": true,
+    "password": "legacy-trojan-password-2026",
+    "passwordHash": "2159bd2608c0b045f2dd9f0aa26e1be2843e0c9cbb41d5a5685bdac4",
+    "path": "/legacy-trojan"
+  },
+  "xhttp": { "enabled": true, "path": "/legacy-xhttp", "mode": "stream-one" },
+  "subscription": { "token": "legacy-subscription-token-2026", "path": "/legacy-sub" }
+}

@@ -75,7 +75,7 @@ class Handler(BaseHTTPRequestHandler):
             result = [{"id": KV_ID, "title": "tehran-network-edge-config"}] if state["kv_created"] else []
             return self._json(envelope(result))
         if path == "/health":
-            return self._json({"ok": True, "version": "0.2.0"})
+            return self._json({"ok": True, "version": "0.3.0"})
         if path == "/_debug":
             return self._json(state)
         return self._json(envelope(None, success=False), 404)

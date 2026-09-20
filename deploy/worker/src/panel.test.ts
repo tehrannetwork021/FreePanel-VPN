@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Env, KvBinding } from './config/model';
 import { loadProtocolConfig } from './config/store';
 import { handleAdminApiSetup, handleSetupForm, renderPublicPanel } from './panel';
+import { createFakeD1 } from './test/fakeD1';
 
 class MemoryKv implements KvBinding {
   private data = new Map<string, string>();
@@ -13,7 +14,12 @@ class MemoryKv implements KvBinding {
   }
 }
 const password = 'owner-admin-password-12345';
-const env = (): Env => ({ C: new MemoryKv(), ADMIN_PASSWORD: password });
+const env = (): Env => ({
+  C: new MemoryKv(),
+  DB: createFakeD1(),
+  ADMIN_PASSWORD: password,
+  INSTALL_GENERATION: 'panel-test-gen',
+});
 
 function form(value: string) {
   return new Request('https://edge.example.workers.dev/setup', {
@@ -84,5 +90,21 @@ describe('owner panel', () => {
     const body = (await good.json()) as any;
     expect(body.links).toHaveLength(3);
     expect(body.subscriptionUrl).toContain('/sub/');
+  });
+});
+
+describe('neutral public root', () => {
+  it('does not disclose admin paths, setup controls, credentials or user state', async () => {
+    const { publicPanelResponse } = await import('./panel');
+    const response = publicPanelResponse(null);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const html = await response.text();
+    expect(html).toContain('Tehran Network');
+    expect(html).not.toContain('ADMIN_PASSWORD');
+    expect(html).not.toContain('action="/setup"');
+    expect(html).not.toContain('/admin');
+    expect(html).not.toContain('vless://');
+    expect(html).not.toContain('trojan://');
   });
 });

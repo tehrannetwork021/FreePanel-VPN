@@ -24,8 +24,21 @@ function makeDeps(events: string[], overrides: Partial<ProvisionDeps> = {}): Pro
       events.push('kv');
       return { id: 'kv-1', title: 'pvnetwork-client-config' };
     },
-    uploadWorkerModule: async (_token, _account, _worker, _kv, _source, password) => {
-      events.push(`worker:${password}`);
+    findOrCreateD1Database: async () => {
+      events.push('d1');
+      return { uuid: 'db-1', name: 'pvnetwork-client-control' };
+    },
+    uploadWorkerModule: async (
+      _token,
+      _account,
+      _worker,
+      _kv,
+      _db,
+      _source,
+      password,
+      generation,
+    ) => {
+      events.push(`worker:${password}:${generation}`);
     },
     ensureAccountSubdomain: async () => {
       events.push('subdomain');
@@ -36,8 +49,9 @@ function makeDeps(events: string[], overrides: Partial<ProvisionDeps> = {}): Pro
     },
     fetchHealth: async () => {
       events.push('health');
-      return { ok: true, version: '0.1.0' };
+      return { ok: true, version: '0.1.0', schemaVersion: 1, d1: true };
     },
+    generateInstallGeneration: () => 'gen-test',
     now: () => Date.now(),
     sleep: async () => undefined,
     ...overrides,
@@ -51,7 +65,8 @@ describe('panel provisioning', () => {
     expect(events).toEqual([
       'account',
       'kv',
-      'worker:correct-horse-1234',
+      'd1',
+      'worker:correct-horse-1234:gen-test',
       'subdomain',
       'enable',
       'health',
@@ -61,6 +76,8 @@ describe('panel provisioning', () => {
       workerUrl: 'https://pvnetwork-client.my-subdomain.workers.dev',
       workerName: 'pvnetwork-client',
       version: '0.1.0',
+      schemaVersion: 1,
+      adminUrl: 'https://pvnetwork-client.my-subdomain.workers.dev/admin',
     });
   });
 
@@ -90,6 +107,7 @@ describe('panel provisioning', () => {
     events.length = 0;
     await expect(provisionPanel(accessToken, request, deps)).resolves.toMatchObject({ ok: true });
     expect(events.filter((event) => event === 'kv')).toHaveLength(1);
+    expect(events.filter((event) => event === 'd1')).toHaveLength(1);
     expect(uploadAttempts).toBe(2);
   });
 

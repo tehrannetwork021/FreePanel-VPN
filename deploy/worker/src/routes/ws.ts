@@ -1,13 +1,23 @@
 import type { ProtocolConfig } from '../config/model';
+import { ensureControlPlaneSchema } from '../db/migrations';
+import { recordUsageDelta } from '../db/usage';
 import type { ConnectTcp } from '../network/tcp';
 import { openTcp } from '../network/tcp';
-import { parseTrojanRequest } from '../protocols/trojan';
-import { parseVlessRequest } from '../protocols/vless';
+import { parseTrojanCandidate, parseTrojanRequest } from '../protocols/trojan';
+import { parseVlessCandidate, parseVlessRequest } from '../protocols/vless';
+import {
+  resolveTunnelPrincipal,
+  type TunnelChannel,
+  type TunnelPrincipal,
+} from '../security/tunnelAuth';
+import { createUsageMeter as makeUsageMeter, type UsageMeter } from '../transport/usageMeter';
 import {
   runWebSocketTunnel,
   type FirstPacketParser,
+  type ParsedFirstPacket,
   type TunnelWebSocket,
 } from '../transport/websocket';
+import type { ParseResult } from '../core/types';
 
 type ProtocolKind = 'vless' | 'trojan';
 
@@ -16,15 +26,74 @@ type UpgradeInput = {
   parseFirstPacket: FirstPacketParser;
   connectTcp: ConnectTcp;
   selfHost: string;
+  createUsageMeter?: (principal: TunnelPrincipal) => UsageMeter | null;
 };
 
 type RouteDeps = {
+  db?: D1Database;
+  now?: () => number;
   connectTcp?: ConnectTcp;
   createUpgradeResponse?: (input: UpgradeInput) => Response;
 };
 
 function text(status: number, message: string): Response {
   return new Response(message, { status, headers: { 'cache-control': 'no-store' } });
+}
+
+function authError(): ParseResult<ParsedFirstPacket> {
+  return { kind: 'error', code: 'auth' };
+}
+
+async function authorizeVless(
+  input: Uint8Array,
+  config: ProtocolConfig,
+  db: D1Database | undefined,
+  channel: Extract<TunnelChannel, 'vless-ws'>,
+  now: number,
+): Promise<ParseResult<ParsedFirstPacket>> {
+  const candidate = parseVlessCandidate(input);
+  if (candidate.kind !== 'ok') return candidate;
+  if (db) {
+    const auth = await resolveTunnelPrincipal(
+      db,
+      channel,
+      candidate.value.presentedCredential,
+      now,
+    );
+    if (auth.kind === 'denied-user') return authError();
+    if (auth.kind === 'authorized') {
+      return { kind: 'ok', value: { ...candidate.value, principal: auth.principal } };
+    }
+  }
+  const legacy = parseVlessRequest(input, config.vless.uuid);
+  if (legacy.kind !== 'ok') return legacy;
+  return { kind: 'ok', value: { ...legacy.value, principal: { kind: 'legacy', channel } } };
+}
+
+async function authorizeTrojan(
+  input: Uint8Array,
+  config: ProtocolConfig,
+  db: D1Database | undefined,
+  channel: Extract<TunnelChannel, 'trojan-ws'>,
+  now: number,
+): Promise<ParseResult<ParsedFirstPacket>> {
+  const candidate = parseTrojanCandidate(input);
+  if (candidate.kind !== 'ok') return candidate;
+  if (db) {
+    const auth = await resolveTunnelPrincipal(
+      db,
+      channel,
+      candidate.value.presentedCredential,
+      now,
+    );
+    if (auth.kind === 'denied-user') return authError();
+    if (auth.kind === 'authorized') {
+      return { kind: 'ok', value: { ...candidate.value, principal: auth.principal } };
+    }
+  }
+  const legacy = parseTrojanRequest(input, config.trojan.passwordHash);
+  if (legacy.kind !== 'ok') return legacy;
+  return { kind: 'ok', value: { ...legacy.value, principal: { kind: 'legacy', channel } } };
 }
 
 function cloudflareUpgrade(input: UpgradeInput): Response {
@@ -46,6 +115,7 @@ function cloudflareUpgrade(input: UpgradeInput): Response {
     parseFirstPacket: input.parseFirstPacket,
     connectTcp: input.connectTcp,
     selfHost: input.selfHost,
+    createUsageMeter: input.createUsageMeter,
   });
   return new Response(null, { status: 101, webSocket: client });
 }
@@ -68,11 +138,13 @@ export async function handleWebSocketRoute(
   if (url.pathname === config.vless.path) {
     kind = 'vless';
     enabled = config.vless.enabled;
-    parseFirstPacket = (input) => parseVlessRequest(input, config.vless.uuid);
+    parseFirstPacket = (input) =>
+      authorizeVless(input, config, deps.db, 'vless-ws', deps.now?.() ?? Date.now());
   } else if (url.pathname === config.trojan.path) {
     kind = 'trojan';
     enabled = config.trojan.enabled;
-    parseFirstPacket = (input) => parseTrojanRequest(input, config.trojan.passwordHash);
+    parseFirstPacket = (input) =>
+      authorizeTrojan(input, config, deps.db, 'trojan-ws', deps.now?.() ?? Date.now());
   } else {
     return null;
   }
@@ -81,12 +153,24 @@ export async function handleWebSocketRoute(
   if (request.method !== 'GET') return text(405, 'Method not allowed');
   if (request.headers.get('upgrade')?.toLowerCase() !== 'websocket')
     return text(426, 'WebSocket upgrade required');
+  if (deps.db) await ensureControlPlaneSchema(deps.db);
 
+  const usageFactory = deps.db
+    ? (principal: TunnelPrincipal): UsageMeter | null =>
+        principal.kind === 'user'
+          ? makeUsageMeter({
+              now: deps.now,
+              write: (delta) =>
+                recordUsageDelta(deps.db!, principal.userId, delta, deps.now?.() ?? Date.now()),
+            })
+          : null
+    : undefined;
   const input: UpgradeInput = {
     kind,
     parseFirstPacket,
     connectTcp: deps.connectTcp ?? openTcp,
     selfHost: url.hostname,
+    createUsageMeter: usageFactory,
   };
   return (deps.createUpgradeResponse ?? cloudflareUpgrade)(input);
 }

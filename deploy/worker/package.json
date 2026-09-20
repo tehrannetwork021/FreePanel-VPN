@@ -1,6 +1,6 @@
 {
   "name": "tehran-network-edge-worker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "check": "npm run typecheck && npm test",
-    "test:protocol": "node test/protocol-e2e.mjs"
+    "test:protocol": "node test/protocol-e2e.mjs",
+    "test:legacy-upgrade": "LEGACY_UPGRADE=1 node test/protocol-e2e.mjs",
+    "test:phase-a": "node test/phase-a-e2e.mjs",
+    "test:tunnels": "npm run test:protocol && npm run test:legacy-upgrade && npm run test:phase-a"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260919.1",

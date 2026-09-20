@@ -1,5 +1,7 @@
 import type { Env } from './config/model';
 import { loadProtocolConfig, publicProtocolStatus } from './config/store';
+import { ensureAdminCredential } from './db/auth';
+import { ensureControlPlaneSchema } from './db/migrations';
 import { createXhttpDiagnostics, type XhttpDiagnostics } from './observability/xhttpDiagnostics';
 import {
   handleAdminApiSetup,
@@ -7,11 +9,14 @@ import {
   javascriptResponse,
   publicPanelResponse,
 } from './panel';
+import { handleAdminApi } from './routes/adminApi';
+import { handleAuthRoute } from './routes/auth';
+import { handlePanelAssetRoute } from './routes/panelAssets';
 import { handleSubscriptionRoute } from './routes/subscription';
 import { handleWebSocketRoute } from './routes/ws';
 import { handleXhttpRoute } from './routes/xhttp';
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 type FetchContext = {
   waitUntil(promise: Promise<void>): void;
@@ -34,6 +39,7 @@ const json = (data: unknown, status = 200) =>
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
       'x-content-type-options': 'nosniff',
+      'referrer-policy': 'no-referrer',
     },
   });
 
@@ -48,10 +54,11 @@ export default {
       return json({ ok: false, error: 'invalid-server-config' }, 500);
     }
 
-    const wsResponse = await handleWebSocketRoute(request, protocolConfig);
+    const wsResponse = await handleWebSocketRoute(request, protocolConfig, { db: env.DB });
     if (wsResponse) return wsResponse;
     const diagnostics = diagnosticsFor(env);
     const xhttpResponse = await handleXhttpRoute(request, protocolConfig, {
+      db: env.DB,
       onAttempt: (status) => {
         diagnostics.record(status);
         const flush = diagnostics.flushIfNeeded();
@@ -59,8 +66,16 @@ export default {
       },
     });
     if (xhttpResponse) return xhttpResponse;
-    const subscriptionResponse = await handleSubscriptionRoute(request, protocolConfig);
+    const subscriptionResponse = await handleSubscriptionRoute(request, protocolConfig, env);
     if (subscriptionResponse) return subscriptionResponse;
+
+    const panelAssetResponse = handlePanelAssetRoute(request);
+    if (panelAssetResponse) return panelAssetResponse;
+
+    const authResponse = await handleAuthRoute(request, env);
+    if (authResponse) return authResponse;
+    const adminResponse = await handleAdminApi(request, env);
+    if (adminResponse) return adminResponse;
 
     if (url.pathname === '/panel.js') {
       return request.method === 'GET' ? javascriptResponse() : methodNotAllowed();
@@ -72,7 +87,14 @@ export default {
       return request.method === 'POST' ? handleAdminApiSetup(request, env) : methodNotAllowed();
     }
     if (url.pathname === '/health') {
-      return request.method === 'GET' ? json({ ok: true, version: VERSION }) : methodNotAllowed();
+      if (request.method !== 'GET') return methodNotAllowed();
+      try {
+        const schemaVersion = await ensureControlPlaneSchema(env.DB);
+        await ensureAdminCredential(env.DB, env.ADMIN_PASSWORD, env.INSTALL_GENERATION, Date.now());
+        return json({ ok: true, version: VERSION, d1: true, schemaVersion });
+      } catch {
+        return json({ ok: false, error: 'd1-unavailable' }, 500);
+      }
     }
     if (url.pathname === '/api/status') {
       if (request.method !== 'GET') return methodNotAllowed();

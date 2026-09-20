@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Destination, ParseResult } from '../core/types';
 import type { TcpSocketLike } from '../network/tcp';
 import { runWebSocketTunnel, type TunnelWebSocket } from './websocket';
@@ -134,5 +134,66 @@ describe('WebSocket TCP tunnel', () => {
     ws.emit('message', { data: new Uint8Array(33).buffer });
     await tick();
     expect(ws.closes.at(-1)?.code).toBe(1009);
+  });
+});
+
+describe('async WebSocket authorization gate', () => {
+  it('does not connect TCP until async authorization resolves successfully', async () => {
+    const ws = new FakeWebSocket();
+    let resolveParser!: (value: ParseResult<any>) => void;
+    const pending = new Promise<ParseResult<any>>((resolve) => {
+      resolveParser = resolve;
+    });
+    let connects = 0;
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: async () => pending,
+      connectTcp: async () => {
+        connects += 1;
+        return fakeSocket().socket;
+      },
+      selfHost: 'worker.example.dev',
+    });
+    ws.emit('message', { data: new Uint8Array([1, 2, 3]).buffer });
+    await tick();
+    expect(connects).toBe(0);
+    resolveParser({ kind: 'error', code: 'auth' });
+    await tick();
+    expect(connects).toBe(0);
+    expect(ws.closes.at(-1)?.code).toBe(1008);
+  });
+});
+
+describe('WebSocket usage checkpoints', () => {
+  it('counts only proxied payload bytes for a user principal', async () => {
+    const ws = new FakeWebSocket();
+    const remote = fakeSocket([new Uint8Array([7, 8, 9])]);
+    const meter = {
+      addUpload: vi.fn(),
+      addDownload: vi.fn(),
+      flush: vi.fn(async () => ({ allowed: true, totalUsedBytes: 0, todayUsedBytes: 0 })),
+      close: vi.fn(async () => null),
+      exhausted: vi.fn(() => false),
+    };
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: () => ({
+        kind: 'ok',
+        value: {
+          destination,
+          payload: new Uint8Array([5, 6]),
+          responseHeader: new Uint8Array([0, 0]),
+          principal: { kind: 'user', userId: 'u-1', channel: 'vless-ws' },
+        },
+      }),
+      connectTcp: async () => remote.socket,
+      selfHost: 'worker.example.dev',
+      createUsageMeter: () => meter,
+    });
+    ws.emit('message', { data: new Uint8Array([1]).buffer });
+    await tick();
+    expect(meter.addUpload).toHaveBeenCalledWith(2);
+    expect(meter.addDownload).toHaveBeenCalledWith(3);
+    expect(meter.addUpload).not.toHaveBeenCalledWith(1);
   });
 });

@@ -1,4 +1,6 @@
 import type { ProtocolConfig } from '../config/model';
+import { sha224Hex } from '../core/sha224';
+import type { UserAccessSecrets, UserRecord } from '../db/users';
 
 export type ProtocolLinks = {
   vlessWs?: string;
@@ -50,4 +52,33 @@ export function buildProtocolLinks(config: ProtocolConfig, host: string): string
 
 export function buildSubscriptionUrl(config: ProtocolConfig, host: string): string {
   return `https://${host}${config.subscription.path}/${config.subscription.token}`;
+}
+
+export function buildUserProtocolConfig(
+  globalConfig: ProtocolConfig,
+  user: UserRecord,
+  secrets: UserAccessSecrets,
+): ProtocolConfig {
+  return {
+    ...globalConfig,
+    vless: {
+      ...globalConfig.vless,
+      enabled: globalConfig.vless.enabled && user.allowVless,
+      uuid: secrets.vlessUuid,
+    },
+    trojan: {
+      ...globalConfig.trojan,
+      enabled: globalConfig.trojan.enabled && user.allowTrojan,
+      password: secrets.trojanPassword,
+      passwordHash: sha224Hex(secrets.trojanPassword),
+    },
+    xhttp: {
+      ...globalConfig.xhttp,
+      enabled: globalConfig.xhttp.enabled && user.allowVless && user.allowXhttp,
+    },
+    subscription: {
+      ...globalConfig.subscription,
+      token: secrets.subscriptionToken,
+    },
+  };
 }

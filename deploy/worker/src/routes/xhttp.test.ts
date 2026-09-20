@@ -1,4 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
+import { concatBytes } from '../core/bytes';
+import { uuidToBytes } from '../core/uuid';
+import { createUser } from '../db/users';
+import { deriveVlessUuid } from '../security/derivedSecrets';
+import { createFakeD1 } from '../test/fakeD1';
 import type { ProtocolConfig } from '../config/model';
 import { handleXhttpRoute } from './xhttp';
 
@@ -10,6 +15,16 @@ const config: ProtocolConfig = {
   xhttp: { enabled: true, path: '/xhttp', mode: 'stream-one' },
   subscription: { token: 'sub', path: '/sub' },
 };
+
+function vlessPacket(uuid: string) {
+  const host = new TextEncoder().encode('example.com');
+  return concatBytes(
+    new Uint8Array([0]),
+    uuidToBytes(uuid),
+    new Uint8Array([0, 1, 0, 80, 2, host.length]),
+    host,
+  );
+}
 
 const req = (path: string, method = 'POST') =>
   new Request(`https://edge.example.dev${path}`, {
@@ -73,5 +88,52 @@ describe('XHTTP route', () => {
     await handleXhttpRoute(req('/xhttp/session-id'), config, deps);
     await handleXhttpRoute(req('/xhttp', 'GET'), config, deps);
     expect(statuses).toEqual([]);
+  });
+});
+
+describe('per-user XHTTP tunnel parser', () => {
+  it('uses the separate vless-xhttp permission and returns the user principal', async () => {
+    const db = createFakeD1();
+    const seed = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    const user = await createUser(db, { name: 'XHTTP U' }, 1_000, seed);
+    const uuid = await deriveVlessUuid(seed, user.id, 1);
+    let parsed: any;
+    const response = await handleXhttpRoute(req('/xhttp'), config, {
+      db,
+      now: () => 2_000,
+      createStreamResponse: async ({ parseFirstPacket }) => {
+        parsed = await parseFirstPacket(vlessPacket(uuid));
+        return new Response('ok');
+      },
+    });
+    expect(response?.status).toBe(200);
+    expect(parsed).toMatchObject({
+      kind: 'ok',
+      value: { principal: { kind: 'user', userId: user.id, channel: 'vless-xhttp' } },
+    });
+  });
+});
+
+describe('XHTTP route usage factory', () => {
+  it('records per-user usage through the stream meter factory', async () => {
+    const db = createFakeD1();
+    const now = Date.parse('2026-09-20T12:00:00Z');
+    const user = await createUser(db, { name: 'XHTTP meter' }, now);
+    const response = await handleXhttpRoute(req('/xhttp'), config, {
+      db,
+      now: () => now,
+      createStreamResponse: async ({ createUsageMeter }) => {
+        const meter = createUsageMeter?.({ kind: 'user', userId: user.id, channel: 'vless-xhttp' });
+        meter?.addDownload(40);
+        await meter?.close();
+        return new Response('ok');
+      },
+    });
+    expect(response?.status).toBe(200);
+    expect(db.state().users.get(user.id)?.total_used_bytes).toBe(40);
+    expect(db.state().usageDaily.get(`${user.id}:2026-09-20`)).toMatchObject({
+      download_bytes: 40,
+      connections: 1,
+    });
   });
 });

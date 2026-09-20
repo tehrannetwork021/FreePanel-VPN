@@ -5,7 +5,9 @@ export type KvBinding = {
 
 export type Env = {
   C: KvBinding;
+  DB: D1Database;
   ADMIN_PASSWORD: string;
+  INSTALL_GENERATION: string;
 };
 
 export type ProtocolConfig = {

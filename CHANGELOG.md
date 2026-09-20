@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.3.0 Release Candidate — 2026-09-21
+
+Phase A adds the Cloudflare-only multi-user control plane. This entry records locally proven behavior only; the real Cloudflare field checklist is still pending and this release is not yet marked stable.
+
+### Added
+
+- D1 schema/migrations for installation state, admin sessions, users, per-user credential indexes, private subscription tokens, UTC usage, audit/login events and throttling.
+- Real `/admin` React dashboard with Persian RTL / English LTR, overview, users, usage and security/audit views.
+- Multi-user CRUD with optimistic versions, pause/resume, expiry, total quota, daily quota and per-channel VLESS/Trojan/XHTTP flags.
+- Private per-user subscriptions and QR payloads with deterministic HMAC-derived VLESS UUID, Trojan password and subscription token; D1 stores only versions + lookup hashes.
+- Per-user tunnel authentication for VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one while preserving the legacy owner credentials/config.
+- Coarse usage accounting and quota checkpoints at 4 MiB, 60 seconds or connection close; no per-packet billing claim.
+- Subscription and protocol credential rotation, redacted audit trail, login telemetry/throttling, PBKDF2 admin credentials, D1 sessions and CSRF protection.
+
+### Upgrade semantics
+
+- Reinstalling the same Worker name reuses `${workerName}-config` KV and `${workerName}-control` D1. Existing protocol config, installation seed and per-user secret versions are preserved.
+- A fresh `INSTALL_GENERATION` intentionally syncs the admin password once to the new value shown by the installer and invalidates older admin sessions. Existing user subscription/protocol credentials remain stable when persistent D1 state is preserved.
+
+### Locally verified
+
+- Legacy upgrade: schema 1 initializes on empty D1 while the existing KV protocol record remains byte-for-byte equivalent and owner VLESS-WS / Trojan-WS / XHTTP continue to connect.
+- Phase A Xray-core flow: login → user create → private subscription → all three channels → usage → pause/resume → quota denial → subscription rotation → credential rotation → legacy compatibility.
+- Desktop/mobile browser flows cover installer handoff and dashboard operations; release security scans cover secret sentinels and response hardening.
+- Release version/artifact contract pins root package, Worker package, installer-worker, runtime health version and immutable manifest to `0.3.0`; generated Worker SHA-256 is verified.
+
+### Not ready / pending
+
+- Real Cloudflare clean-account + existing-v0.2 upgrade field gate is pending.
+- Full Backup/Restore is not implemented.
+- Speed limiting is not implemented; quota enforcement is checkpoint-based.
+
 ## Unreleased — 2026-09-20
 
 ### Changed

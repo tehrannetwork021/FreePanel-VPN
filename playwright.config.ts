@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:43173',
     trace: 'retain-on-failure',
   },
   projects: [
@@ -16,13 +16,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'pnpm --filter @tehrannetwork/panel dev -- --port 4173',
-      url: 'http://127.0.0.1:4173',
+      command: 'pnpm --filter @tehrannetwork/panel dev --port 43173',
+      url: 'http://127.0.0.1:43173',
       reuseExistingServer: false,
     },
     {
-      command: 'pnpm --filter @tehrannetwork/installer dev -- --port 4174',
-      url: 'http://127.0.0.1:4174',
+      command: 'pnpm --filter @tehrannetwork/installer dev --port 43174',
+      url: 'http://127.0.0.1:43174',
       reuseExistingServer: false,
     },
   ],

@@ -103,20 +103,51 @@ export async function findOrCreateKvNamespace(
   return result;
 }
 
+type D1DatabaseView = { uuid: string; name: string };
+
+export async function findOrCreateD1Database(
+  token: string,
+  accountId: string,
+  workerName: string,
+): Promise<D1DatabaseView> {
+  const name = `${workerName}-control`;
+  const { result } = await cfRequest<D1DatabaseView[]>(
+    token,
+    `/accounts/${encodeURIComponent(accountId)}/d1/database?name=${encodeURIComponent(name)}&per_page=100`,
+  );
+  const existing = result.find((database) => database.name === name);
+  if (existing) return existing;
+  return (
+    await cfRequest<D1DatabaseView>(
+      token,
+      `/accounts/${encodeURIComponent(accountId)}/d1/database`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name }),
+      },
+    )
+  ).result;
+}
+
 export async function uploadWorkerModule(
   token: string,
   accountId: string,
   workerName: string,
   namespaceId: string,
+  databaseId: string,
   source: string,
   adminPassword: string,
+  installGeneration: string,
 ): Promise<void> {
   const metadata = {
     main_module: 'worker.mjs',
     compatibility_date: '2026-09-19',
     bindings: [
       { type: 'kv_namespace', name: 'C', namespace_id: namespaceId },
+      { type: 'd1', name: 'DB', database_id: databaseId },
       { type: 'secret_text', name: 'ADMIN_PASSWORD', text: adminPassword },
+      { type: 'plain_text', name: 'INSTALL_GENERATION', text: installGeneration },
     ],
   };
   const form = new FormData();

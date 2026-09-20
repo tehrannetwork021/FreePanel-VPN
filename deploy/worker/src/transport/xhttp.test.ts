@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { concatBytes } from '../core/bytes';
 import { uuidToBytes } from '../core/uuid';
 import type { TcpSocketLike } from '../network/tcp';
@@ -98,5 +98,70 @@ describe('XHTTP stream-one transport', () => {
       maxHandshakeBytes: 64,
     });
     expect(response.status).toBe(413);
+  });
+});
+
+describe('async XHTTP authorization gate', () => {
+  it('awaits authorization and never connects when it resolves to auth failure', async () => {
+    let resolveParser!: (value: any) => void;
+    const pending = new Promise<any>((resolve) => {
+      resolveParser = resolve;
+    });
+    let connects = 0;
+    const responsePromise = createXhttpStream({
+      body: body([vless()]),
+      parseFirstPacket: async () => pending,
+      connectTcp: async () => {
+        connects += 1;
+        return socket('').value;
+      },
+      selfHost: 'edge.example.dev',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(connects).toBe(0);
+    resolveParser({ kind: 'error', code: 'auth' });
+    const response = await responsePromise;
+    expect(response.status).toBe(403);
+    expect(connects).toBe(0);
+  });
+});
+
+describe('XHTTP usage checkpoints', () => {
+  it('counts parsed upload and remote download but not the VLESS handshake', async () => {
+    const packet = vless(new Uint8Array([5, 6]));
+    const remote = socket('abc');
+    const meter = {
+      addUpload: vi.fn(),
+      addDownload: vi.fn(),
+      flush: vi.fn(async () => ({ allowed: true, totalUsedBytes: 0, todayUsedBytes: 0 })),
+      close: vi.fn(async () => null),
+      exhausted: vi.fn(() => false),
+    };
+    const response = await createXhttpStream({
+      body: body([packet]),
+      parseFirstPacket: (input) => {
+        const parsed = parseVlessRequest(input, UUID);
+        return parsed.kind === 'ok'
+          ? {
+              ...parsed,
+              value: {
+                ...parsed.value,
+                principal: {
+                  kind: 'user' as const,
+                  userId: 'u-1',
+                  channel: 'vless-xhttp' as const,
+                },
+              },
+            }
+          : parsed;
+      },
+      connectTcp: async () => remote.value,
+      selfHost: 'edge.example.dev',
+      createUsageMeter: () => meter,
+    });
+    await response.arrayBuffer();
+    expect(meter.addUpload).toHaveBeenCalledWith(2);
+    expect(meter.addDownload).toHaveBeenCalledWith(3);
+    expect(meter.close).toHaveBeenCalled();
   });
 });

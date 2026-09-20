@@ -1,6 +1,8 @@
 import { concatBytes, toBytes } from '../core/bytes';
 import type { Destination, ParseResult } from '../core/types';
 import type { ConnectTcp, TcpSocketLike } from '../network/tcp';
+import type { TunnelPrincipal } from '../security/tunnelAuth';
+import type { UsageMeter } from './usageMeter';
 
 export type TunnelWebSocket = {
   send(data: ArrayBuffer | ArrayBufferView): void;
@@ -12,9 +14,12 @@ export type ParsedFirstPacket = {
   destination: Destination;
   payload: Uint8Array;
   responseHeader?: Uint8Array;
+  principal?: TunnelPrincipal;
 };
 
-export type FirstPacketParser = (input: Uint8Array) => ParseResult<ParsedFirstPacket>;
+export type FirstPacketParser = (
+  input: Uint8Array,
+) => ParseResult<ParsedFirstPacket> | Promise<ParseResult<ParsedFirstPacket>>;
 
 type TunnelOptions = {
   webSocket: TunnelWebSocket;
@@ -22,6 +27,7 @@ type TunnelOptions = {
   connectTcp: ConnectTcp;
   selfHost: string;
   maxFirstPacketBytes?: number;
+  createUsageMeter?: (principal: TunnelPrincipal) => UsageMeter | null;
 };
 
 async function eventBytes(data: unknown): Promise<Uint8Array | null> {
@@ -38,12 +44,14 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
   let firstPacket: Uint8Array = new Uint8Array();
   let socket: TcpSocketLike | null = null;
   let writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
+  let usageMeter: UsageMeter | null = null;
   let stopped = false;
   let queue = Promise.resolve();
 
   const stop = (code = 1000, reason = 'closed') => {
     if (stopped) return;
     stopped = true;
+    void usageMeter?.close();
     try {
       socket?.close();
     } catch {
@@ -62,9 +70,20 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
       while (!stopped) {
         const { done, value } = await reader.read();
         if (done) break;
-        if (value?.byteLength) webSocket.send(value);
+        if (value?.byteLength) {
+          webSocket.send(value);
+          usageMeter?.addDownload(value.byteLength);
+          if (usageMeter) {
+            await usageMeter.flush();
+            if (usageMeter.exhausted()) {
+              stop(1008, 'quota');
+              break;
+            }
+          }
+        }
       }
       if (!stopped) {
+        await usageMeter?.close();
         try {
           webSocket.close(1000, 'remote-eof');
         } catch {
@@ -87,6 +106,11 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
     }
     if (writer) {
       await writer.write(bytes);
+      usageMeter?.addUpload(bytes.byteLength);
+      if (usageMeter) {
+        await usageMeter.flush();
+        if (usageMeter.exhausted()) stop(1008, 'quota');
+      }
       return;
     }
 
@@ -95,7 +119,7 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
       stop(1009, 'first-packet-too-large');
       return;
     }
-    const parsed = parseFirstPacket(firstPacket);
+    const parsed = await parseFirstPacket(firstPacket);
     if (parsed.kind === 'need-more') return;
     if (parsed.kind === 'error') {
       stop(1008, 'invalid-handshake');
@@ -105,8 +129,22 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
     try {
       socket = await connectTcp(parsed.value.destination, selfHost);
       writer = socket.writable.getWriter();
+      usageMeter =
+        parsed.value.principal && options.createUsageMeter
+          ? options.createUsageMeter(parsed.value.principal)
+          : null;
       if (parsed.value.responseHeader?.byteLength) webSocket.send(parsed.value.responseHeader);
-      if (parsed.value.payload.byteLength) await writer.write(parsed.value.payload);
+      if (parsed.value.payload.byteLength) {
+        await writer.write(parsed.value.payload);
+        usageMeter?.addUpload(parsed.value.payload.byteLength);
+        if (usageMeter) {
+          await usageMeter.flush();
+          if (usageMeter.exhausted()) {
+            stop(1008, 'quota');
+            return;
+          }
+        }
+      }
       firstPacket = new Uint8Array();
       void pumpDownstream(socket);
     } catch {
@@ -124,6 +162,7 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
   webSocket.addEventListener('close', () => {
     if (!stopped) {
       stopped = true;
+      void usageMeter?.close();
       try {
         socket?.close();
       } catch {

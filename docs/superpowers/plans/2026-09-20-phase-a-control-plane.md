@@ -22,6 +22,7 @@
 - Persian/English and RTL/LTR remain first-class; normal UI must work on desktop and mobile.
 - Only verified items are checked in `AGENTS.md`; every code task follows red-green TDD and ends in a focused commit.
 - Before every task commit, append the exact verification commands/results to `AGENTS.md`, check only what that task actually proved, and include `AGENTS.md` in the same commit.
+
 ## File Structure
 
 - `deploy/worker/migrations/0001_control_plane.sql` — initial D1 schema and indexes.
@@ -51,9 +52,11 @@
 5. Malformed IDs, negative quota values, oversized notes/names and token/path probing must be bounded and return sanitized 4xx responses — Tasks 4 and 5 pin this.
 
 ---
+
 ### Task 1: D1 schema and migration engine
 
 **Files:**
+
 - Create: `deploy/worker/migrations/0001_control_plane.sql`
 - Create: `deploy/worker/src/db/migrations.ts`
 - Create: `deploy/worker/src/db/migrations.test.ts`
@@ -64,6 +67,7 @@
 - Test: `deploy/worker/src/db/migrations.test.ts`
 
 **Interfaces:**
+
 - Consumes: Cloudflare `D1Database` binding as `env.DB`.
 - Produces: `CONTROL_PLANE_SCHEMA_VERSION = 1`, `ensureControlPlaneSchema(db: D1Database): Promise<number>`, `ensureInstallationState(db,...): Promise<InstallationState>`, and `Env.DB: D1Database` / `Env.INSTALL_GENERATION: string`.
 
@@ -85,20 +89,31 @@ it('rejects a database whose recorded version is newer than this Worker', async 
 it('converges concurrent installation-state initialization on one persistent seed', async () => {
   const db = makeD1Mock();
   const [a, b] = await Promise.all([
-    ensureInstallationState(db, () => 1_000, () => fixedBytes(0x11)),
-    ensureInstallationState(db, () => 1_001, () => fixedBytes(0x22)),
+    ensureInstallationState(
+      db,
+      () => 1_000,
+      () => fixedBytes(0x11),
+    ),
+    ensureInstallationState(
+      db,
+      () => 1_001,
+      () => fixedBytes(0x22),
+    ),
   ]);
   expect(a.secretSeed).toBe(b.secretSeed);
   expect(base64urlDecode(a.secretSeed)).toHaveLength(32);
 });
 
 it('fails closed on a mismatched migration checksum or corrupted installation seed', async () => {
-  await expect(ensureControlPlaneSchema(makeD1Mock({ migration1Checksum: 'wrong' })))
-    .rejects.toThrow('migration-checksum-mismatch');
-  await expect(ensureInstallationState(makeD1Mock({ secretSeed: 'broken' })))
-    .rejects.toThrow('invalid-installation-state');
+  await expect(
+    ensureControlPlaneSchema(makeD1Mock({ migration1Checksum: 'wrong' })),
+  ).rejects.toThrow('migration-checksum-mismatch');
+  await expect(ensureInstallationState(makeD1Mock({ secretSeed: 'broken' }))).rejects.toThrow(
+    'invalid-installation-state',
+  );
 });
 ```
+
 - [ ] **Step 2: Run the focused test and prove RED**
 
 Run: `pnpm --dir deploy/worker test -- src/db/migrations.test.ts`
@@ -134,6 +149,7 @@ CREATE TABLE IF NOT EXISTS users (
   version INTEGER NOT NULL DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
 );
 ```
+
 ```sql
 CREATE TABLE IF NOT EXISTS user_credentials (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -166,6 +182,7 @@ CREATE TABLE IF NOT EXISTS login_throttle (
   key_hash TEXT PRIMARY KEY, window_start INTEGER NOT NULL, failures INTEGER NOT NULL
 );
 ```
+
 - [ ] **Step 4: Implement the migration runner and Env bindings**
 
 ```ts
@@ -208,9 +225,11 @@ Run a real local D1 application with Wrangler using a temporary persist director
 git add deploy/worker/migrations deploy/worker/src/db deploy/worker/src/types/sql.d.ts deploy/worker/src/config/model.ts deploy/worker/wrangler.jsonc scripts/build-edge-worker-artifact* AGENTS.md
 git commit -m "feat: add D1 control-plane schema"
 ```
+
 ### Task 2: One-click installer provisions D1 and an install generation
 
 **Files:**
+
 - Modify: `packages/shared/src/installer.ts:1-49`
 - Modify: `apps/installer-worker/src/cloudflare.ts:1-187`
 - Modify: `apps/installer-worker/src/cloudflare.test.ts:1-177`
@@ -221,6 +240,7 @@ git commit -m "feat: add D1 control-plane schema"
 - Modify: `README.md`, `docs/INSTALL_FA.md`, `docs/INSTALL_EN.md`, `scripts/release-install-contract.test.ts`
 
 **Interfaces:**
+
 - Produces: `findOrCreateD1Database(token, accountId, workerName): Promise<{uuid:string;name:string}>`.
 - Changes: `uploadWorkerModule(..., namespaceId, databaseId, source, adminPassword, installGeneration)` binds `C`, `DB`, `ADMIN_PASSWORD`, `INSTALL_GENERATION` in one Worker version.
 - Changes: `InstallStage` gains `d1`; `InstallErrorCode` gains `d1-failed`; `InstallResult` gains `adminUrl` and `schemaVersion` after health verification.
@@ -229,17 +249,23 @@ git commit -m "feat: add D1 control-plane schema"
 
 ```ts
 it('reuses a deterministic D1 database and binds it atomically', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok([{ uuid: 'db-1', name: 'pvnetwork-client-control' }])));
-  await expect(findOrCreateD1Database('token', 'acct', 'pvnetwork-client')).resolves.toMatchObject({ uuid: 'db-1' });
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(ok([{ uuid: 'db-1', name: 'pvnetwork-client-control' }])),
+  );
+  await expect(findOrCreateD1Database('token', 'acct', 'pvnetwork-client')).resolves.toMatchObject({
+    uuid: 'db-1',
+  });
 });
 
 it('provisions account -> KV -> D1 -> Worker -> subdomain -> schema health', async () => {
   const events: string[] = [];
   const result = await provisionPanel(accessToken, request, makeDeps(events));
-  expect(events).toEqual(['account','kv','d1','worker','subdomain','enable','health']);
+  expect(events).toEqual(['account', 'kv', 'd1', 'worker', 'subdomain', 'enable', 'health']);
   expect(result.schemaVersion).toBe(1);
 });
 ```
+
 - [ ] **Step 2: Prove RED**
 
 Run: `pnpm test -- apps/installer-worker/src/cloudflare.test.ts apps/installer-worker/src/provision.test.ts apps/installer/src/App.test.tsx`
@@ -259,9 +285,15 @@ export async function findOrCreateD1Database(token: string, accountId: string, w
   const existing = result.find((db) => db.name === name);
   if (existing) return existing;
   return (
-    await cfRequest<D1DatabaseView>(token, `/accounts/${encodeURIComponent(accountId)}/d1/database`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name }),
-    })
+    await cfRequest<D1DatabaseView>(
+      token,
+      `/accounts/${encodeURIComponent(accountId)}/d1/database`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name }),
+      },
+    )
   ).result;
 }
 ```
@@ -271,13 +303,14 @@ Use only official Cloudflare endpoints: list/create D1 at `/accounts/{account_id
 - [ ] **Step 4: Add atomic D1/install-generation Worker bindings**
 
 Generate a fresh non-secret UUID in `provision.ts` through an injected `generateInstallGeneration()` dependency so tests are deterministic. The generation is bound as plain text and changes on every successful/retried install attempt; it exists only to make admin-password bootstrap run once for that deployed generation.
+
 ```ts
 bindings: [
   { type: 'kv_namespace', name: 'C', namespace_id: namespaceId },
   { type: 'd1', name: 'DB', database_id: databaseId },
   { type: 'secret_text', name: 'ADMIN_PASSWORD', text: adminPassword },
   { type: 'plain_text', name: 'INSTALL_GENERATION', text: installGeneration },
-]
+];
 ```
 
 Update `/health` in Task 1/Task 2 integration so installer success requires `{ok:true, version:<artifact>, schemaVersion:1, d1:true}`. A missing binding or migration failure must end as `health-failed`, never a false successful install.
@@ -304,9 +337,11 @@ Expected: tests PASS; Wrangler dry-run metadata contains both `kv_namespace:C` a
 git add packages/shared apps/installer apps/installer-worker README.md docs scripts/release-install-contract.test.ts AGENTS.md
 git commit -m "feat: provision D1 in one-click installer"
 ```
+
 ### Task 3: PBKDF2 admin auth, D1 sessions and CSRF
 
 **Files:**
+
 - Create: `deploy/worker/src/db/auth.ts`
 - Create: `deploy/worker/src/db/auth.test.ts`
 - Create: `deploy/worker/src/db/audit.ts`
@@ -318,6 +353,7 @@ git commit -m "feat: provision D1 in one-click installer"
 - Modify: `deploy/worker/src/panel.ts:1-157` only to retain a compatibility login handoff until the SPA replaces it in Task 8.
 
 **Interfaces:**
+
 - `ensureAdminCredential(db, configuredSecret, installGeneration, now): Promise<AdminCredential>` synchronizes D1 from `ADMIN_PASSWORD` exactly once when `installation_state.admin_bootstrap_generation !== INSTALL_GENERATION`.
 - `verifyAdminCredential(db, candidate): Promise<AdminCredential | null>` verifies only the authoritative D1 hash after bootstrap, using PBKDF2-HMAC-SHA-256, 100,000 iterations.
 - `createSession(db, passwordVersion, now): Promise<{sessionToken:string;csrfToken:string;expiresAt:number}>` with 12-hour absolute TTL.
@@ -348,6 +384,7 @@ it('does not revert a UI password change in the same install generation but rese
   expect(await countSessions(db)).toBe(0);
 });
 ```
+
 ```ts
 it('rejects stale session versions and CSRF mismatches without account-detail leaks', async () => {
   const session = await loginFixture();
@@ -361,7 +398,9 @@ it('rejects stale session versions and CSRF mismatches without account-detail le
 it('throttles the ninth failed login in 15 minutes without storing the raw source IP', async () => {
   const request = requestFromIp('203.0.113.7');
   for (let i = 0; i < 8; i += 1) await recordFailedLogin(db, seed, request, 10_000 + i);
-  await expect(checkLoginThrottle(db, seed, request, 20_000)).resolves.toMatchObject({ allowed: false });
+  await expect(checkLoginThrottle(db, seed, request, 20_000)).resolves.toMatchObject({
+    allowed: false,
+  });
   expect(JSON.stringify(db.rows())).not.toContain('203.0.113.7');
 });
 ```
@@ -378,17 +417,32 @@ Expected: FAIL because credential/session APIs do not exist.
 const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_HASH = 'SHA-256';
 
-async function derivePasswordHash(password: string, salt: Uint8Array, iterations = PBKDF2_ITERATIONS) {
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  return new Uint8Array(await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', hash: PBKDF2_HASH, salt, iterations }, key, 256,
-  ));
+async function derivePasswordHash(
+  password: string,
+  salt: Uint8Array,
+  iterations = PBKDF2_ITERATIONS,
+) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  );
+  return new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: PBKDF2_HASH, salt, iterations },
+      key,
+      256,
+    ),
+  );
 }
 ```
 
 `ensureAdminCredential` first calls `ensureInstallationState`. When the stored bootstrap generation differs from `env.INSTALL_GENERATION`, it PBKDF2-hashes the current `env.ADMIN_PASSWORD`, upserts the admin credential, increments `password_version` if a credential already exists, deletes all sessions, and updates `admin_bootstrap_generation` in the same D1 batch. When the generation already matches, it never compares or rewrites from `ADMIN_PASSWORD`; this prevents an in-panel password change from being reverted on the next request. Reinstalling with a fresh generation intentionally resets the admin password to the password the installer shows while preserving the D1 installation seed and every user secret version.
 
 `changeAdminPassword` must require the current D1 password, write a new random salt/hash, increment `password_version`, and delete **all** sessions in the same D1 batch. The caller receives cleared auth cookies and must log in again.
+
 - [ ] **Step 4: Implement session cookies and CSRF**
 
 Use cookie names `tn_session` and `tn_csrf`. `tn_session` is `HttpOnly; Secure; SameSite=Strict; Path=/`; `tn_csrf` is `Secure; SameSite=Strict; Path=/` and readable by the SPA. Generate both values from 32 random bytes and store only SHA-256 hashes in D1. `createSession` deletes expired sessions in the same batch as the new insert. Do not update `last_seen_at` on every request; Phase A avoids a session-write-per-API-call pattern.
@@ -422,9 +476,11 @@ Run: `pnpm --dir deploy/worker typecheck`
 git add deploy/worker/src/db deploy/worker/src/security deploy/worker/src/routes/auth* deploy/worker/src/index.ts deploy/worker/src/panel.ts AGENTS.md
 git commit -m "feat: add secure admin sessions"
 ```
+
 ### Task 4: User repository, validated admin API and audit trail
 
 **Files:**
+
 - Create: `deploy/worker/src/db/users.ts`
 - Create: `deploy/worker/src/db/users.test.ts`
 - Create: `deploy/worker/src/routes/adminApi.ts`
@@ -434,6 +490,7 @@ git commit -m "feat: add secure admin sessions"
 - Modify: `packages/shared/src/index.ts` with JSON DTO types shared by panel tests/build only; Worker must not gain a workspace runtime dependency.
 
 **Interfaces:**
+
 - `UserRecord`: `{id,name,enabled,quotaBytes,dailyQuotaBytes,expiresAt,totalUsedBytes,allowVless,allowTrojan,allowXhttp,notes,lastSubscriptionAt,lastTunnelAt,version,createdAt,updatedAt}`.
 - `createUser(db,input,now): Promise<UserRecord>`, `listUsers(db): Promise<UserRecord[]>`, `getUser(db,id)`, `updateUser(db,id,input,expectedVersion,now)`, `deleteUser(db,id)`.
 - `writeAudit(db,{ts,actor,action,targetType,targetId,detail})`; `detail` accepts only a known redacted object, never arbitrary request bodies.
@@ -451,12 +508,14 @@ it.each([
   await expect(createUser(db, input as never, now)).rejects.toMatchObject({ code });
 });
 ```
+
 ```ts
 it('uses optimistic versioning so stale concurrent edits fail with 409', async () => {
   const user = await createUser(db, { name: 'A' }, now);
   await updateUser(db, user.id, { name: 'B' }, user.version, now + 1);
-  await expect(updateUser(db, user.id, { name: 'C' }, user.version, now + 2))
-    .rejects.toMatchObject({ code: 'version-conflict' });
+  await expect(updateUser(db, user.id, { name: 'C' }, user.version, now + 2)).rejects.toMatchObject(
+    { code: 'version-conflict' },
+  );
 });
 ```
 
@@ -484,6 +543,7 @@ GET    /api/security/logins?limit=50
 ```
 
 All non-GET routes require valid admin session + CSRF. Audit and login-event reads clamp `limit` to `1..100`. Unknown UUIDs return generic 404. Stale `version` returns 409. Never echo raw SQL/D1 errors. API serializers expose `lastSubscriptionAt` and `lastTunnelAt` but never the installation seed, lookup hashes or raw credential material.
+
 - [ ] **Step 5: Audit every mutation with redacted details**
 
 Use stable action names: `user.create`, `user.update`, `user.delete`, `user.pause`, `user.resume`. Audit details may include changed field names and numeric before/after quota/expiry values; they must not include derived secrets, subscription tokens, protocol credentials, admin password, session cookie, CSRF token, installation seed or Cloudflare token. `writeAudit` retains at most the newest 5,000 audit rows; login-event writes retain at most the newest 1,000 rows. Retention cleanup is part of the same D1 batch as the new insert so growth is bounded without a cron/VPS dependency.
@@ -508,9 +568,11 @@ Run: `pnpm --dir deploy/worker typecheck`
 git add deploy/worker/src/db/users* deploy/worker/src/db/audit* deploy/worker/src/routes/adminApi* deploy/worker/src/index.ts packages/shared/src AGENTS.md
 git commit -m "feat: add audited multi-user control API"
 ```
+
 ### Task 5: Derived per-user secrets and private subscriptions
 
 **Files:**
+
 - Create: `deploy/worker/src/security/derivedSecrets.ts`
 - Create: `deploy/worker/src/security/derivedSecrets.test.ts`
 - Modify: `deploy/worker/src/db/users.ts`
@@ -521,6 +583,7 @@ git commit -m "feat: add audited multi-user control API"
 - Modify: `deploy/worker/src/routes/adminApi.ts`
 
 **Interfaces:**
+
 - `deriveSubscriptionToken(seed,userId,version): Promise<string>`; `deriveVlessUuid(...)`; `deriveTrojanPassword(...)`.
 - `subscriptionLookupHash(token): Promise<string>` and protocol-specific `credentialLookupHash` functions.
 - `createUserSecrets(db, seed, userId, now)` writes only version numbers + lookup hashes; raw per-user tokens/passwords are reproducible from HMAC while the persistent installation seed remains internal to D1 and is never returned by an API.
@@ -540,6 +603,7 @@ it('derives stable purpose-separated secrets without persisting plaintext', asyn
   expect(await deriveSubscriptionToken(seed, 'user-1', 2)).not.toBe(sub);
 });
 ```
+
 - [ ] **Step 2: Prove RED**
 
 Run: `pnpm --dir deploy/worker test -- src/security/derivedSecrets.test.ts src/routes/subscription.test.ts src/subscription/subscription.test.ts`
@@ -552,7 +616,9 @@ Expected: FAIL because derived secrets and per-user token resolution do not exis
 async function deriveBytes(seed: string, purpose: string, userId: string, version: number) {
   const raw = base64urlDecode(seed);
   if (raw.byteLength !== 32) throw new Error('invalid-installation-seed');
-  const key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, [
+    'sign',
+  ]);
   const msg = new TextEncoder().encode(`tn:v1:${purpose}:${userId}:${version}`);
   return new Uint8Array(await crypto.subtle.sign('HMAC', key, msg));
 }
@@ -571,6 +637,7 @@ GET  /api/users/:id/access              -> subscription URL + QR payload metadat
 ```
 
 Rotation increments only the requested version and replaces its lookup hash; the old token/credential must fail immediately on the next lookup.
+
 - [ ] **Step 5: Extend subscription routing without breaking the owner link**
 
 `handleSubscriptionRoute` now receives `env`. For `/sub/<token>`:
@@ -602,9 +669,11 @@ Run: `pnpm --dir deploy/worker test -- src/security/derivedSecrets.test.ts src/r
 git add deploy/worker/src/security/derivedSecrets* deploy/worker/src/db/users.ts deploy/worker/src/routes/subscription* deploy/worker/src/routes/adminApi.ts deploy/worker/src/subscription AGENTS.md
 git commit -m "feat: add private per-user subscriptions"
 ```
+
 ### Task 6: Per-user tunnel authentication with legacy-owner fallback
 
 **Files:**
+
 - Create: `deploy/worker/src/security/tunnelAuth.ts`
 - Create: `deploy/worker/src/security/tunnelAuth.test.ts`
 - Modify: `deploy/worker/src/core/uuid.ts`
@@ -617,6 +686,7 @@ git commit -m "feat: add private per-user subscriptions"
 - Modify: `deploy/worker/src/db/users.ts`
 
 **Interfaces:**
+
 - `TunnelChannel = 'vless-ws' | 'trojan-ws' | 'vless-xhttp'`; `TunnelPrincipal = { kind:'user'; userId:string; channel:TunnelChannel } | { kind:'legacy'; channel:TunnelChannel }`.
 - `TunnelAuthResult = {kind:'authorized';principal:TunnelPrincipal} | {kind:'not-found'} | {kind:'denied-user'}`.
 - `parseVlessCandidate(input)` and `parseTrojanCandidate(input)` expose presented credential bytes plus destination/payload without authorizing them.
@@ -629,7 +699,12 @@ git commit -m "feat: add private per-user subscriptions"
 it('does not connect TCP until async per-user authorization succeeds', async () => {
   const auth = deferred<ParseResult<ParsedFirstPacket>>();
   const connectTcp = vi.fn();
-  runWebSocketTunnel({ webSocket, parseFirstPacket: () => auth.promise, connectTcp, selfHost: 'w.example' });
+  runWebSocketTunnel({
+    webSocket,
+    parseFirstPacket: () => auth.promise,
+    connectTcp,
+    selfHost: 'w.example',
+  });
   emitBinary(validVlessPacket);
   await tick();
   expect(connectTcp).not.toHaveBeenCalled();
@@ -638,12 +713,19 @@ it('does not connect TCP until async per-user authorization succeeds', async () 
   expect(connectTcp).not.toHaveBeenCalled();
 });
 ```
+
 ```ts
-it.each(['disabled','expired','total-quota','daily-quota'] as const)(
-  'rejects %s users and does not fall through to the legacy owner credential', async (state) => {
+it.each(['disabled', 'expired', 'total-quota', 'daily-quota'] as const)(
+  'rejects %s users and does not fall through to the legacy owner credential',
+  async (state) => {
     const fixture = await userCredentialFixture(state);
-    await expect(resolveTunnelPrincipal(db, fixture.channel, fixture.presented, now)).resolves.toEqual({ kind: 'denied-user' });
-    expect(await authorizeCandidate(fixture.candidate, fixture.legacyConfig)).toMatchObject({ kind: 'error', code: 'auth' });
+    await expect(
+      resolveTunnelPrincipal(db, fixture.channel, fixture.presented, now),
+    ).resolves.toEqual({ kind: 'denied-user' });
+    expect(await authorizeCandidate(fixture.candidate, fixture.legacyConfig)).toMatchObject({
+      kind: 'error',
+      code: 'auth',
+    });
   },
 );
 ```
@@ -663,6 +745,7 @@ Expected: FAIL because candidate parsing, async parsers and D1 authorization do 
 - [ ] **Step 4: Implement D1 tunnel principal resolution**
 
 Hash the exact wire credential bytes with SHA-256 hex, map `vless-ws`/`vless-xhttp` to the VLESS credential row and `trojan-ws` to Trojan, join `users`, and read today's `usage_daily` row. Enforce `allow_vless`, `allow_xhttp`, or `allow_trojan` according to the requested channel. If a credential row exists but its user is disabled/expired/over quota/channel-disabled, return `denied-user` so the route **must not** try legacy fallback. If no credential row exists, return `not-found`, allowing a constant-time legacy-owner credential check. Successful resolution returns `authorized` with the exact channel on the principal.
+
 - [ ] **Step 5: Make both streaming transports await authorization before TCP connect**
 
 Change the parser call in WebSocket and XHTTP to:
@@ -691,9 +774,11 @@ Expected: existing VLESS-WS/Trojan-WS/XHTTP/negative-auth E2E remains green befo
 git add deploy/worker/src/core/uuid.ts deploy/worker/src/protocols deploy/worker/src/transport deploy/worker/src/routes/ws* deploy/worker/src/routes/xhttp* deploy/worker/src/security/tunnelAuth* deploy/worker/src/db/users.ts AGENTS.md
 git commit -m "feat: authenticate proxy tunnels per user"
 ```
+
 ### Task 7: Coarse usage accounting and quota checkpoints
 
 **Files:**
+
 - Create: `deploy/worker/src/db/usage.ts`
 - Create: `deploy/worker/src/db/usage.test.ts`
 - Create: `deploy/worker/src/transport/usageMeter.ts`
@@ -704,6 +789,7 @@ git commit -m "feat: authenticate proxy tunnels per user"
 - Modify: `deploy/worker/src/routes/adminApi.ts` and `adminApi.test.ts`
 
 **Interfaces:**
+
 - `readAccessState(db,userId,now): Promise<{allowed:boolean;reason?:string;totalUsedBytes:number;todayUsedBytes:number}>`.
 - `recordUsageDelta(db,userId,{uploadBytes,downloadBytes,connections},now): Promise<AccessState>` atomically increments `users.total_used_bytes`, updates `users.last_tunnel_at`, and increments UTC `usage_daily`.
 - `UsageMeter` exposes `addUpload(bytes)`, `addDownload(bytes)`, `flush(force?)`, and `close()`; only per-user principals receive a meter.
@@ -718,14 +804,23 @@ it('atomically accumulates concurrent deltas without lost updates', async () => 
     recordUsageDelta(db, userId, { uploadBytes: 400, downloadBytes: 500, connections: 1 }, now),
   ]);
   expect(await readUsage(db, userId, '2026-09-20')).toMatchObject({
-    uploadBytes: 500, downloadBytes: 700, totalBytes: 1200, connections: 2,
+    uploadBytes: 500,
+    downloadBytes: 700,
+    totalBytes: 1200,
+    connections: 2,
   });
 });
 ```
+
 ```ts
 it('does not write per packet and flushes at threshold, age, and close', async () => {
   const write = vi.fn().mockResolvedValue({ allowed: true, totalUsedBytes: 0, todayUsedBytes: 0 });
-  const meter = createUsageMeter({ write, now: fakeNow, byteThreshold: 4 * 1024 * 1024, ageMs: 60_000 });
+  const meter = createUsageMeter({
+    write,
+    now: fakeNow,
+    byteThreshold: 4 * 1024 * 1024,
+    ageMs: 60_000,
+  });
   meter.addUpload(1024);
   meter.addDownload(2048);
   expect(write).not.toHaveBeenCalled();
@@ -764,6 +859,7 @@ ON CONFLICT(user_id, day_utc) DO UPDATE SET
 ```
 
 After the transaction, read current total/daily quota state once and return it. Use `YYYY-MM-DD` UTC derived from the injected epoch time. Quota semantics are explicit: `NULL` means unlimited; numeric `0` means exhausted/no allowance; an expiry `<= now` is expired.
+
 - [ ] **Step 4: Implement the meter without per-packet writes**
 
 The meter starts with `connectionsPending = 1`; only the first successful flush includes that connection increment. Each `addUpload/addDownload` changes local counters only. `flush(false)` returns immediately unless pending bytes reach 4 MiB or age reaches 60 seconds. `close()` forces a flush when either bytes **or the one pending connection count** remain, so a successful zero-payload tunnel can still be counted once. Serialize flushes through one promise chain so two simultaneous threshold crossings cannot submit the same delta twice.
@@ -798,9 +894,11 @@ Run: `pnpm --dir deploy/worker test -- src/db/usage.test.ts src/transport/usageM
 git add deploy/worker/src/db/usage* deploy/worker/src/transport deploy/worker/src/routes/ws* deploy/worker/src/routes/xhttp* deploy/worker/src/routes/adminApi* AGENTS.md
 git commit -m "feat: add quota-aware usage accounting"
 ```
+
 ### Task 8: Replace the simple panel with the real embedded React control plane
 
 **Files:**
+
 - Create: `apps/panel/src/api/client.ts`
 - Create: `apps/panel/src/auth/AuthGate.tsx`
 - Create: `apps/panel/src/pages/OverviewPage.tsx`
@@ -818,6 +916,7 @@ git commit -m "feat: add quota-aware usage accounting"
 - Modify: `apps/installer/src/App.tsx` and tests to surface `result.adminUrl`.
 
 **Interfaces:**
+
 - `PanelApi` wraps auth/session, overview, users, user access/rotation, usage, audit/login-events, password change and logout.
 - Mutating calls read `tn_csrf` from `document.cookie`, set `X-CSRF-Token`, and always use `credentials:'same-origin'`.
 - Worker serves the SPA at `/admin` and generated assets under `/panel-assets/*`; there is no runtime CDN, font, QR service or external JavaScript dependency.
@@ -826,12 +925,25 @@ git commit -m "feat: add quota-aware usage accounting"
 
 ```tsx
 it('shows real overview values and never the old hard-coded FRA/28ms preview', async () => {
-  render(<App api={fakeApi({ overview: { enabledUsers: 3, recentUsers: 2, todayBytes: 1234, totalBytes: 5678, expiryWarnings: 1 } })} />);
+  render(
+    <App
+      api={fakeApi({
+        overview: {
+          enabledUsers: 3,
+          recentUsers: 2,
+          todayBytes: 1234,
+          totalBytes: 5678,
+          expiryWarnings: 1,
+        },
+      })}
+    />,
+  );
   expect(await screen.findByText('3')).toBeVisible();
   expect(screen.queryByText('28 ms')).not.toBeInTheDocument();
   expect(screen.queryByText('FRA')).not.toBeInTheDocument();
 });
 ```
+
 ```tsx
 it('creates, pauses and rotates a user through CSRF-protected API calls', async () => {
   const api = fakeApi();
@@ -856,12 +968,18 @@ Expected: FAIL because the API client, real pages and embedded asset builder do 
 
 ```ts
 function csrfCookie(): string {
-  return document.cookie.split('; ').find((part) => part.startsWith('tn_csrf='))?.slice('tn_csrf='.length) ?? '';
+  return (
+    document.cookie
+      .split('; ')
+      .find((part) => part.startsWith('tn_csrf='))
+      ?.slice('tn_csrf='.length) ?? ''
+  );
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
-  if (init.method && init.method !== 'GET') headers.set('x-csrf-token', decodeURIComponent(csrfCookie()));
+  if (init.method && init.method !== 'GET')
+    headers.set('x-csrf-token', decodeURIComponent(csrfCookie()));
   headers.set('content-type', 'application/json');
   const response = await fetch(path, { ...init, headers, credentials: 'same-origin' });
   const body = await response.json();
@@ -871,6 +989,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 ```
 
 Login is the sole mutation exempt from CSRF because no authenticated cookie exists yet. A 401 from any authenticated request returns the SPA to the login view without exposing endpoint-specific details.
+
 - [ ] **Step 4: Build only working Phase A navigation and screens**
 
 Navigation contains **Overview, Users, Usage, Logs & Security** only. Do not show clickable ProxyIP/WARP/Fragment/Clean-IP/DNS pages until their later phases exist.
@@ -888,14 +1007,18 @@ Add matching FA/EN keys for every Phase A label/error/action. Keep `packages/i18
 Set Vite `base: '/panel-assets/'`. `scripts/build-panel-assets.mjs` reads `apps/panel/dist/index.html` plus every emitted asset and generates a deterministic TypeScript module:
 
 ```ts
-export const PANEL_INDEX_HTML = "<!doctype html>...";
+export const PANEL_INDEX_HTML = '<!doctype html>...';
 export const PANEL_ASSETS: Record<string, { contentType: string; body: string }> = {
-  '/panel-assets/assets/index-ABC.js': { contentType: 'text/javascript; charset=utf-8', body: '...' },
+  '/panel-assets/assets/index-ABC.js': {
+    contentType: 'text/javascript; charset=utf-8',
+    body: '...',
+  },
   '/panel-assets/assets/index-DEF.css': { contentType: 'text/css; charset=utf-8', body: '...' },
 };
 ```
 
 The generator rejects absolute `http://` or `https://` script/style/font references in built HTML/CSS. `panelAssets.ts` serves `/admin`/`/admin/` with no-store and assets with immutable cache headers plus `nosniff`, CSP/frame/referrer headers.
+
 - [ ] **Step 7: Make release builds regenerate panel assets before the edge artifact**
 
 Change `apps/panel/package.json` build to `vite build && node ../../scripts/build-panel-assets.mjs`. Change root scripts so `pnpm build` executes the panel build first, then `pnpm build:edge-artifact`, then the remaining workspace builds. Add a contract test that deliberately changes a panel sentinel string and proves the regenerated `dist/edge-worker.js` contains it; this prevents shipping a stale UI inside the installer artifact.
@@ -922,9 +1045,11 @@ Expected: no external runtime asset URLs; `/admin` assets are inside the Worker;
 git add apps/panel apps/installer packages/i18n scripts/build-panel-assets* deploy/worker/src/generated/panelAssets.ts deploy/worker/src/routes/panelAssets* deploy/worker/src/index.ts deploy/worker/src/panel.ts package.json dist apps/installer-worker/src/generated/edgeWorkerArtifact.ts AGENTS.md
 git commit -m "feat: ship the real control-plane dashboard"
 ```
+
 ### Task 9: Legacy upgrade, end-to-end gates, bilingual docs and real Cloudflare field gate
 
 **Files:**
+
 - Modify: `deploy/worker/test/protocol-e2e.mjs`
 - Create: `deploy/worker/test/phase-a-e2e.mjs`
 - Create: `deploy/worker/test/fixtures/legacy-protocol-config.json`
@@ -934,6 +1059,7 @@ git commit -m "feat: ship the real control-plane dashboard"
 - Modify: root `package.json`, `deploy/worker/package.json`, `apps/installer-worker/package.json` for release version parity.
 
 **Interfaces:**
+
 - Release candidate version: `0.3.0`; Worker `/health`, root package, installer-worker and artifact manifest must agree.
 - Upgrade path for an existing `workerName`: installer reuses `${workerName}-config` and `${workerName}-control`, uploads the new Worker with a fresh `INSTALL_GENERATION`, preserves the D1 installation seed and per-user secret versions, and leaves `protocol:config:v1` unchanged.
 - Phase A is not marked field-stable until the owner completes the real clean-account/upgrade checklist below.
@@ -952,6 +1078,7 @@ assert.deepEqual(await readKv('protocol:config:v1'), originalLegacyFixture);
 ```
 
 The D1 migration must never rewrite the existing owner UUID, Trojan password/hash, XHTTP path or subscription token.
+
 - [ ] **Step 2: Add a real Phase A local E2E user flow**
 
 `phase-a-e2e.mjs` starts Workerd/Wrangler with real local KV + D1 bindings, then:
@@ -980,6 +1107,7 @@ The script prints only user IDs/status counts; it must never print raw derived c
 Run tests that search generated Worker source, panel assets, installer dist and log fixtures for sentinel values `SECRET_TOKEN_SENTINEL`, `INSTALLATION_SEED_SENTINEL`, `ADMIN_PASSWORD_SENTINEL`, and a sample private subscription token. Expected: none appear except inside test source fixtures themselves.
 
 Add HTTP assertions for CSP, frame protection, referrer policy, `nosniff`, no-store on admin/API responses, secure auth cookies, sanitized D1/JSON errors, and generic 404 for private-token probing.
+
 - [ ] **Step 5: Bump to v0.3.0 and regenerate immutable artifacts only after E2E is green**
 
 Update root/Worker/installer-worker versions and `VERSION` in the Worker together. Run the panel build first, regenerate `deploy/worker/src/generated/panelAssets.ts`, then run `pnpm build:edge-artifact`; update manifest/hash contract tests so a stale Worker or stale panel asset fails CI.
@@ -990,7 +1118,7 @@ README + INSTALL_FA/EN must state the regular-user path exactly: hosted installe
 
 `SECURITY.md` documents D1 sessions, CSRF, PBKDF2, derived per-user credentials, redaction rules, installation-seed handling and the fact that subscription links are credentials. `CHANGELOG.md` lists only functionality proven by local gates; real Cloudflare field status remains explicitly pending until Step 8.
 
-- [ ] **Step 7: Run the complete local release gate fresh**
+- [x] **Step 7: Run the complete local release gate fresh**
 
 Run, in this order:
 
@@ -1003,7 +1131,8 @@ cd deploy/worker && node test/protocol-e2e.mjs && node test/phase-a-e2e.mjs
 cd ../.. && pnpm --dir deploy/worker exec wrangler deploy --dry-run --outdir /tmp/tn-v030-dry
 ```
 
-Expected: zero test/type/lint/format/build failures; legacy and per-user protocol E2E pass; generated artifact and panel are current; dry-run includes `C`, `DB`, `ADMIN_PASSWORD`, and `INSTALL_GENERATION` binding declarations without secret values; bundle stays under the 64 MiB uncompressed Worker limit.
+Expected: zero test/type/lint/format/build failures; legacy and per-user protocol E2E pass; generated artifact and panel are current; Wrangler dry-run includes the deployable `C`, `DB`, and `INSTALL_GENERATION` bindings without secret values; because Wrangler 4.135 does not enumerate `secrets.required` in the dry-run binding summary, the release contract separately requires `ADMIN_PASSWORD` in `wrangler.jsonc` `secrets.required` and verifies the real installer upload binds it as `secret_text` (never as `plain_text`); bundle stays under the 64 MiB uncompressed Worker limit.
+
 - [ ] **Step 8: Push the verified branch and run the real Cloudflare field checklist**
 
 Push `feat/complete-cloudflare-control-plane` only after Step 7 is green. Deploy a temporary hosted installer built from this exact commit. The owner performs two tests from the browser with no CLI:

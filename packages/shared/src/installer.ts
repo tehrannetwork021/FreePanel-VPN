@@ -1,5 +1,5 @@
 export type InstallStage =
-  'token' | 'account' | 'kv' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
+  'token' | 'account' | 'kv' | 'd1' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
 
 export type InstallErrorCode =
   | 'token-invalid'
@@ -8,6 +8,7 @@ export type InstallErrorCode =
   | 'invalid-worker-name'
   | 'invalid-admin-password'
   | 'kv-failed'
+  | 'd1-failed'
   | 'worker-upload-failed'
   | 'secret-failed'
   | 'subdomain-failed'
@@ -33,6 +34,8 @@ export type InstallResult = {
   workerUrl: string;
   workerName: string;
   version: string;
+  schemaVersion: number;
+  adminUrl: string;
 };
 
 export function validateWorkerName(input: string) {

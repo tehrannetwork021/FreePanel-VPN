@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
+import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
 
 let PORT = 0;
@@ -20,6 +21,8 @@ async function freePort() {
   });
 }
 const ADMIN_PASSWORD = 'task10-local-admin-password-2026';
+const LEGACY_UPGRADE = process.env.LEGACY_UPGRADE === '1';
+const LEGACY_FIXTURE_URL = new URL('./fixtures/legacy-protocol-config.json', import.meta.url);
 const TARGET_HOST = 'example.com';
 const TARGET_PORT = 80;
 const HTTP_REQUEST = `GET / HTTP/1.1\r\nHost: ${TARGET_HOST}\r\nConnection: close\r\n\r\n`;
@@ -78,6 +81,73 @@ async function waitForWorker() {
     await new Promise((r) => setTimeout(r, 250));
   }
   throw new Error('worker did not become ready');
+}
+
+async function readLegacyFixture() {
+  return JSON.parse(await readFile(LEGACY_FIXTURE_URL, 'utf8'));
+}
+
+function runLocalKv(args, state) {
+  const result = spawnSync(
+    process.execPath,
+    [
+      './node_modules/wrangler/bin/wrangler.js',
+      'kv',
+      'key',
+      ...args,
+      '--binding',
+      'C',
+      '--local',
+      '--persist-to',
+      state,
+    ],
+    {
+      cwd: new URL('..', import.meta.url),
+      encoding: 'utf8',
+      env: { ...process.env, WRANGLER_SEND_METRICS: 'false' },
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(`local kv command failed: ${(result.stderr || result.stdout).slice(-1000)}`);
+  }
+  return result.stdout.trim();
+}
+
+async function seedLegacyFixture(state) {
+  runLocalKv(['put', 'protocol:config:v1', '--path', fileURLToPath(LEGACY_FIXTURE_URL)], state);
+}
+
+function readLegacyKv(state) {
+  return runLocalKv(['get', 'protocol:config:v1', '--text'], state);
+}
+
+async function assertLegacyUpgrade(state) {
+  const fixture = await readLegacyFixture();
+  const healthResponse = await fetch(`${BASE}/health`);
+  const health = await healthResponse.json();
+  assert(healthResponse.ok && health.schemaVersion === 1, 'legacy upgrade did not reach schema 1');
+
+  const sub = await fetch(`${BASE}${fixture.subscription.path}/${fixture.subscription.token}`);
+  assert(sub.status === 200, `legacy subscription failed: ${sub.status}`);
+
+  const vless = await wsRoundTrip(fixture.vless.path, vlessPacket(fixture.vless.uuid));
+  assert(isHttpResponse(vless.slice(2)), 'legacy VLESS-WS did not connect');
+  const trojan = await wsRoundTrip(fixture.trojan.path, trojanPacket(fixture.trojan.password));
+  assert(isHttpResponse(trojan), 'legacy Trojan-WS did not connect');
+  const xhttp = await fetch(`${BASE}${fixture.xhttp.path}`, {
+    method: 'POST',
+    body: vlessPacket(fixture.vless.uuid),
+    duplex: 'half',
+  });
+  assert(xhttp.ok, `legacy XHTTP failed: ${xhttp.status}`);
+  const xhttpBytes = new Uint8Array(await xhttp.arrayBuffer());
+  assert(isHttpResponse(xhttpBytes.slice(2)), 'legacy XHTTP did not return target bytes');
+  const current = JSON.parse(readLegacyKv(state));
+  assert(
+    JSON.stringify(current) === JSON.stringify(fixture),
+    'legacy KV config changed during D1 upgrade',
+  );
+  console.log('PASS legacy-upgrade protocols');
 }
 
 async function setup() {
@@ -149,6 +219,7 @@ async function main() {
   const state = await mkdtemp(join(tmpdir(), 'tn-worker-e2e-'));
   PORT = await freePort();
   BASE = `http://127.0.0.1:${PORT}`;
+  if (LEGACY_UPGRADE) await seedLegacyFixture(state);
   const child = spawn(
     process.execPath,
     [
@@ -175,6 +246,10 @@ async function main() {
   });
   try {
     await waitForWorker();
+    if (LEGACY_UPGRADE) {
+      await assertLegacyUpgrade(state);
+      return;
+    }
     const owner = await setup();
     const vlessWs = new URL(
       owner.links.find((x) => x.startsWith('vless://') && x.includes('type=ws')),

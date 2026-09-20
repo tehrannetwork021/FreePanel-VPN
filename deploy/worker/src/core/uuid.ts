@@ -14,3 +14,9 @@ export function formatIpv6(bytes: Uint8Array): string {
   for (let i = 0; i < 16; i += 2) groups.push(((bytes[i]! << 8) | bytes[i + 1]!).toString(16));
   return groups.join(':');
 }
+
+export function bytesToUuid(bytes: Uint8Array): string {
+  if (bytes.length !== 16) throw new Error('invalid-uuid-bytes');
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}

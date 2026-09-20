@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { App } from './App';
+import { App, CLOUDFLARE_TOKEN_TEMPLATE_URL } from './App';
 import type { InstallerApi } from './installClient';
 
 function api(overrides: Partial<InstallerApi> = {}): InstallerApi {
@@ -16,6 +16,8 @@ function api(overrides: Partial<InstallerApi> = {}): InstallerApi {
       workerUrl: 'https://pvnetwork-client.example.workers.dev',
       workerName: 'pvnetwork-client',
       version: '0.1.0',
+      schemaVersion: 1,
+      adminUrl: 'https://pvnetwork-client.example.workers.dev/admin',
     }),
     ...overrides,
   } as InstallerApi;
@@ -31,6 +33,10 @@ describe('free Cloudflare key installer', () => {
     render(<App api={api()} />);
     expect(screen.getByRole('link', { name: 'ساخت کلید Cloudflare' })).toBeVisible();
     expect(screen.getByLabelText('Cloudflare API Token')).toHaveAttribute('type', 'password');
+    const permissions = JSON.parse(
+      new URL(CLOUDFLARE_TOKEN_TEMPLATE_URL).searchParams.get('permissionGroupKeys') ?? '[]',
+    );
+    expect(permissions).toContainEqual({ key: 'd1', type: 'edit' });
     expect(
       screen.queryByText(/OAuth|consent|Client ID|GitHub connection/i),
     ).not.toBeInTheDocument();
@@ -48,6 +54,8 @@ describe('free Cloudflare key installer', () => {
       workerUrl: 'https://pvnetwork-client.example.workers.dev',
       workerName: 'pvnetwork-client',
       version: '0.1.0',
+      schemaVersion: 1,
+      adminUrl: 'https://pvnetwork-client.example.workers.dev/admin',
     });
     render(<App api={api({ verifyToken, installPanel })} />);
 
@@ -77,7 +85,11 @@ describe('free Cloudflare key installer', () => {
       }),
     );
     expect(await screen.findByText('https://pvnetwork-client.example.workers.dev')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'باز کردن پنل' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'باز کردن پنل مدیریت' })).toHaveAttribute(
+      'href',
+      'https://pvnetwork-client.example.workers.dev/admin',
+    );
+    expect(screen.getByRole('link', { name: 'باز کردن Worker' })).toHaveAttribute(
       'href',
       'https://pvnetwork-client.example.workers.dev',
     );

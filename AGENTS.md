@@ -208,10 +208,125 @@
 - [x] Full design written to `docs/superpowers/specs/2026-09-20-cloudflare-only-complete-panel-design.md`.
 - [x] Owner reviewed and approved the written design — 2026-09-20.
 - [x] Phase A implementation plan written and self-reviewed: `docs/superpowers/plans/2026-09-20-phase-a-control-plane.md` — 2026-09-20.
-- [ ] Owner reviews the implementation plan and chooses the execution method before code changes begin.
+- [x] Owner reviewed the implementation plan and chose Native/inline execution — 2026-09-20.
 - [ ] Phase A implementation: D1 provisioning + migrations + multi-user/quota/expiry/private links/audit + redesigned dashboard shell.
 - [ ] Phase B implementation: native multi-format subscription engine.
 - [ ] Phase C implementation: Clean-IP/preferred endpoint platform + optional privacy-preserving community registry.
 - [ ] Phase D implementation: ProxyIP/chain/DNS/ECH/routing.
 - [ ] Phase E implementation: WARP/Fragment/extra clients/Shadowsocks only after separate tests.
 - [ ] Phase F: security hardening, Free-plan budget tests, clean-account real Cloudflare field verification and release docs.
+
+### Phase A Task 1 — D1 schema/migration engine — 2026-09-20
+
+- [x] RED observed: `pnpm --dir deploy/worker test -- src/db/migrations.test.ts` failed because `./migrations` did not exist.
+- [x] D1 schema v1 added with installation state, admin/session, users, credential indexes, subscription tokens, daily usage, audit/login/throttle tables.
+- [x] Persistent 32-byte installation seed initialization is race-safe (`INSERT OR IGNORE`) and corrupted state/checksum fails closed.
+- [x] Canonical SQL import is bundled as text; build script has `.sql` text loader and Wrangler has matching Text-module rule.
+- [x] `Env` now declares `DB` and `INSTALL_GENERATION`; local Wrangler config includes KV + D1 + install-generation bindings.
+- [x] GREEN: worker test suite 14 files / 78 tests passed, including 4 migration tests.
+- [x] GREEN: root suite 32 files / 128 tests passed after artifact-loader contract update.
+- [x] GREEN: `pnpm --dir deploy/worker typecheck` passed.
+- [x] Real local Wrangler D1: migration SQL applied twice idempotently; `installation_state`, `users`, `usage_daily`, `idx_sessions_expiry` verified present.
+- [x] Wrangler dry-run passed; bindings reported `C`, `DB`, `INSTALL_GENERATION`; upload 74.50 KiB / gzip 20.65 KiB.
+
+### Phase A Task 2 — One-click D1 provisioning — 2026-09-20
+
+- [x] RED observed: D1 resolver absent, D1/install-generation bindings absent, provisioning skipped D1, token template/docs lacked D1 Write, and `/health` did not prove schema readiness.
+- [x] Installer API now reuses/creates deterministic `${workerName}-control` D1 databases via Cloudflare API; retry resolves KV + D1 again instead of duplicating named resources.
+- [x] Worker upload metadata atomically binds `C`, `DB`, `ADMIN_PASSWORD`, and non-secret `INSTALL_GENERATION`.
+- [x] Installer token template/docs now require exactly Workers Scripts Edit, Workers KV Storage Edit, D1 Write, Account Settings Read.
+- [x] Provisioning health succeeds only when artifact version matches and Worker reports `d1:true` + `schemaVersion:1`; result includes `/admin` URL and schema version.
+- [x] Embedded Worker artifact regenerated from current source; migration SQL and D1 health gate verified present in `dist/edge-worker.js`.
+- [x] Tooling ruling verified: Wrangler Text modules require bare `.sql`; root/worker Vitest use test-only SQL text loaders. Worker Wrangler dry-run passes with canonical SQL bundled.
+- [x] GREEN: root suite 33 files / 130 tests passed.
+- [x] GREEN: root workspace typecheck passed; standalone Worker typecheck passed.
+- [x] GREEN: Worker Wrangler dry-run passed (80.08 KiB / gzip 22.05 KiB) with C + DB + INSTALL_GENERATION bindings.
+- [x] GREEN: installer-worker Wrangler dry-run build passed (93.12 KiB / gzip 25.08 KiB).
+
+### Phase A Task 3 — Secure admin auth/session/CSRF — 2026-09-20
+
+- [x] RED observed for missing PBKDF2 credential/session/auth-route APIs, then route-specific RED for session/logout/password CSRF behavior.
+- [x] Admin password is authoritative in D1 after one-time `INSTALL_GENERATION` bootstrap; PBKDF2-HMAC-SHA-256 uses 100,000 iterations and stores no plaintext password.
+- [x] D1 sessions store only hashed 32-byte tokens, use 12-hour absolute TTL, password-version invalidation, `HttpOnly; Secure; SameSite=Strict` session cookie, and D1-bound CSRF hash.
+- [x] Login throttle blocks the ninth failure in 15 minutes using HMAC(installation seed, source IP); raw IP and candidate password are never stored or logged.
+- [x] Login/session/logout/password routes and legacy setup handoff now use the same D1 credential authority; password changes invalidate every session.
+- [x] Real Workerd exposed D1 `exec()` newline semantics; migration execution now normalizes canonical SQL to one complete statement per line while checksum remains over exact source bytes.
+- [x] Workerd benchmark: 20 success median/p95 137.063/162.983 ms; 20 failure median/p95 131.522/151.766 ms wall-clock. Task 9 remains the Cloudflare Free CPU field gate.
+- [x] GREEN: focused Worker suite 18 files / 90 tests passed; root suite 36 files / 141 tests passed; root + Worker typechecks passed.
+- [x] GREEN: Worker Wrangler dry-run passed (97.62 KiB / gzip 26.21 KiB); installer-worker dry-run build passed (109.76 KiB / gzip 28.94 KiB).
+
+### Phase A Task 4 — Audited multi-user control API — 2026-09-20
+
+- [x] RED observed for absent user repository/Admin API, plus RED at Worker integration before `/api/overview` was routed.
+- [x] User CRUD validates bounded Unicode names/notes, safe quotas/expiry, protocol flags and unknown fields; IDs are UUIDv4 and updates use optimistic `version` checks.
+- [x] Authenticated REST endpoints now expose overview, users, audit and login-event reads; every mutation requires the D1 admin session plus matching CSRF.
+- [x] Mutations write redacted stable audit actions (`user.create/update/delete/pause/resume`); audit/login retention is bounded to 5,000/1,000 rows without cron/VPS.
+- [x] Malformed JSON, invalid UUIDs, oversized fields, invalid quota types/ranges, stale versions and bad CSRF return local 4xx codes without raw D1/SQL detail.
+- [x] Shared JSON DTOs added for panel/test consumers without introducing a Worker runtime workspace dependency.
+- [x] Real local Workerd+D1 smoke passed: health/login → user create → optimistic PATCH v1→v2 → audit read (`user.create`, `user.update`).
+- [x] GREEN: focused Worker suite 20 files / 111 tests passed; root suite 38 files / 162 tests passed; Worker + root workspace typechecks passed.
+- [x] GREEN: Worker Wrangler dry-run passed (112.99 KiB / gzip 29.37 KiB); installer-worker dry-run build passed (124.54 KiB / gzip 31.89 KiB).
+
+### Phase A Task 5 — Private derived per-user access — 2026-09-20
+
+- [x] RED observed for missing HMAC-derived secret module, per-user subscription lookup and access/rotation Admin API.
+- [x] Per-user subscription token, VLESS UUID and Trojan password are deterministically HMAC-derived from the persistent 32-byte installation seed with purpose/version separation.
+- [x] D1 persists only secret versions + SHA-256 lookup hashes; raw subscription/VLESS/Trojan secrets remain reproducible and are never stored.
+- [x] User creation can atomically batch the user row plus subscription/VLESS/Trojan indexes; per-secret rotation changes only the requested version/index.
+- [x] `/sub/<token>` preserves the legacy owner link and adds private per-user rendering with protocol toggles, expiry, enabled, total quota and UTC daily-quota checks.
+- [x] Invalid/probing/expired/disabled/exhausted tokens all return the same no-store `404 Not found`; old subscription tokens become invalid immediately after rotation.
+- [x] Authenticated access/rotation APIs expose QR-ready subscription metadata and current derived client credentials without installation seed/admin material.
+- [x] Workerd+D1 smoke passed v1 subscription → rotate → old 404/new 200; VLESS stayed stable and D1 index rows contained lookup hashes but no raw access secrets.
+- [x] GREEN: focused Worker suite 22 files / 121 tests passed; root suite 40 files / 172 tests passed; Worker + root typechecks passed.
+- [x] GREEN: Worker Wrangler dry-run passed (126.68 KiB / gzip 31.78 KiB); installer-worker dry-run build passed.
+
+### Phase A Task 6 — Per-user tunnel authentication — 2026-09-20
+
+- [x] RED observed for missing candidate parsers/tunnel resolver and for synchronous-only first-packet authorization.
+- [x] VLESS/Trojan parsing is split into candidate parsing plus legacy wrappers; legacy parser error/auth ordering remains regression-compatible.
+- [x] WebSocket and XHTTP transports now await async authorization before any TCP connect.
+- [x] D1 tunnel lookup hashes exact wire credentials; Trojan indexes normalize to the SHA-224 wire form while raw derived passwords remain unstored.
+- [x] Indexed users enforce enabled/expiry/total quota/daily quota plus per-channel VLESS/Trojan/XHTTP flags; denied indexed users never fall through to owner credentials.
+- [x] VLESS-WS, Trojan-WS and VLESS-XHTTP routes attach exact per-user principals; `not-found` alone may use constant-time legacy-owner fallback.
+- [x] Two independent VLESS users, per-user Trojan, paused-user denial, XHTTP channel authorization and owner compatibility are pinned in route/security tests.
+- [x] Protocol E2E passed: VLESS-WS, Trojan-WS, VLESS-XHTTP stream-one and negative-auth.
+- [x] GREEN: focused Worker suite 23 files / 134 tests passed; root suite 41 files / 185 tests passed; Worker + root workspace typechecks passed.
+- [x] GREEN: Worker Wrangler dry-run passed (132.29 KiB / gzip 32.73 KiB); installer-worker dry-run passed (142.53 KiB / gzip 34.97 KiB).
+
+### Phase A Task 7 — Coarse usage accounting and quota checkpoints — 2026-09-20
+
+- [x] RED observed for absent D1 usage repository/meter and for transports that did not account proxied payload.
+- [x] D1 usage writes atomically increment user totals + UTC daily upload/download/total/connections; `NULL` quota means unlimited and numeric `0` is exhausted.
+- [x] UsageMeter keeps packet traffic in memory and checkpoints only at 4 MiB, 60 seconds, or close; concurrent flushes are serialized and a zero-payload successful connection is counted once.
+- [x] WebSocket/XHTTP count proxied payload only (not handshake bytes or VLESS response headers) and stop after a checkpoint reports quota exhaustion.
+- [x] Legacy owner tunnels remain zero-accounting; only exact per-user tunnel principals receive a meter.
+- [x] `/api/usage`, `/api/users/:id/usage` and overview metrics expose UTC usage, enabled/recent users, today/total bytes and seven-day expiry warnings.
+- [x] Parallel-meter quota tests preserve both SQL deltas and converge to exhausted state without per-packet D1 writes.
+- [x] Real local Workerd+D1 smoke preserved concurrent deltas exactly: upload 500, download 700, total 1200, connections 2; aggregate/read-access matched the stored row.
+- [x] README labels enforcement honestly as periodic edge quota enforcement, not exact packet billing; overshoot bound is checkpoint size × concurrent connections.
+- [x] GREEN: Worker suite 25 files / 146 tests passed; root suite 43 files / 197 tests passed; Worker + root workspace typechecks passed.
+- [x] GREEN: protocol E2E passed all four gates; Worker Wrangler dry-run passed (143.40 KiB / gzip 34.89 KiB); installer-worker dry-run passed (153.22 KiB / gzip 36.97 KiB).
+
+### Phase A Task 8 — Embedded React control-plane dashboard — 2026-09-21
+
+- [x] Real React `/admin` replaces the placeholder owner UI and keeps a login gate backed by D1 sessions/CSRF.
+- [x] Overview, Users, Usage and Security/Audit views consume the real Worker APIs; FA RTL and EN LTR are covered by UI/browser tests.
+- [x] User create/edit/pause/resume, quota/expiry, private access/QR and rotation workflows are wired to production APIs rather than demo state.
+- [x] Vite output is converted into committed `panelAssets.ts` and embedded into the Worker; no external runtime JS/CSS dependency is required.
+- [x] Public `/` is a neutral status page; `/admin` is the supported management UI while legacy `/setup` and `/api/setup` remain compatibility endpoints.
+- [x] Build/test/typecheck/dry-run gate passed before commit `586fcbe` (`feat: embed real React control plane`).
+
+### Phase A Task 9 — Legacy/release gates — 2026-09-21
+
+- [x] Step 1 legacy-upgrade regression: empty D1 migrates to schema 1 while exact existing `protocol:config:v1` remains unchanged; legacy owner subscription + VLESS-WS/Trojan-WS/XHTTP pass (`927f9af`).
+- [x] Step 2 real Phase A local E2E: login → create user → private subscription → Xray VLESS-WS/Trojan-WS/VLESS-XHTTP → usage → pause/resume → quota denial → token rotation → credential rotation → legacy compatibility (`180da4b`).
+- [x] Step 2 portability hardening: Xray-core `26.3.27` is pinned, SHA-256 verified and cached outside the repo when `XRAY_BIN` is not supplied; clean-HOME provisioning + full flow PASS (`e257104`).
+- [x] Step 3 browser E2E covers the deployed dashboard workflows and responsive installer/dashboard UX (`dd7119b`).
+- [x] Step 4 security regression gates cover secret sentinels, HTTP hardening, cookies, sanitized errors and private-token probing (`354d445`).
+- [x] Step 5 release state bumped in lockstep to `0.3.0`; stale-manifest RED was observed before regeneration, then panel → edge artifact regeneration produced verified SHA-256 and version parity (`e5ec6f0`).
+- [x] Step 6 bilingual Phase A operator/user/security docs verified; README/install/security/changelog contracts and formatting PASS.
+- [x] Step 7 complete fresh local release gate: `pnpm install --frozen-lockfile`; `pnpm check` PASS (48 files / 214 tests at the full gate); Playwright PASS (10 passed / 2 intentional project skips); standalone Worker check PASS (26 files / 152 tests); owner protocol E2E PASS (VLESS-WS, Trojan-WS, VLESS-XHTTP stream-one, negative auth); Phase A Xray E2E PASS through usage/pause/resume/quota/token+credential rotation/legacy compatibility; Wrangler 4.135 dry-run PASS with `C`, `DB`, `INSTALL_GENERATION`; `ADMIN_PASSWORD` separately verified in `secrets.required` and installer upload metadata as `secret_text`; generated Worker contains no secret sentinel/value; dry bundle 451,007 bytes (<64 MiB). Follow-up release/security contract run PASS (48 files / 215 tests).
+- [ ] Step 8 real Cloudflare clean-account + existing-v0.2 field checklist. **Do not mark stable before this passes.**
+- [ ] Step 9 release-candidate ledger/push state after local gate; field results must be a separate evidence commit.
+
+Current implementation branch: `feat/complete-cloudflare-control-plane`. Older branch names in historical ledger entries are retained only as history and are not the current execution target.

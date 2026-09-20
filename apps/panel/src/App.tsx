@@ -1,128 +1,112 @@
-import { useState } from 'react';
-import { Activity, Gauge, Network, RadioTower, Route, ShieldCheck, Waypoints } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { BarChart3, Gauge, Languages, RadioTower, ShieldCheck, UsersRound } from 'lucide-react';
 import { createTranslator, getDirection, type Locale } from '@tehrannetwork/i18n';
-import { AppShell, MetricCard, NetworkStatus, type NavItem } from '@tehrannetwork/ui';
+import { AuthGate } from './auth/AuthGate';
+import { browserPanelApi, type PanelApi } from './api/client';
+import { OverviewPage } from './pages/OverviewPage';
+import { UsersPage } from './pages/UsersPage';
+import { UsagePage } from './pages/UsagePage';
+import { SecurityPage } from './pages/SecurityPage';
 import './app.css';
 
-export function App() {
+type Page = 'overview' | 'users' | 'usage' | 'security';
+type Props = { api?: PanelApi };
+
+export function App({ api = browserPanelApi }: Props) {
   const [locale, setLocale] = useState<Locale>('fa');
-  const t = createTranslator(locale);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [page, setPage] = useState<Page>('overview');
+  const t = useMemo(() => createTranslator(locale), [locale]);
   const dir = getDirection(locale);
 
-  const nav: NavItem[] = [
-    { id: 'overview', label: t('nav.overview'), icon: <Gauge size={17} />, active: true },
-    { id: 'protocols', label: t('nav.protocols'), icon: <Waypoints size={17} /> },
-    { id: 'endpoints', label: t('nav.endpoints'), icon: <Network size={17} /> },
-    { id: 'routing', label: t('nav.routing'), icon: <Route size={17} /> },
-    { id: 'security', label: t('nav.security'), icon: <ShieldCheck size={17} /> },
+  useEffect(() => {
+    let active = true;
+    api
+      .session()
+      .then((session) => {
+        if (active) setAuthenticated(session.authenticated);
+      })
+      .catch(() => {
+        if (active) setAuthenticated(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api]);
+
+  const nav = [
+    { id: 'overview' as const, label: t('nav.overview'), icon: <Gauge size={17} /> },
+    { id: 'users' as const, label: t('nav.users'), icon: <UsersRound size={17} /> },
+    { id: 'usage' as const, label: t('nav.usage'), icon: <BarChart3 size={17} /> },
+    { id: 'security' as const, label: t('nav.securityLogs'), icon: <ShieldCheck size={17} /> },
   ];
+  const loseAuth = () => setAuthenticated(false);
 
   return (
-    <div data-testid="dashboard" dir={dir}>
-      <AppShell
-        dir={dir}
-        brand="Tehran Network"
-        navigation={nav}
-        localeLabel={locale.toUpperCase()}
+    <div className="panel-root" dir={dir}>
+      <AuthGate
+        api={api}
+        authenticated={authenticated}
+        t={t}
+        onAuthenticated={() => setAuthenticated(true)}
+        onAuthLost={loseAuth}
       >
-        <header className="dash-head">
-          <div>
-            <span className="dash-eyebrow">
-              <RadioTower size={14} />
-              {t('dashboard.eyebrow')}
-            </span>
-            <h1>{t('dashboard.title')}</h1>
-            <p>{t('dashboard.subtitle')}</p>
-          </div>
-          <div className="dash-head__actions">
-            <NetworkStatus state="healthy" label={t('status.online')} />
+        <div className="control-shell" data-testid="dashboard" dir={dir}>
+          <aside className="control-rail">
+            <div className="panel-brand">
+              <span className="panel-brand__mark">
+                <RadioTower size={21} />
+              </span>
+              <div>
+                <strong>Tehran Network</strong>
+                <small>Edge Control Plane</small>
+              </div>
+            </div>
+            <nav className="control-nav" aria-label="Primary navigation">
+              {nav.map((item) => (
+                <button
+                  className={page === item.id ? 'is-active' : ''}
+                  type="button"
+                  key={item.id}
+                  onClick={() => setPage(item.id)}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
             <button
-              className="language-button"
+              className="rail-language"
               type="button"
               aria-label={locale === 'fa' ? 'English' : 'فارسی'}
               onClick={() => setLocale(locale === 'fa' ? 'en' : 'fa')}
             >
-              {t('dashboard.language')}
+              <Languages size={16} />
+              <span>{locale === 'fa' ? 'English' : 'فارسی'}</span>
             </button>
-          </div>
-        </header>
-
-        <section className="metric-grid" aria-label="Network metrics">
-          <MetricCard
-            title={t('dashboard.cloudflare')}
-            value={t('dashboard.connected')}
-            supporting="FRA"
-            accent="network"
-            icon={<RadioTower size={17} />}
-          />
-          <MetricCard
-            title={t('dashboard.protocols')}
-            value={t('dashboard.active')}
-            supporting="VLESS · Trojan · XHTTP"
-            accent="protocol"
-            icon={<Waypoints size={17} />}
-          />
-          <MetricCard
-            title={t('dashboard.endpoints')}
-            value={t('dashboard.healthy')}
-            supporting="Auto-ranked"
-            accent="health"
-            icon={<Network size={17} />}
-          />
-          <MetricCard
-            title={t('dashboard.latency')}
-            value="28 ms"
-            supporting={t('dashboard.bestRoute')}
-            accent="routing"
-            icon={<Activity size={17} />}
-          />
-        </section>
-
-        <section className="dashboard-grid">
-          <article className="network-map panel-card">
-            <div className="panel-title">
-              <span>{t('dashboard.map')}</span>
-              <NetworkStatus state="healthy" label="Live" />
-            </div>
-            <div className="map-stage" aria-label="Edge network visualization">
-              <span className="edge-node edge-node--main">FRA</span>
-              <span className="edge-node edge-node--a">AMS</span>
-              <span className="edge-node edge-node--b">WAW</span>
-              <span className="edge-node edge-node--c">CDG</span>
-              <svg viewBox="0 0 600 260" role="img" aria-label="Active edge routes">
-                <path d="M300 92 C225 88 175 130 115 175" />
-                <path d="M300 92 C345 110 385 135 430 184" />
-                <path d="M300 92 C405 76 475 96 520 140" />
-              </svg>
-            </div>
-          </article>
-          <article className="health-card panel-card">
-            <div className="panel-title">
-              <span>{t('dashboard.health')}</span>
-              <strong>94%</strong>
-            </div>
-            <div className="health-ring">
-              <span>
-                94<small>%</small>
-              </span>
-            </div>
-            <div className="health-list">
-              <div>
-                <span>VLESS</span>
-                <NetworkStatus state="healthy" label={t('status.online')} />
+          </aside>
+          <main className="control-main">
+            <header className="mobile-topbar">
+              <div className="panel-brand panel-brand--mobile">
+                <span className="panel-brand__mark">
+                  <RadioTower size={19} />
+                </span>
+                <strong>Tehran Network</strong>
               </div>
-              <div>
-                <span>Trojan</span>
-                <NetworkStatus state="healthy" label={t('status.online')} />
-              </div>
-              <div>
-                <span>XHTTP</span>
-                <NetworkStatus state="checking" label="Checking" />
-              </div>
+            </header>
+            <div className="control-content">
+              {page === 'overview' ? (
+                <OverviewPage api={api} t={t} onUnauthorized={loseAuth} />
+              ) : null}
+              {page === 'users' ? <UsersPage api={api} t={t} onUnauthorized={loseAuth} /> : null}
+              {page === 'usage' ? <UsagePage api={api} t={t} onUnauthorized={loseAuth} /> : null}
+              {page === 'security' ? (
+                <SecurityPage api={api} t={t} onUnauthorized={loseAuth} onLoggedOut={loseAuth} />
+              ) : null}
             </div>
-          </article>
-        </section>
-      </AppShell>
+          </main>
+        </div>
+      </AuthGate>
     </div>
   );
 }

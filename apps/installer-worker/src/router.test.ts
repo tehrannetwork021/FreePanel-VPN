@@ -21,6 +21,8 @@ function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
       workerUrl: 'https://pvnetwork-client.sub.workers.dev',
       workerName: 'pvnetwork-client',
       version: '0.1.0',
+      schemaVersion: 1,
+      adminUrl: 'https://pvnetwork-client.sub.workers.dev/admin',
     } satisfies InstallResult),
     ...overrides,
   } as RouterDeps;
