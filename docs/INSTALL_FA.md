@@ -10,6 +10,20 @@ https://tehran-network-installer.honored-feather.workers.dev
 
 Installer فقط کنترل‌پلین نصب است؛ ترافیک VPN شما از آن عبور نمی‌کند و پنل نهایی بعد از نصب مستقل است.
 
+### مسیر جایگزین: نصب یک‌کلیکی از GitHub
+
+اگر Installer عمومی در دسترس نبود یا می‌خواهید Installer مخصوص خودتان را داشته باشید، دکمه رسمی Cloudflare را باز کنید:
+
+https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/one-click/apps/installer-worker
+
+1. Cloudflare صفحه **Accounts** را باز می‌کند؛ این رفتار طبیعی Deploy Button است.
+2. Account مقصد را انتخاب کنید.
+3. Cloudflare پروژه self-contained را از branch دائمی `one-click` می‌سازد و Deploy می‌کند.
+4. URL جدید `*.workers.dev` را باز کنید؛ این همان Installer شخصی شماست.
+5. از داخل آن Generate Key → Verify → Install را انجام دهید.
+
+برای این مسیر هم VPS، Docker، دامنه اختصاصی، Wrangler یا ترمینال لازم نیست.
+
 ### گام ۲ — ساخت کلید Cloudflare
 
 روی **ساخت کلید Cloudflare / Generate Cloudflare Key** بزنید و توکن Scoped بسازید. دسترسی‌های لازم:

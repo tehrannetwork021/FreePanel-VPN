@@ -19,6 +19,11 @@
 
 [![Install Free on Cloudflare](https://img.shields.io/badge/Install%20Free%20on%20Cloudflare-OPEN%20INSTALLER-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://tehran-network-installer.honored-feather.workers.dev)
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/one-click/apps/installer-worker)
+
+**GitHub one-click fallback:** اگر Installer عمومی در دسترس نبود، دکمه **Deploy to Cloudflare** را بزنید؛ Cloudflare ابتدا Account را می‌پرسد، سپس Installer شخصی شما را داخل همان Account می‌سازد.
+**GitHub one-click fallback:** if the public installer is unavailable, click **Deploy to Cloudflare**; Cloudflare first asks for an account, then creates your private installer inside that account.
+
 **کاربر عادی هیچ Deploy، GitHub account، Worker setup، Wrangler یا ترمینالی لازم ندارد.**
 **Regular users do not need Deploy steps, a GitHub account, Worker setup, Wrangler, or a terminal.**
 
@@ -62,6 +67,8 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 Token فقط برای همین درخواست نصب از طریق HTTPS به Installer Worker ارسال می‌شود، در KV/DB/Cookie/localStorage/log ذخیره نمی‌شود و بعد از تلاش نصب پاک می‌شود. پنل نهایی هیچ وابستگی‌ای به Installer ندارد و می‌توانید Token نصب را بعداً از Cloudflare حذف کنید.
 
 راهنمای گام‌به‌گام: [آموزش کامل فارسی](docs/INSTALL_FA.md)
+
+**نصب مستقیم از GitHub:** [Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/one-click/apps/installer-worker) → Account را انتخاب کنید → Deploy تمام شود → URL Installer شخصی را باز کنید.
 
 ### چرا متفاوت است؟
 
@@ -126,6 +133,8 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 The token is sent over HTTPS to the installer Worker only for the current install request. It is never persisted to KV/database/cookies/browser storage/logs and is cleared after the attempt. The installed panel is independent from the public installer, so you may revoke the setup token afterwards.
 
 Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
+
+**GitHub one-click:** [Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/one-click/apps/installer-worker) → choose the account → finish deployment → open your private installer URL.
 
 ### Why this project?
 
