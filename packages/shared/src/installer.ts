@@ -43,7 +43,7 @@ export function validateWorkerName(input: string) {
 }
 
 export function validateAdminPassword(password: string) {
-  return password.length >= 16
+  return password.length > 0
     ? ({ ok: true } as const)
     : ({ ok: false, error: 'invalid-admin-password' as const } as const);
 }

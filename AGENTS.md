@@ -94,7 +94,7 @@
 - [x] Clean-user field install completed by owner from separate Cloudflare account
 - [x] Real VLESS-WS connectivity confirmed by owner on deployed workers.dev panel
 - [ ] **BUG P0:** VLESS-XHTTP works in local/workerd/Xray harness but fails in owner's real Cloudflare deployment; reproduce against production semantics before changing implementation
-- [ ] Remove fixed 16-character ADMIN_PASSWORD minimum; accept any non-empty owner password (UI + shared validator + deployed panel setup form + tests)
+- [x] Removed fixed 16-character ADMIN_PASSWORD minimum; any non-empty owner password accepted (UI + shared validator + deployed panel setup form + tests)
 - [ ] Competitive transport/protocol expansion after field-stable core; benchmark BPB + yonggekkk/3Kmfi6HP-style Worker panels before adding each feature
 - [ ] Clean IP / preferred endpoint support with manual IP/domain list, operator-aware testing, health/latency metadata and safe fallback
 - [ ] ProxyIP / chain outbound support for fixed egress where Cloudflare Worker architecture permits it

@@ -28,6 +28,8 @@ describe('owner panel', () => {
     const e = env();
     const html = renderPublicPanel(null);
     expect(html).toContain('ADMIN_PASSWORD');
+    expect(html).toContain('minlength="1"');
+    expect(html).not.toContain('minlength="16"');
     expect(html).not.toContain('vless://');
     expect(await loadProtocolConfig(e)).toBeNull();
   });

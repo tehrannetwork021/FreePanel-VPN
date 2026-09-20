@@ -230,7 +230,7 @@ export function App({ api = browserInstallerApi }: Props) {
               id="admin-password"
               aria-label={t('installer.free.password')}
               type="password"
-              minLength={16}
+              minLength={1}
               value={adminPassword}
               onChange={(event) => setAdminPassword(event.target.value)}
               autoComplete="new-password"

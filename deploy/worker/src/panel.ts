@@ -42,7 +42,7 @@ export function renderPublicPanel(config: ProtocolConfig | null, error = ''): st
 <div class="muted">Cloudflare Worker · No VPS</div><h1>Tehran Network</h1>
 <p>${message}</p>${error ? `<div class="notice error">${escapeHtml(error)}</div>` : ''}
 <form class="login" method="post" action="/setup" autocomplete="off">
-<input name="adminPassword" type="password" minlength="16" required autocomplete="current-password" placeholder="ADMIN_PASSWORD">
+<input name="adminPassword" type="password" minlength="1" required autocomplete="current-password" placeholder="ADMIN_PASSWORD">
 <button class="primary" type="submit">باز کردن پنل / Open Panel</button></form>
 <div class="grid" style="margin-top:24px">
 <div class="card"><b>VLESS · WebSocket</b><span>${config?.vless.enabled ? 'فعال / Active' : 'پس از Setup فعال می‌شود'}</span></div>

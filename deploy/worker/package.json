@@ -24,7 +24,7 @@
         "description": "Tehran Network configuration storage. Cloudflare creates and binds this KV namespace automatically."
       },
       "ADMIN_PASSWORD": {
-        "description": "Required owner password. Use a unique random value of at least 16 characters; it protects setup/config access and is never reused as a VPN credential."
+        "description": "Required owner password. Any non-empty value is accepted; a longer unique password is recommended because it protects setup/config access and is never reused as a VPN credential."
       }
     }
   },

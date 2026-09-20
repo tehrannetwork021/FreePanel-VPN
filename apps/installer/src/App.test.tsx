@@ -109,6 +109,18 @@ describe('free Cloudflare key installer', () => {
     expect(await screen.findByLabelText('Cloudflare API Token')).toHaveValue('');
   });
 
+  it('allows a short non-empty admin password after token verification', async () => {
+    render(<App api={api()} />);
+    fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
+      target: { value: 'cf-token-value-12345678901234567890' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'بررسی کلید' }));
+    const password = await screen.findByLabelText('رمز مدیریت');
+    expect(password).toHaveAttribute('minlength', '1');
+    fireEvent.change(password, { target: { value: '12345' } });
+    expect(password).toHaveValue('12345');
+  });
+
   it('switches Persian RTL to English LTR with the same key flow', () => {
     render(<App api={api()} />);
     expect(document.querySelector('main')).toHaveAttribute('dir', 'rtl');

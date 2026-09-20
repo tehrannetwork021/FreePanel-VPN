@@ -15,9 +15,10 @@ describe('installer validation', () => {
     expect(validateWorkerName('UPPER CASE')).toMatchObject({ ok: false });
   });
 
-  it('requires an admin password of at least 16 characters', () => {
-    expect(validateAdminPassword('123456789012345')).toMatchObject({ ok: false });
-    expect(validateAdminPassword('correct-horse-1234')).toEqual({ ok: true });
+  it('accepts any non-empty admin password and rejects only empty input', () => {
+    expect(validateAdminPassword('')).toMatchObject({ ok: false });
+    expect(validateAdminPassword('1')).toEqual({ ok: true });
+    expect(validateAdminPassword('12345')).toEqual({ ok: true });
   });
 });
 
