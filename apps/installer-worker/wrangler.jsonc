@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "tehran-network-installer",
+  "name": "tehran-network-installer-v030-field",
   "main": "./src/index.ts",
   "compatibility_date": "2026-09-19",
   "workers_dev": true,
