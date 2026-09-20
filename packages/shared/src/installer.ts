@@ -1,9 +1,8 @@
 export type InstallStage =
-  'oauth' | 'account' | 'kv' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
+  'token' | 'account' | 'kv' | 'worker' | 'secret' | 'subdomain' | 'health' | 'complete';
 
 export type InstallErrorCode =
-  | 'authorization-expired'
-  | 'authorization-denied'
+  | 'token-invalid'
   | 'insufficient-scope'
   | 'invalid-account'
   | 'invalid-worker-name'
@@ -15,6 +14,8 @@ export type InstallErrorCode =
   | 'health-failed';
 
 export type CloudflareAccountView = { id: string; name: string };
+export type TokenVerifyRequest = { token: string };
+export type TokenVerifyResult = { ok: true; accounts: CloudflareAccountView[] };
 export type InstallerSessionView = {
   connected: boolean;
   expiresAt?: number;
@@ -25,6 +26,7 @@ export type InstallRequest = {
   workerName: string;
   adminPassword: string;
 };
+export type TokenInstallRequest = InstallRequest & { token: string };
 
 export type InstallResult = {
   ok: true;

@@ -13,9 +13,24 @@ export class CloudflareApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code?: number,
+    localCode?: 'token-invalid',
   ) {
-    super(status === 403 ? 'insufficient-scope' : 'cloudflare-api-failed');
+    super(localCode ?? (status === 403 ? 'insufficient-scope' : 'cloudflare-api-failed'));
     this.name = 'CloudflareApiError';
+  }
+}
+
+export async function verifyApiToken(token: string): Promise<void> {
+  const headers = new Headers({ authorization: `Bearer ${token}` });
+  const response = await fetch(`${API_ROOT}/user/tokens/verify`, { headers });
+  let body: CfEnvelope<{ status?: string }> | undefined;
+  try {
+    body = (await response.json()) as CfEnvelope<{ status?: string }>;
+  } catch {
+    body = undefined;
+  }
+  if (!response.ok || !body?.success || body.result?.status !== 'active') {
+    throw new CloudflareApiError(response.status || 401, undefined, 'token-invalid');
   }
 }
 

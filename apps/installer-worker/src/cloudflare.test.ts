@@ -7,6 +7,7 @@ import {
   listAccounts,
   putAdminSecret,
   uploadWorkerModule,
+  verifyApiToken,
 } from './cloudflare';
 
 function ok(result: unknown, resultInfo?: unknown) {
@@ -30,6 +31,30 @@ function fail(status: number, code = 1000) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Cloudflare provisioning API', () => {
+  it('accepts only active API tokens and sanitizes invalid token failures', async () => {
+    const activeFetch = vi.fn().mockResolvedValue(ok({ id: 't1', status: 'active' }));
+    vi.stubGlobal('fetch', activeFetch);
+    await expect(verifyApiToken('SECRET_TOKEN_SENTINEL')).resolves.toBeUndefined();
+    expect(activeFetch.mock.calls[0]?.[0]).toContain('/user/tokens/verify');
+
+    for (const response of [
+      ok({ id: 't1', status: 'disabled' }),
+      ok({ id: 't1', status: 'expired' }),
+      fail(401, 10000),
+    ]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+      try {
+        await verifyApiToken('SECRET_TOKEN_SENTINEL');
+        throw new Error('expected-failure');
+      } catch (error) {
+        expect(error).toBeInstanceOf(CloudflareApiError);
+        expect((error as Error).message).toBe('token-invalid');
+        expect(String(error)).not.toContain('SECRET_TOKEN_SENTINEL');
+        expect(String(error)).not.toContain('SECRET RAW DETAIL');
+      }
+    }
+  });
+
   it('paginates accounts with the expected API path', async () => {
     const fetchMock = vi
       .fn()
