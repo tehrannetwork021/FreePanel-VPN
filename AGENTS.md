@@ -148,6 +148,18 @@
 - BPB explicitly documents that VLESS/Trojan UDP on Workers is not reliable; Tehran Network must not advertise unsupported UDP merely to increase protocol count.
 - Product rule: keep install free/no-VPS/no-custom-domain for normal users; new features must not reintroduce GitHub connection, local Wrangler, or paid infrastructure.
 
+## Direct Public Installer Publication — 2026-09-20
+
+- [x] Re-read approved free-token installer spec/plan: normal user path explicitly requires GitHub README → public Tehran Network `workers.dev` installer → Generate Key → Paste → Install; user must NOT deploy the installer first.
+- [x] Root cause of current UX regression identified: commit `2c19573` made `Deploy Installer` the README primary action, contradicting the already-approved Task 5 public-installer design.
+- [x] Fresh public installer candidate deployed from current `main`: `https://tehran-network-installer.honored-feather.workers.dev`.
+- [x] Public smoke: installer root HTTP 200 with Tehran Network UI; synthetic invalid token returns HTTP 401 / `token-invalid` without raw Cloudflare body.
+- [x] TDD docs contract changed to require the direct public installer before all developer/self-host paths; README + INSTALL_FA/EN updated accordingly.
+- [x] Privacy wording corrected for hosted installer: scoped token traverses the installer Worker over HTTPS for the current request but is never persisted/logged; VPN traffic never traverses Tehran Network installer infrastructure.
+- [ ] Owner-only one-time action: claim the Cloudflare preview account before the 60-minute claim window expires so the public URL persists.
+- [ ] Real-token smoke on the claimed public installer: Verify → account → Install → `/health` → VLESS-WS plus Trojan/XHTTP field retest.
+- [ ] After claim + real smoke PASS: fast-forward these direct-installer docs to `main` and make the GitHub button the final public entry point.
+
 ## Handoff Notes
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.

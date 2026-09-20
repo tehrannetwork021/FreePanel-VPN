@@ -1,28 +1,27 @@
 # Installation and Usage — English
 
-## No-terminal install (recommended — just a link and a paste)
+## No-terminal install (recommended — one link + one paste)
 
-This is the official install path. It requires **no VPS, no custom domain, no GitHub connection, no Wrangler, no PowerShell and no terminal**, and it runs entirely on the Cloudflare Free plan. You open one link, create one token, paste it into the installer page and click Install.
+This is the normal-user path: **no VPS, no custom domain, no GitHub connection, no installer deployment, no Wrangler, no PowerShell and no terminal**.
 
-### Step 1 — Deploy the installer (once)
+### Step 1 — Open the ready public installer
 
-1. Click **Deploy Installer** in the README or open this link directly:
-   [https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
-2. Sign in to your free Cloudflare account and approve the deployment; Cloudflare builds the installer for you (1–2 minutes).
-3. Cloudflare shows a URL like `https://tehran-network-installer.<account-subdomain>.workers.dev`; click it to open the installer page.
+[https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
-> The installer is a local page inside your own account; your token is never sent to or stored by any Tehran Network server.
+This public Worker is setup control-plane only. VPN traffic never traverses it, and the installed panel is independent after provisioning.
 
-### Step 2 — Generate the key and install the panel
+### Step 2 — Generate the Cloudflare key and install
 
-1. In the installer, click **Generate Cloudflare Key**. Cloudflare's official token page opens with the required scopes preselected: `Workers Scripts: Edit`, `Workers KV Storage: Edit` and `Account Settings: Read`, scoped to all accounts.
-2. Click **Create Token**. Cloudflare shows the token secret **only once**; copy it.
-3. Return to the installer, paste the token and verify; your accounts are discovered.
-4. Choose the account and adjust the Worker name if you like; **a strong admin password is already auto-generated** — keep it or replace it.
-5. Click Install. The installer automatically creates the KV namespace, uploads the signed immutable Worker artifact, sets the admin secret and enables `workers.dev`.
-6. Done! You receive `https://<worker-name>.<account-subdomain>.workers.dev` together with **your admin password** (with a copy button). Open the panel, enter that password and collect your configs.
+1. Click **Generate Cloudflare Key**. Cloudflare opens with `Workers Scripts: Edit`, `Workers KV Storage: Edit` and `Account Settings: Read`.
+2. Click **Create Token** and copy the value Cloudflare shows once.
+3. Return to the installer, paste the token and verify it.
+4. Pick an account. Worker name and admin password are editable; a password is generated automatically and any non-empty value is accepted.
+5. Click **Install**. The installer creates KV, Worker, secret and workers.dev automatically, then verifies `/health`.
+6. Copy the panel URL and admin password, open the panel and collect configs/QR/subscription.
 
-After every install attempt (success or failure) the token is cleared from browser memory and is never written to localStorage, sessionStorage, KV or logs. The result screen links to Cloudflare's official API Tokens page under "Delete installation key" if you want to revoke the token afterwards.
+### Token privacy
+
+The token is sent over HTTPS to the installer Worker because Cloudflare's API does not allow this provisioning flow directly from a browser via CORS. It is used only in the current request/volatile memory and is never written to KV, a database, cookies, localStorage, sessionStorage, analytics or logs. It is cleared after success or failure. The installed panel does not depend on it, so you may revoke it afterwards.
 
 ### Common errors explained
 
@@ -84,12 +83,12 @@ Every public update is published as a separate GitHub Release with its own versi
 
 ## Uninstalling
 
-Open Cloudflare Dashboard → Workers & Pages and delete the deployed Worker (and the installer if you no longer need it). KV is a separate resource; delete the related namespace as well if you no longer need the stored configuration. Also delete the installation token from Cloudflare's API Tokens page.
+Open Cloudflare Dashboard → Workers & Pages and delete the deployed Worker. KV is a separate resource; delete the related namespace as well if you no longer need the stored configuration. Also delete the installation token from Cloudflare's API Tokens page.
 
 ## Security
 
 - Never paste tokens or secrets into public issues.
-- Your token is used only in volatile browser memory for the duration of the request; no Tehran Network server is involved.
+- The token is used only for the HTTPS install request on the installer Worker and is never persisted; VPN traffic never traverses the installer.
 - Use scoped API tokens, never the Global API Key.
 - Keep the token scopes to exactly the three required: Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read.
 - See [SECURITY.md](../SECURITY.md) for vulnerability reporting.

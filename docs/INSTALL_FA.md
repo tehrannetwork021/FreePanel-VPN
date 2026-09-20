@@ -2,27 +2,26 @@
 
 ## نصب بدون ترمینال (پیشنهادی — فقط لینک و Paste)
 
-این مسیر رسمی نصب است و **نیازی به VPS، دامنه، اتصال GitHub، Wrangler، PowerShell یا ترمینال ندارد** و روی پلن رایگان Cloudflare انجام می‌شود. فقط یک لینک را باز می‌کنید، یک توکن می‌سازید، در صفحهٔ نصب‌کننده Paste می‌کنید و Install را می‌زنید.
+این مسیر رسمی برای کاربر عادی است: **بدون VPS، دامنه، GitHub account، Deploy Installer، Wrangler، PowerShell یا ترمینال**.
 
-### گام ۱ — نصب خود نصب‌کننده (یک بار)
+### گام ۱ — Installer آماده را باز کنید
 
-1. روی دکمهٔ **Deploy Installer** در README کلیک کنید یا مستقیم این لینک را باز کنید:
-   [https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
-2. وارد حساب رایگان Cloudflare خود شوید و Deploy را تأیید کنید؛ Cloudflare خودش نصب‌کننده را می‌سازد (۱ تا ۲ دقیقه).
-3. Cloudflare یک آدرس شبیه `https://tehran-network-installer.<نام-حساب>.workers.dev` نشان می‌دهد؛ روی همان کلیک کنید تا صفحهٔ نصب‌کننده باز شود.
+[https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
-> نصب‌کننده فقط یک صفحه محلی روی اکانت خودتان است؛ توکن شما هرگز به سرور Tehran Network ارسال یا ذخیره نمی‌شود.
+این Worker عمومی فقط کنترل‌پلین نصب است؛ ترافیک VPN شما از آن عبور نمی‌کند و پنل نهایی بعد از نصب مستقل است.
 
 ### گام ۲ — ساخت کلید Cloudflare و نصب پنل
 
-1. در صفحه نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ لینک رسمی Cloudflare با دسترسی‌های ازپیش‌تعیین‌شده باز می‌شود: `Workers Scripts: Edit`، `Workers KV Storage: Edit` و `Account Settings: Read` برای همه حساب‌ها.
-2. روی **Create Token** بزنید. Cloudflare مقدار توکن را **فقط یک بار** نمایش می‌دهد؛ آن را کپی کنید.
-3. به نصب‌کننده برگردید، توکن را Paste کنید و Verify بزنید؛ حساب‌های شما شناسایی می‌شوند.
-4. حساب موردنظر را انتخاب کنید و نام Worker را در صورت نیاز عوض کنید؛ **رمز مدیریت از قبل با یک رمز قوی خودکار پر شده است** — می‌توانید همان را نگه دارید یا عوضش کنید.
-5. Install را بزنید؛ نصب‌کننده به‌صورت خودکار KV را می‌سازد، Worker را با نسخهٔ امضاشده آپلود می‌کند، رمز مدیریت را ست می‌کند و `workers.dev` را فعال می‌کند.
-6. تمام! در پایان آدرس `https://<نام-worker>.<نام-حساب>.workers.dev` به‌همراه **رمز مدیریت شما** (با دکمهٔ کپی) نمایش داده می‌شود؛ پنل را باز کنید، همان رمز را وارد کنید و کانفیگ‌ها را بردارید.
+1. روی **ساخت کلید Cloudflare** بزنید؛ Cloudflare با `Workers Scripts: Edit`، `Workers KV Storage: Edit` و `Account Settings: Read` باز می‌شود.
+2. **Create Token** را بزنید و مقدار Token را که Cloudflare فقط یک بار نشان می‌دهد کپی کنید.
+3. به Installer برگردید، Token را Paste و Verify کنید.
+4. Account را انتخاب کنید. نام Worker و رمز مدیریت قابل تغییرند؛ رمز پیش‌فرض خودکار ساخته می‌شود و حتی یک مقدار کوتاهِ غیرخالی هم پذیرفته می‌شود.
+5. **Install** را بزنید. Installer به‌صورت خودکار KV، Worker، Secret و workers.dev را می‌سازد و `/health` را بررسی می‌کند.
+6. آدرس پنل و رمز مدیریت را بردارید؛ پنل را باز کنید و کانفیگ/QR/Subscription را بگیرید.
 
-پس از هر تلاش نصب (موفق یا ناموفق)، توکن از حافظهٔ مرورگر پاک می‌شود و در localStorage، sessionStorage، KV یا لاگ‌ها ذخیره نمی‌شود. اگر خواستید توکن را عقب‌تر حذف کنید، در صفحهٔ نتیجه لینک «حذف کلید نصب» به صفحهٔ رسمی API Tokens کلادفلر داده شده است.
+### حریم خصوصی Token
+
+Token در درخواست HTTPS به Installer Worker ارسال می‌شود چون Cloudflare API از مرورگر CORS مستقیم نمی‌پذیرد. Token فقط در همان درخواست/حافظهٔ موقت استفاده می‌شود و در KV، DB، Cookie، localStorage، sessionStorage، analytics یا log ذخیره نمی‌شود. پس از موفقیت یا خطا، Token از state نصب‌کننده پاک می‌شود. پنل نصب‌شده به آن وابسته نیست و می‌توانید Token را از Cloudflare حذف کنید.
 
 ### معنی خطاهای رایج
 
@@ -84,12 +83,12 @@ curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/insta
 
 ## حذف
 
-برای حذف، از Cloudflare Dashboard به Workers & Pages بروید و Worker ساخته‌شده (و در صورت نیاز نصب‌کننده) را حذف کنید. KV ساخته‌شده مستقل است؛ اگر دیگر به تنظیمات آن نیاز ندارید، KV Namespace مربوط را نیز حذف کنید. توکن نصب را هم از صفحهٔ API Tokens کلادفلر حذف کنید.
+برای حذف، از Cloudflare Dashboard به Workers & Pages بروید و Worker ساخته‌شده را حذف کنید. KV ساخته‌شده مستقل است؛ اگر دیگر به تنظیمات آن نیاز ندارید، KV Namespace مربوط را نیز حذف کنید. توکن نصب را هم از صفحهٔ API Tokens کلادفلر حذف کنید.
 
 ## امنیت
 
 - Token یا Secret را در Issue عمومی نفرستید.
-- توکن شما فقط در حافظهٔ موقت مرورگر و برای همین درخواست استفاده می‌شود؛ سروری از Tehran Network در کار نیست.
+- Token فقط برای درخواست HTTPS نصب روی Installer Worker استفاده می‌شود و هیچ‌جا ذخیره نمی‌شود؛ ترافیک VPN از Installer عبور نمی‌کند.
 - فقط Scoped Token بسازید؛ Global API Key هرگز ندهید.
 - دسترسی‌های پیشنهادی فقط همین سه مورد است: Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read.
 - فایل [SECURITY.md](../SECURITY.md) مرجع گزارش امنیتی پروژه است.

@@ -15,25 +15,29 @@
 
 ### 🚀 نصب / Install
 
-**Install Free on Cloudflare — نصب رایگان روی کلادفلر، بدون ترمینال**
+**Install Free on Cloudflare — نصب رایگان، بدون ترمینال، بدون GitHub و بدون Deploy دستی**
 
-[![Deploy Installer](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
+[![Install Free on Cloudflare](https://img.shields.io/badge/Install%20Free%20on%20Cloudflare-Open%20Installer-F38020?logo=cloudflare&logoColor=white)](https://tehran-network-installer.honored-feather.workers.dev)
 
-**۳ کلیک تا پنل — 3 clicks to your panel:**
+**۳ قدم تا پنل — 3 steps to your panel:**
 
-| گام | کار شما                                                                                 |
-| --- | --------------------------------------------------------------------------------------- |
-| ۱   | روی دکمهٔ **Deploy Installer** کلیک کنید و با اکانت رایگان Cloudflare Confirm بزنید     |
-| ۲   | بعد از نصب، روی لینک `*.workers.dev` که Cloudflare نشان می‌دهد کلیک کنید                |
-| ۳   | در صفحهٔ نصب‌کننده: **ساخت کلید Cloudflare** → Create Token → کپی → Paste → **Install** |
+| گام | کار شما                                                                   |
+| --- | ------------------------------------------------------------------------- |
+| ۱   | دکمهٔ **Install Free on Cloudflare** را بزنید؛ Installer آماده باز می‌شود |
+| ۲   | **ساخت کلید Cloudflare / Generate Cloudflare Key** → Create Token → Copy  |
+| ۳   | برگردید، Token را Paste کنید → **Install**                                |
 
-تمام! آدرس پنل + رمز مدیریت (خودکار ساخته می‌شود) نمایش داده می‌شود.
-Done! Your panel URL + auto-generated admin password are shown.
+تمام. Installer خودش Account، KV، Worker، Secret و `workers.dev` را می‌سازد و آدرس پنل + رمز مدیریت را تحویل می‌دهد.
+Done. The installer provisions Account/KV/Worker/Secret/workers.dev and returns your panel URL + admin password.
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
 <details>
-<summary>روش جایگزین: نصب با اسکریپت در ترمینال / Alternative: terminal script</summary>
+<summary>روش‌های پیشرفته / Advanced & self-hosted alternatives</summary>
+
+اگر می‌خواهید خود Installer را داخل اکانت خودتان میزبانی کنید / If you want to self-host the installer:
+
+[Deploy Installer yourself](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
 
 ```powershell
 # Windows PowerShell
@@ -65,22 +69,25 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 
 ### نصب برای کاربر عادی
 
-**راه اول — نصب‌کنندهٔ وب (بدون ترمینال، پیشنهادی):**
+**فقط همین لینک را باز کنید:** [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
-1. روی دکمهٔ **Deploy Installer** در بالای همین صفحه کلیک کنید و با اکانت رایگان Cloudflare، نصب را Confirm کنید؛ Cloudflare خودش نصب‌کننده را می‌سازد (۱ تا ۲ دقیقه).
-2. بعد از اتمام، روی لینک `*.workers.dev` که Cloudflare نمایش می‌دهد کلیک کنید تا صفحهٔ نصب‌کننده باز شود.
-3. در نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ صفحهٔ رسمی Cloudflare با دسترسی‌های لازم (Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read) از پیش تنظیم‌شده باز می‌شود. **Create Token** را بزنید و توکن را کپی کنید.
-4. به نصب‌کننده برگردید، توکن را Paste و Verify کنید؛ رمز مدیریت هم از قبل خودکار ساخته شده — **Install** را بزنید.
-5. تمام! آدرس پنل + رمز مدیریت نمایش داده می‌شود؛ با همان رمز وارد پنل شوید و کانفیگ/QR/Subscription را بردارید.
+1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه Deploy Installer، نه Wrangler و نه ترمینال.
+2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit و Account Settings Read.
+3. **Create Token** را بزنید و Token را کپی کنید.
+4. به Installer برگردید، Token را Paste و Verify کنید. اگر چند Account دارید یکی را انتخاب کنید؛ نام Worker و رمز مدیریت هم قابل تغییر است و رمز پیش‌فرض خودکار ساخته می‌شود.
+5. **Install** را بزنید. KV + Worker + Secret + workers.dev به‌صورت خودکار داخل اکانت خودتان ساخته می‌شود.
+6. آدرس پنل و رمز مدیریت را بردارید و وارد پنل شوید.
 
-**راه دوم — اسکریپت ترمینال:** اگر ترمینال را ترجیح می‌دهید، دستورهای بخش جایگزین در بالای صفحه را اجرا کنید و توکن را Paste کنید. (نکته: اگر در ایران هستید و دانلود اسکریپت خطا داد، از راه اول استفاده کنید.)
+Token فقط برای همین درخواست نصب از طریق HTTPS به Installer Worker ارسال می‌شود، در KV/DB/Cookie/localStorage/log ذخیره نمی‌شود و بعد از تلاش نصب پاک می‌شود. پنل نهایی هیچ وابستگی‌ای به Installer ندارد و می‌توانید Token نصب را بعداً از Cloudflare حذف کنید.
+
+**راه جایگزین برای کاربران فنی:** اسکریپت ترمینال و Self-hosted Installer داخل بخش Advanced بالای README باقی مانده‌اند.
 
 راهنمای گام‌به‌گام: [آموزش کامل فارسی](docs/INSTALL_FA.md)
 
 ### چرا متفاوت است؟
 
 - **رایگان و بدون سرور:** همه‌چیز روی پلن رایگان Cloudflare و داخل اکانت خود شما ساخته می‌شود؛ نه VPS می‌خواهد نه دامنه.
-- **Local-first:** توکن Cloudflare فقط در حافظهٔ موقت مرورگر می‌ماند و پس از هر تلاش نصب پاک می‌شود.
+- **Token کم‌عمر و بدون ذخیره‌سازی:** Token فقط برای درخواست نصب روی Installer Worker استفاده می‌شود، هیچ‌جا persist نمی‌شود و بعد از هر تلاش پاک می‌شود.
 - **فارسی واقعی + English:** RTL/LTR در تست‌های Unit و Browser کنترل می‌شود.
 - **ظاهر اختصاصی:** Prismatic Network Console به‌جای Dashboard templateهای تکراری.
 - **Responsive:** تست خودکار در عرض موبایل و Desktop انجام می‌شود.
@@ -99,8 +106,8 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 
 **برای کاربر عادی هیچ ابزار توسعه‌ای لازم نیست.**
 
-1. دکمهٔ **Deploy Installer** را بزنید تا نصب‌کننده روی اکانت Cloudflare شما ساخته شود.
-2. داخل نصب‌کننده، با لینک «ساخت کلید Cloudflare» توکن بسازید و Paste کنید.
+1. [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev) را باز کنید.
+2. Generate Key → Create Token → Copy → Paste.
 3. Install را بزنید و آدرس `*.workers.dev` پنل خود را بگیرید.
 
 آموزش کامل: [docs/INSTALL_FA.md](docs/INSTALL_FA.md)
@@ -124,22 +131,25 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 
 ### One-click installation
 
-**Path 1 — Web installer (no terminal, recommended):**
+**Open the public installer:** [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
-1. Click **Deploy Installer** at the top of this page and confirm with your free Cloudflare account; Cloudflare builds the installer for you (1–2 minutes).
-2. When it finishes, click the `*.workers.dev` link Cloudflare shows to open the installer page.
-3. Click **Generate Cloudflare Key**; Cloudflare's official page opens with the required scopes preselected (Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read). Click **Create Token** and copy it.
-4. Return to the installer, paste the token and verify; a strong admin password is already auto-generated — click **Install**.
-5. Done! Your panel URL + admin password are displayed; sign in with that password and collect configs/QR/subscription.
+1. The ready-to-use installer opens directly. No GitHub account, installer deployment, Wrangler or terminal is required.
+2. Click **Generate Cloudflare Key**. Cloudflare opens the official token builder with Workers Scripts Edit, Workers KV Storage Edit and Account Settings Read.
+3. Click **Create Token**, copy it, return to the installer and paste/verify it.
+4. Pick an account if needed; the Worker name and auto-generated admin password remain editable.
+5. Click **Install**. KV + Worker + secret + workers.dev are provisioned automatically inside your Cloudflare account.
+6. Open the returned panel URL and keep the displayed admin password.
 
-**Path 2 — Terminal script:** if you prefer a terminal, run the alternative commands at the top of this page and paste the token. (Note: if the script download fails — common behind Iranian filters — use Path 1.)
+The token is sent over HTTPS to the installer Worker only for the current install request. It is never persisted to KV/database/cookies/browser storage/logs and is cleared after the attempt. The installed panel is independent from the public installer, so you may revoke the setup token afterwards.
+
+**Technical alternatives:** terminal scripts and a self-hosted installer remain under the Advanced section at the top of this README.
 
 Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 
 ### Why this project?
 
 - **Free and serverless** — everything runs on the Cloudflare Free plan inside your own account; no VPS, no custom domain.
-- **Local-first credentials** — the Cloudflare token stays in volatile browser memory and is cleared after every attempt.
+- **Ephemeral install credential** — the token is used only for the current HTTPS install request, is never persisted, and is cleared after every attempt.
 - **Persian + English** — tested RTL/LTR parity, not a translated afterthought.
 - **Distinct visual system** — a colorful Prismatic Network Console instead of a generic admin template.
 - **Responsive by test** — browser tests cover desktop and mobile layouts.
@@ -150,8 +160,8 @@ Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 
 **Regular users do not need local development tools.**
 
-1. Click **Deploy Installer** to put the installer on your Cloudflare account.
-2. Inside the installer, use "Generate Cloudflare Key", create the token and paste it.
+1. Open [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev).
+2. Generate Key → Create Token → Copy → Paste.
 3. Click Install and receive your panel's `*.workers.dev` URL.
 
 Full guide: [docs/INSTALL_EN.md](docs/INSTALL_EN.md)
@@ -184,7 +194,7 @@ packages/shared       → product contracts shared across apps
 | Worker rollback                     | 🚧 In development |
 | VLESS-WS core                       | ✅ Ready          |
 | Trojan-WS core                      | ✅ Ready          |
-| VLESS-XHTTP stream-one              | ✅ Ready          |
+| VLESS-XHTTP stream-one              | 🧪 Field retest   |
 | Smart endpoints / rotation          | 🧭 Planned        |
 | Subscription + QR                   | ✅ Ready          |
 | DNS / ECH / Network Lab             | 🧭 Planned        |

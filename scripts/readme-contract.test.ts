@@ -10,6 +10,8 @@ describe('GitHub landing page contract', () => {
     expect(readme).toContain('## نصب سریع');
     expect(readme).toContain('## Quick start');
     expect(readme).toContain('SECURITY.md');
+    expect(readme).toContain('https://tehran-network-installer.honored-feather.workers.dev');
+    expect(readme).toContain('Install Free on Cloudflare');
     expect(readme).toMatch(/در حال توسعه|In development/);
   });
 
