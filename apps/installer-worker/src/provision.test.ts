@@ -1,12 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { InstallSession } from './session';
 import { ProvisionError, provisionPanel, type ProvisionDeps } from './provision';
 
-const session: InstallSession = {
-  accessToken: 'oauth-token',
-  issuedAt: Date.now(),
-  expiresAt: Date.now() + 600_000,
-};
+const accessToken = 'test-token';
 const request = {
   accountId: 'acct-1',
   workerName: 'pvnetwork-client',
@@ -55,7 +50,7 @@ function makeDeps(events: string[], overrides: Partial<ProvisionDeps> = {}): Pro
 describe('panel provisioning', () => {
   it('validates then provisions in order and returns the final workers.dev URL', async () => {
     const events: string[] = [];
-    const result = await provisionPanel(session, request, makeDeps(events));
+    const result = await provisionPanel(accessToken, request, makeDeps(events));
     expect(events).toEqual(['account', 'kv', 'worker', 'secret', 'subdomain', 'enable', 'health']);
     expect(result).toEqual({
       ok: true,
@@ -68,7 +63,7 @@ describe('panel provisioning', () => {
   it('rejects invalid input before any Cloudflare API call', async () => {
     const events: string[] = [];
     await expect(
-      provisionPanel(session, { ...request, workerName: '../bad' }, makeDeps(events)),
+      provisionPanel(accessToken, { ...request, workerName: '../bad' }, makeDeps(events)),
     ).rejects.toMatchObject({ code: 'invalid-worker-name' });
     expect(events).toEqual([]);
   });
@@ -84,12 +79,12 @@ describe('panel provisioning', () => {
       },
     });
 
-    await expect(provisionPanel(session, request, deps)).rejects.toMatchObject({
+    await expect(provisionPanel(accessToken, request, deps)).rejects.toMatchObject({
       stage: 'worker',
       code: 'worker-upload-failed',
     });
     events.length = 0;
-    await expect(provisionPanel(session, request, deps)).resolves.toMatchObject({ ok: true });
+    await expect(provisionPanel(accessToken, request, deps)).resolves.toMatchObject({ ok: true });
     expect(events.filter((event) => event === 'kv')).toHaveLength(1);
     expect(uploadAttempts).toBe(2);
   });
@@ -106,7 +101,7 @@ describe('panel provisioning', () => {
       },
     });
 
-    await expect(provisionPanel(session, request, deps)).rejects.toEqual(
+    await expect(provisionPanel(accessToken, request, deps)).rejects.toEqual(
       new ProvisionError('health', 'health-failed'),
     );
     expect(fetchHealth.mock.calls.length).toBeGreaterThan(1);

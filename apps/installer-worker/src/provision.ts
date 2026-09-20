@@ -21,7 +21,6 @@ import {
   EDGE_WORKER_SOURCE,
   EDGE_WORKER_VERSION,
 } from './generated/edgeWorkerArtifact';
-import type { InstallSession } from './session';
 
 export class ProvisionError extends Error {
   constructor(
@@ -109,7 +108,7 @@ async function stageCall<T>(
 }
 
 export async function provisionPanel(
-  session: InstallSession,
+  accessToken: string,
   request: InstallRequest,
   deps: ProvisionDeps = defaultProvisionDeps,
 ): Promise<InstallResult> {
@@ -119,7 +118,7 @@ export async function provisionPanel(
   if (!password.ok) throw new ProvisionError('secret', password.error);
 
   const accounts = await stageCall('account', 'invalid-account', () =>
-    deps.listAccounts(session.accessToken),
+    deps.listAccounts(accessToken),
   );
   if (!accounts.some((account) => account.id === request.accountId)) {
     throw new ProvisionError('account', 'invalid-account');
@@ -132,11 +131,11 @@ export async function provisionPanel(
   }
 
   const kv = await stageCall('kv', 'kv-failed', () =>
-    deps.findOrCreateKvNamespace(session.accessToken, request.accountId, worker.value),
+    deps.findOrCreateKvNamespace(accessToken, request.accountId, worker.value),
   );
   await stageCall('worker', 'worker-upload-failed', () =>
     deps.uploadWorkerModule(
-      session.accessToken,
+      accessToken,
       request.accountId,
       worker.value,
       kv.id,
@@ -144,19 +143,14 @@ export async function provisionPanel(
     ),
   );
   await stageCall('secret', 'secret-failed', () =>
-    deps.putAdminSecret(
-      session.accessToken,
-      request.accountId,
-      worker.value,
-      request.adminPassword,
-    ),
+    deps.putAdminSecret(accessToken, request.accountId, worker.value, request.adminPassword),
   );
 
   const subdomain = await stageCall('subdomain', 'subdomain-failed', () =>
-    deps.ensureAccountSubdomain(session.accessToken, request.accountId, worker.value),
+    deps.ensureAccountSubdomain(accessToken, request.accountId, worker.value),
   );
   await stageCall('subdomain', 'subdomain-failed', () =>
-    deps.enableScriptSubdomain(session.accessToken, request.accountId, worker.value),
+    deps.enableScriptSubdomain(accessToken, request.accountId, worker.value),
   );
 
   const workerUrl = `https://${worker.value}.${subdomain}.workers.dev`;

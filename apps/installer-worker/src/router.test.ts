@@ -1,154 +1,145 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { InstallResult } from '@tehrannetwork/shared';
+import { CloudflareApiError } from './cloudflare';
 import type { InstallerEnv } from './env';
 import { ProvisionError } from './provision';
 import { handleInstallerRequest, type RouterDeps } from './router';
-import { makeInstallSessionCookie } from './session';
 
-const KEY = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-const now = Date.now();
 const env = {
-  COOKIE_KEY_B64: KEY,
-  INSTALLER_ORIGIN: 'https://install.example.com',
   ASSETS: { fetch: vi.fn().mockResolvedValue(new Response('asset')) },
 } as unknown as InstallerEnv;
 
-async function cookieFor(token = 'oauth-token', expiresAt = now + 600_000) {
-  const setCookie = await makeInstallSessionCookie(
-    { accessToken: token, issuedAt: now, expiresAt },
-    KEY,
-  );
-  return setCookie.split(';', 1)[0];
-}
-
 function deps(overrides: Partial<RouterDeps> = {}): RouterDeps {
   return {
-    startOAuth: vi.fn().mockResolvedValue(new Response(null, { status: 302 })),
-    finishOAuth: vi.fn().mockResolvedValue(new Response(null, { status: 302 })),
-    listAccounts: vi.fn().mockResolvedValue([{ id: 'acct', name: 'Account' }]),
+    verifyApiToken: vi.fn().mockResolvedValue(undefined),
+    listAccounts: vi.fn().mockResolvedValue([
+      { id: 'a1', name: 'One' },
+      { id: 'a2', name: 'Two' },
+    ]),
     provisionPanel: vi.fn().mockResolvedValue({
       ok: true,
       workerUrl: 'https://pvnetwork-client.sub.workers.dev',
       workerName: 'pvnetwork-client',
       version: '0.1.0',
     } satisfies InstallResult),
-    revokeOAuth: vi.fn().mockResolvedValue(undefined),
     ...overrides,
-  };
+  } as RouterDeps;
+}
+function post(path: string, body: unknown, headers: Record<string, string> = {}) {
+  return new Request(`https://installer.example${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('installer Worker router', () => {
-  it('returns disconnected without a session and lists accounts with a valid session', async () => {
-    const d = deps();
-    const disconnected = await handleInstallerRequest(
-      new Request('https://install.example.com/api/session'),
-      env,
-      d,
-    );
-    await expect(disconnected.json()).resolves.toEqual({ connected: false });
-
-    const connected = await handleInstallerRequest(
-      new Request('https://install.example.com/api/session', {
-        headers: { cookie: await cookieFor() },
-      }),
-      env,
-      d,
-    );
-    await expect(connected.json()).resolves.toMatchObject({
-      connected: true,
-      accounts: [{ id: 'acct', name: 'Account' }],
-    });
-  });
-
-  it('fails closed and clears an expired session', async () => {
-    const response = await handleInstallerRequest(
-      new Request('https://install.example.com/api/session', {
-        headers: { cookie: await cookieFor('expired-token', now - 1) },
-      }),
-      env,
-      deps(),
-    );
-    expect(response.status).toBe(401);
-    expect(response.headers.get('set-cookie')).toContain('__Host-tn_install_session=;');
-    await expect(response.json()).resolves.toMatchObject({
-      connected: false,
-      error: 'authorization-expired',
-    });
-  });
-
-  it('revokes authorization and clears cookies after a successful install without leaking secrets', async () => {
-    const sentinelToken = 'SENTINEL-OAUTH-TOKEN';
-    const sentinelPassword = 'SENTINEL-ADMIN-PASSWORD';
-    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+describe('stateless token installer router', () => {
+  it('verifies a token and returns every accessible account', async () => {
     const d = deps();
     const response = await handleInstallerRequest(
-      new Request('https://install.example.com/api/install', {
-        method: 'POST',
-        headers: {
-          cookie: await cookieFor(sentinelToken),
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          accountId: 'acct',
-          workerName: 'pvnetwork-client',
-          adminPassword: sentinelPassword,
-        }),
-      }),
+      post('/api/token/verify', { token: 'TOKEN_VALUE' }),
       env,
       d,
     );
-
     expect(response.status).toBe(200);
-    expect(d.revokeOAuth).toHaveBeenCalledWith(sentinelToken, env);
-    expect(response.headers.get('set-cookie')).toContain('__Host-tn_install_session=;');
-    const body = JSON.stringify(await response.json());
-    expect(body).not.toContain(sentinelToken);
-    expect(body).not.toContain(sentinelPassword);
-    for (const spy of [log, error, warn]) {
-      expect(JSON.stringify(spy.mock.calls)).not.toContain('SENTINEL');
-    }
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      accounts: [
+        { id: 'a1', name: 'One' },
+        { id: 'a2', name: 'Two' },
+      ],
+    });
+    expect(d.verifyApiToken).toHaveBeenCalledWith('TOKEN_VALUE');
+    expect(d.listAccounts).toHaveBeenCalledWith('TOKEN_VALUE');
   });
+  it('rejects invalid requests and oversized bodies before Cloudflare calls', async () => {
+    const d = deps();
+    const wrongType = await handleInstallerRequest(
+      new Request('https://installer.example/api/token/verify', { method: 'POST', body: 'x' }),
+      env,
+      d,
+    );
+    expect(wrongType.status).toBe(415);
 
-  it('clears terminal permission errors but preserves retryable provisioning sessions', async () => {
-    const cookie = await cookieFor();
-    const permission = await handleInstallerRequest(
-      new Request('https://install.example.com/api/install', {
-        method: 'POST',
-        headers: { cookie, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          accountId: 'acct',
-          workerName: 'pvnetwork-client',
-          adminPassword: 'correct-horse-1234',
-        }),
-      }),
+    const malformed = await handleInstallerRequest(post('/api/token/verify', '{bad-json'), env, d);
+    expect(malformed.status).toBe(400);
+
+    const oversized = await handleInstallerRequest(
+      post(
+        '/api/token/verify',
+        { token: 'TOKEN_VALUE' },
+        { 'content-length': String(16 * 1024 + 1) },
+      ),
+      env,
+      d,
+    );
+    expect(oversized.status).toBe(413);
+    await expect(oversized.json()).resolves.toEqual({
+      ok: false,
+      stage: 'token',
+      code: 'invalid-request',
+    });
+    expect(d.verifyApiToken).not.toHaveBeenCalled();
+    expect(d.listAccounts).not.toHaveBeenCalled();
+  });
+  it('maps invalid tokens and insufficient permissions to safe errors', async () => {
+    const invalid = await handleInstallerRequest(
+      post('/api/token/verify', { token: 'BAD_VALUE' }),
       env,
       deps({
-        provisionPanel: vi
+        verifyApiToken: vi
           .fn()
-          .mockRejectedValue(new ProvisionError('account', 'insufficient-scope')),
+          .mockRejectedValue(new CloudflareApiError(401, undefined, 'token-invalid')),
       }),
     );
-    expect(permission.status).toBe(403);
-    expect(permission.headers.get('set-cookie')).toContain('__Host-tn_install_session=;');
-    await expect(permission.json()).resolves.toEqual({
+    expect(invalid.status).toBe(401);
+    await expect(invalid.json()).resolves.toEqual({
+      ok: false,
+      stage: 'token',
+      code: 'token-invalid',
+    });
+
+    const insufficient = await handleInstallerRequest(
+      post('/api/token/verify', { token: 'LIMITED_VALUE' }),
+      env,
+      deps({
+        listAccounts: vi.fn().mockRejectedValue(new CloudflareApiError(403, 9109)),
+      }),
+    );
+    expect(insufficient.status).toBe(403);
+    await expect(insufficient.json()).resolves.toEqual({
       ok: false,
       stage: 'account',
       code: 'insufficient-scope',
     });
+  });
+  it('installs directly from the request token and preserves retryable safe errors', async () => {
+    const d = deps();
+    const response = await handleInstallerRequest(
+      post('/api/install', {
+        token: 'TOKEN_VALUE',
+        accountId: 'a2',
+        workerName: 'pvnetwork-client',
+        adminPassword: 'correct-horse-1234',
+      }),
+      env,
+      d,
+    );
+    expect(response.status).toBe(200);
+    expect(d.provisionPanel).toHaveBeenCalledWith(
+      'TOKEN_VALUE',
+      { accountId: 'a2', workerName: 'pvnetwork-client', adminPassword: 'correct-horse-1234' },
+      expect.any(Object),
+    );
 
     const retryable = await handleInstallerRequest(
-      new Request('https://install.example.com/api/install', {
-        method: 'POST',
-        headers: { cookie, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          accountId: 'acct',
-          workerName: 'pvnetwork-client',
-          adminPassword: 'correct-horse-1234',
-        }),
+      post('/api/install', {
+        token: 'TOKEN_VALUE',
+        accountId: 'a2',
+        workerName: 'pvnetwork-client',
+        adminPassword: 'correct-horse-1234',
       }),
       env,
       deps({
@@ -158,6 +149,46 @@ describe('installer Worker router', () => {
       }),
     );
     expect(retryable.status).toBe(502);
-    expect(retryable.headers.get('set-cookie')).toBeNull();
+    await expect(retryable.json()).resolves.toEqual({
+      ok: false,
+      stage: 'worker',
+      code: 'worker-upload-failed',
+    });
+  });
+  it('never leaks token/password through logs or responses', async () => {
+    const token = 'SENTINEL_VALUE_A';
+    const password = 'SENTINEL_VALUE_B_1234';
+    const spies = [
+      vi.spyOn(console, 'log').mockImplementation(() => undefined),
+      vi.spyOn(console, 'error').mockImplementation(() => undefined),
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined),
+    ];
+    const response = await handleInstallerRequest(
+      post('/api/install', {
+        token,
+        accountId: 'a1',
+        workerName: 'pvnetwork-client',
+        adminPassword: password,
+      }),
+      env,
+      deps({
+        provisionPanel: vi.fn().mockRejectedValue(new ProvisionError('secret', 'secret-failed')),
+      }),
+    );
+    const text = await response.text();
+    expect(text).not.toContain(token);
+    expect(text).not.toContain(password);
+    for (const spy of spies) expect(JSON.stringify(spy.mock.calls)).not.toContain('SENTINEL');
+  });
+
+  it('removes all OAuth/session endpoints after migration', async () => {
+    for (const path of ['/api/oauth/start', '/api/oauth/callback', '/api/session', '/api/logout']) {
+      const response = await handleInstallerRequest(
+        new Request(`https://installer.example${path}`),
+        env,
+        deps(),
+      );
+      expect(response.status).toBe(404);
+    }
   });
 });

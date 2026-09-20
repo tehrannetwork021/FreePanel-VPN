@@ -1,128 +1,109 @@
-import type { InstallRequest } from '@tehrannetwork/shared';
-import { CloudflareApiError, listAccounts } from './cloudflare';
+import type {
+  InstallRequest,
+  TokenInstallRequest,
+  TokenVerifyRequest,
+} from '@tehrannetwork/shared';
+import { CloudflareApiError, listAccounts, verifyApiToken } from './cloudflare';
 import type { InstallerEnv } from './env';
-import { finishOAuth, revokeOAuth, startOAuth } from './oauth';
 import { defaultProvisionDeps, ProvisionError, provisionPanel } from './provision';
-import { INSTALL_SESSION_COOKIE, clearInstallerCookies, readInstallSessionCookie } from './session';
 
 export type RouterDeps = {
-  startOAuth: typeof startOAuth;
-  finishOAuth: typeof finishOAuth;
+  verifyApiToken: typeof verifyApiToken;
   listAccounts: typeof listAccounts;
   provisionPanel: typeof provisionPanel;
-  revokeOAuth: typeof revokeOAuth;
 };
 
 const defaultDeps: RouterDeps = {
-  startOAuth,
-  finishOAuth,
+  verifyApiToken,
   listAccounts,
   provisionPanel,
-  revokeOAuth,
 };
 
-function json(data: unknown, status = 200, cookies: string[] = []): Response {
-  const headers = new Headers({
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store',
-    'x-content-type-options': 'nosniff',
+const MAX_BODY_BYTES = 16 * 1024;
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+    },
   });
-  for (const cookie of cookies) headers.append('set-cookie', cookie);
-  return new Response(JSON.stringify(data), { status, headers });
 }
-
-function hasInstallCookie(request: Request): boolean {
-  return (request.headers.get('cookie') ?? '')
-    .split(';')
-    .some((part) => part.trim().startsWith(`${INSTALL_SESSION_COOKIE}=`));
-}
-
-async function readSessionOrResponse(
-  request: Request,
-  env: InstallerEnv,
-): Promise<Awaited<ReturnType<typeof readInstallSessionCookie>> | Response> {
-  if (!hasInstallCookie(request)) {
-    return json({ connected: false });
-  }
-  try {
-    return await readInstallSessionCookie(request, env.COOKIE_KEY_B64);
-  } catch {
-    return json({ connected: false, error: 'authorization-expired' }, 401, clearInstallerCookies());
-  }
-}
-
-async function handleSession(request: Request, env: InstallerEnv, deps: RouterDeps) {
-  const session = await readSessionOrResponse(request, env);
-  if (session instanceof Response) return session;
-  try {
-    const accounts = await deps.listAccounts(session.accessToken);
-    return json({ connected: true, expiresAt: session.expiresAt, accounts });
-  } catch (error) {
-    const code =
-      error instanceof CloudflareApiError && error.message === 'insufficient-scope'
-        ? 'insufficient-scope'
-        : 'invalid-account';
-    const terminal = code === 'insufficient-scope';
-    return json(
-      { ok: false, stage: 'account', code },
-      terminal ? 403 : 502,
-      terminal ? clearInstallerCookies() : [],
-    );
-  }
-}
-
-async function handleInstall(request: Request, env: InstallerEnv, deps: RouterDeps) {
-  const session = await readSessionOrResponse(request, env);
-  if (session instanceof Response) {
-    if (session.status === 200) {
-      return json({ ok: false, stage: 'oauth', code: 'authorization-expired' }, 401);
-    }
-    return session;
-  }
+async function readJson<T>(request: Request): Promise<T | Response> {
   if (!(request.headers.get('content-type') ?? '').toLowerCase().startsWith('application/json')) {
-    return json({ ok: false, stage: 'oauth', code: 'invalid-request' }, 415);
+    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 415);
   }
-
-  let installRequest: InstallRequest;
+  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 413);
+  }
+  const text = await request.text();
+  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
+    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 413);
+  }
   try {
-    installRequest = (await request.json()) as InstallRequest;
+    return JSON.parse(text) as T;
   } catch {
-    return json({ ok: false, stage: 'oauth', code: 'invalid-request' }, 400);
-  }
-
-  try {
-    const result = await deps.provisionPanel(session, installRequest, defaultProvisionDeps);
-    await deps.revokeOAuth(session.accessToken, env);
-    return json(result, 200, clearInstallerCookies());
-  } catch (error) {
-    if (!(error instanceof ProvisionError)) {
-      return json({ ok: false, stage: 'worker', code: 'worker-upload-failed' }, 502);
-    }
-    const terminal = error.code === 'insufficient-scope';
-    const inputError =
-      error.code === 'invalid-account' ||
-      error.code === 'invalid-worker-name' ||
-      error.code === 'invalid-admin-password';
-    return json(
-      { ok: false, stage: error.stage, code: error.code },
-      terminal ? 403 : inputError ? 400 : 502,
-      terminal ? clearInstallerCookies() : [],
-    );
+    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 400);
   }
 }
 
-async function handleLogout(request: Request, env: InstallerEnv, deps: RouterDeps) {
-  if (hasInstallCookie(request)) {
-    try {
-      const session = await readInstallSessionCookie(request, env.COOKIE_KEY_B64);
-      await deps.revokeOAuth(session.accessToken, env);
-    } catch {
-      // Cookie is still cleared below even if already expired or invalid.
-    }
+function tokenError(error: unknown): Response {
+  if (error instanceof CloudflareApiError && error.message === 'token-invalid') {
+    return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
   }
-  const headers = new Headers();
-  for (const cookie of clearInstallerCookies()) headers.append('set-cookie', cookie);
-  return new Response(null, { status: 204, headers });
+  if (error instanceof CloudflareApiError && error.message === 'insufficient-scope') {
+    return json({ ok: false, stage: 'account', code: 'insufficient-scope' }, 403);
+  }
+  return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
+}
+async function handleVerify(request: Request, deps: RouterDeps): Promise<Response> {
+  const body = await readJson<TokenVerifyRequest>(request);
+  if (body instanceof Response) return body;
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  if (!token) return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
+  try {
+    await deps.verifyApiToken(token);
+    const accounts = await deps.listAccounts(token);
+    return json({ ok: true, accounts });
+  } catch (error) {
+    return tokenError(error);
+  }
+}
+
+function installError(error: unknown): Response {
+  if (error instanceof CloudflareApiError) return tokenError(error);
+  if (!(error instanceof ProvisionError)) {
+    return json({ ok: false, stage: 'worker', code: 'worker-upload-failed' }, 502);
+  }
+  const inputError =
+    error.code === 'invalid-account' ||
+    error.code === 'invalid-worker-name' ||
+    error.code === 'invalid-admin-password';
+  return json(
+    { ok: false, stage: error.stage, code: error.code },
+    error.code === 'insufficient-scope' ? 403 : inputError ? 400 : 502,
+  );
+}
+async function handleInstall(request: Request, deps: RouterDeps): Promise<Response> {
+  const body = await readJson<TokenInstallRequest>(request);
+  if (body instanceof Response) return body;
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  if (!token) return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
+  try {
+    await deps.verifyApiToken(token);
+    const installRequest: InstallRequest = {
+      accountId: body.accountId,
+      workerName: body.workerName,
+      adminPassword: body.adminPassword,
+    };
+    const result = await deps.provisionPanel(token, installRequest, defaultProvisionDeps);
+    return json(result);
+  } catch (error) {
+    return installError(error);
+  }
 }
 
 export async function handleInstallerRequest(
@@ -131,20 +112,11 @@ export async function handleInstallerRequest(
   deps: RouterDeps = defaultDeps,
 ): Promise<Response> {
   const url = new URL(request.url);
-  if (url.pathname === '/api/oauth/start' && request.method === 'GET') {
-    return deps.startOAuth(request, env);
-  }
-  if (url.pathname === '/api/oauth/callback' && request.method === 'GET') {
-    return deps.finishOAuth(request, env);
-  }
-  if (url.pathname === '/api/session' && request.method === 'GET') {
-    return handleSession(request, env, deps);
+  if (url.pathname === '/api/token/verify' && request.method === 'POST') {
+    return handleVerify(request, deps);
   }
   if (url.pathname === '/api/install' && request.method === 'POST') {
-    return handleInstall(request, env, deps);
-  }
-  if (url.pathname === '/api/logout' && request.method === 'POST') {
-    return handleLogout(request, env, deps);
+    return handleInstall(request, deps);
   }
   if (url.pathname.startsWith('/api/')) {
     return json({ ok: false, code: 'not-found' }, 404);
