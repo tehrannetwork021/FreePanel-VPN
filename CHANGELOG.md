@@ -13,6 +13,9 @@ Phase A adds the Cloudflare-only multi-user control plane. This entry records lo
 - Per-user tunnel authentication for VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one while preserving the legacy owner credentials/config.
 - Coarse usage accounting and quota checkpoints at 4 MiB, 60 seconds or connection close; no per-packet billing claim.
 - Subscription and protocol credential rotation, redacted audit trail, login telemetry/throttling, PBKDF2 admin credentials, D1 sessions and CSRF protection.
+- Final regular-user installer UX is one-token only: Generate API Token → Paste → Install. Account selection, Worker name and admin password are automatic and no pre-install configuration form is shown.
+- Installer success now requires v0.3 health/schema readiness plus a real `/api/auth/login` using the exact generated password, preventing false-success password handoffs.
+- Installer Worker assets are rebuilt and synchronized deterministically from `apps/installer/dist`; stale public assets are deleted before every release build.
 
 ### Upgrade semantics
 
@@ -25,6 +28,8 @@ Phase A adds the Cloudflare-only multi-user control plane. This entry records lo
 - Phase A Xray-core flow: login → user create → private subscription → all three channels → usage → pause/resume → quota denial → subscription rotation → credential rotation → legacy compatibility.
 - Desktop/mobile browser flows cover installer handoff and dashboard operations; release security scans cover secret sentinels and response hardening.
 - Release version/artifact contract pins root package, Worker package, installer-worker, runtime health version and immutable manifest to `0.3.0`; generated Worker SHA-256 is verified.
+- Final gate: repository `pnpm check` PASS with 48 test files / 216 tests; Playwright PASS 9 executed / 3 intentional project skips; standalone Worker PASS 26 files / 152 tests; VLESS-WS, Trojan-WS, VLESS-XHTTP stream-one, negative-auth, Phase A lifecycle and legacy-upgrade E2E all PASS.
+- Final edge artifact: 434,492 bytes, SHA-256 `58ffdc316263268f1f5beb587dfabe716ec4d754758dae04ab8690f2dc37824f`.
 
 ### Not ready / pending
 

@@ -8,3 +8,5 @@ assets/readme/*.png
 deploy/worker/package-lock.json
 
 apps/installer-worker/src/generated/
+
+apps/installer-worker/public/

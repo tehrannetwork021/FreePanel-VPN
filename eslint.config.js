@@ -16,7 +16,15 @@ const nodeGlobals = Object.fromEntries(
 );
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', '**/.superpowers/**'] },
+  {
+    ignores: [
+      '**/dist/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+      '**/.superpowers/**',
+      'apps/installer-worker/public/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

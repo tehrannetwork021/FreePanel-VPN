@@ -92,8 +92,8 @@ export function App({ api = browserInstallerApi }: Props) {
     }
   }
 
-
-  const step = screen === 'token' ? 1 : screen === 'verifying' ? 2 : screen === 'installing' ? 3 : 4;
+  const step =
+    screen === 'token' ? 1 : screen === 'verifying' ? 2 : screen === 'installing' ? 3 : 4;
 
   return (
     <main className="installer" dir={dir}>
@@ -247,7 +247,6 @@ export function App({ api = browserInstallerApi }: Props) {
             </a>
           </div>
         ) : null}
-
       </section>
     </main>
   );

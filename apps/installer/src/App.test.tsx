@@ -101,9 +101,7 @@ describe('one-token Cloudflare installer', () => {
 
   it('shows a safe error when the token has no accessible account', async () => {
     render(
-      <App
-        api={api({ verifyToken: vi.fn().mockResolvedValue({ ok: true, accounts: [] }) })}
-      />,
+      <App api={api({ verifyToken: vi.fn().mockResolvedValue({ ok: true, accounts: [] }) })} />,
     );
     fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
       target: { value: 'cf-token-value-12345678901234567890' },

@@ -83,7 +83,9 @@ test('one token automatically provisions and returns admin handoff', async ({ pa
   expect(JSON.stringify(storage)).not.toContain(installToken);
 });
 
-test('mobile flow also exposes only the token input before installation', async ({ page }, testInfo) => {
+test('mobile flow also exposes only the token input before installation', async ({
+  page,
+}, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile-only assertion');
   await page.goto('http://127.0.0.1:43174/');
   await expect(page.getByLabel('Cloudflare API Token')).toBeVisible();

@@ -357,6 +357,6 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 - [x] Installer unit/i18n contract PASS: 8/8 focused tests; browser contract PASS on desktop/mobile: 5 passed / 1 intentional project skip.
 - [x] Stale-installer packaging root cause fixed: `scripts/sync-installer-assets.mjs` replaces `apps/installer-worker/public` with the exact Vite build on every release build; RED missing-module test then GREEN parity test observed.
 - [x] Current generated installer assets are byte-identical between `apps/installer/dist` and `apps/installer-worker/public`; stale assets are deleted during sync.
-- [ ] Fresh full release gate on the final staging commit.
+- [x] Fresh full release gate on final staging source: `pnpm check` PASS (48 files / 216 tests); Playwright PASS (9 executed / 3 intentional project skips); standalone Worker PASS (26 files / 152 tests); protocol E2E PASS VLESS-WS/Trojan-WS/XHTTP/negative-auth; Phase A lifecycle PASS; legacy-upgrade PASS; installer assets byte-identical after deterministic sync.
 - [ ] Central public installer redeployed with this exact v0.3 build and `/api/health` confirms edge artifact `0.3.0`.
 - [ ] Real Cloudflare single-token field install passes health + admin login + user/protocol smoke before stable release is declared.
