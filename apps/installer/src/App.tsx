@@ -31,6 +31,15 @@ export const DEVELOPER_INSTALL_URL =
 type Props = { api?: InstallerApi };
 type Screen = 'token' | 'config' | 'installing' | 'result';
 
+function generatePassword(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (const byte of bytes) out += alphabet[byte % alphabet.length];
+  return out;
+}
+
 function errorCode(error: unknown): string {
   return error instanceof InstallerClientError ? error.code : 'installation-failed';
 }
@@ -43,6 +52,7 @@ export function App({ api = browserInstallerApi }: Props) {
   const [accountId, setAccountId] = useState('');
   const [workerName, setWorkerName] = useState('tehran-network-edge');
   const [adminPassword, setAdminPassword] = useState('');
+  const [usedPassword, setUsedPassword] = useState('');
   const [result, setResult] = useState<InstallResult | null>(null);
   const [error, setError] = useState('');
   const vault = useMemo(() => createVolatileTokenVault(), []);
@@ -69,6 +79,7 @@ export function App({ api = browserInstallerApi }: Props) {
       setAccounts(verified.accounts);
       setAccountId(verified.accounts[0]?.id ?? '');
       setTokenInput('');
+      setAdminPassword(generatePassword());
       setScreen('config');
     } catch (cause) {
       vault.clear();
@@ -92,6 +103,7 @@ export function App({ api = browserInstallerApi }: Props) {
     setError('');
     try {
       const installed = await api.installPanel({ token, accountId, workerName, adminPassword });
+      setUsedPassword(adminPassword);
       setResult(installed);
       setScreen('result');
     } catch {
@@ -226,16 +238,29 @@ export function App({ api = browserInstallerApi }: Props) {
               disabled={screen === 'installing'}
             />
             <label htmlFor="admin-password">{t('installer.free.password')}</label>
-            <input
-              id="admin-password"
-              aria-label={t('installer.free.password')}
-              type="password"
-              minLength={1}
-              value={adminPassword}
-              onChange={(event) => setAdminPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={screen === 'installing'}
-            />
+            <div className="password-row">
+              <input
+                id="admin-password"
+                aria-label={t('installer.free.password')}
+                type="text"
+                minLength={1}
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                autoComplete="new-password"
+                spellCheck={false}
+                disabled={screen === 'installing'}
+              />
+              <button
+                type="button"
+                className="password-regen"
+                title={t('installer.free.newPassword')}
+                onClick={() => setAdminPassword(generatePassword())}
+                disabled={screen === 'installing'}
+              >
+                <Sparkles size={15} /> {t('installer.free.newPassword')}
+              </button>
+            </div>
+            <p className="password-hint">{t('installer.free.autoPasswordHint')}</p>
             <button className="install-button" type="submit" disabled={screen === 'installing'}>
               {screen === 'installing'
                 ? t('installer.free.installing')
@@ -252,7 +277,17 @@ export function App({ api = browserInstallerApi }: Props) {
             <div>
               <strong>{t('installer.free.ready')}</strong>
               <p>{result.workerUrl}</p>
+              <p className="result-password">
+                <b>{t('installer.free.yourPassword')}:</b> <code>{usedPassword}</code>
+              </p>
             </div>
+            <button
+              type="button"
+              className="result-card__copy-password"
+              onClick={() => void navigator.clipboard?.writeText(usedPassword)}
+            >
+              <Copy size={16} /> {t('installer.free.yourPassword')}
+            </button>
             <div className="result-card__actions">
               <button
                 type="button"

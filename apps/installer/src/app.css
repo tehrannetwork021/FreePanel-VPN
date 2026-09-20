@@ -243,6 +243,66 @@
   top: 17px;
   color: var(--tn-muted);
 }
+.password-row {
+  display: flex;
+  gap: 10px;
+}
+.password-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0 15px;
+  border: 1px solid var(--tn-border);
+  border-radius: 16px;
+  color: var(--tn-text);
+  background: rgba(3, 8, 22, 0.58);
+  outline: none;
+  font: inherit;
+  direction: ltr;
+}
+.password-row input:focus {
+  border-color: rgba(141, 107, 255, 0.85);
+}
+.password-regen {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--tn-border);
+  border-radius: 16px;
+  color: var(--tn-text);
+  background: rgba(141, 107, 255, 0.12);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.password-regen:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+.password-hint {
+  margin: -4px 2px 0;
+  font-size: 12px;
+  color: var(--tn-muted);
+}
+.result-password {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.result-password code {
+  direction: ltr;
+  unicode-bidi: embed;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(141, 107, 255, 0.16);
+  font-size: 13px;
+}
+.result-card__copy-password {
+  align-self: flex-start;
+}
 .install-button {
   min-height: 52px;
   border: 0;

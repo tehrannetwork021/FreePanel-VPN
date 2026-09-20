@@ -80,6 +80,10 @@ export const fa = {
   'installer.free.account': 'حساب Cloudflare',
   'installer.free.worker': 'نام Worker',
   'installer.free.password': 'رمز مدیریت',
+  'installer.free.newPassword': 'رمز جدید',
+  'installer.free.autoPasswordHint':
+    'یک رمز قوی خودکار ساخته شده؛ می\u200cتوانید همان را نگه دارید یا عوضش کنید.',
+  'installer.free.yourPassword': 'رمز مدیریت شما',
   'installer.free.install': 'نصب پنل',
   'installer.free.installing': 'در حال ساخت KV و Worker…',
   'installer.free.ready': 'پنل شما آماده است',

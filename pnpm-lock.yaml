@@ -83,17 +83,10 @@ importers:
         version: 8.3.0(@types/node@22.20.4)(esbuild@0.28.1)
 
   apps/installer-worker:
-    dependencies:
-      '@tehrannetwork/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 5.20260919.1
         version: 5.20260919.1
-      '@tehrannetwork/installer':
-        specifier: workspace:*
-        version: link:../installer
       typescript:
         specifier: 5.9.3
         version: 5.9.3

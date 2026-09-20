@@ -15,15 +15,25 @@
 
 ### 🚀 نصب / Install
 
-**Install Free on Cloudflare — نصب رایگان روی کلادفلر**
+**Install Free on Cloudflare — نصب رایگان روی کلادفلر، بدون ترمینال**
 
 [![Deploy Installer](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
 
-**Generate Cloudflare Key → Paste → Automatic install — بدون VPS، دامنه، GitHub یا ترمینال**
+**۳ کلیک تا پنل — 3 clicks to your panel:**
+
+| گام | کار شما                                                                                 |
+| --- | --------------------------------------------------------------------------------------- |
+| ۱   | روی دکمهٔ **Deploy Installer** کلیک کنید و با اکانت رایگان Cloudflare Confirm بزنید     |
+| ۲   | بعد از نصب، روی لینک `*.workers.dev` که Cloudflare نشان می‌دهد کلیک کنید                |
+| ۳   | در صفحهٔ نصب‌کننده: **ساخت کلید Cloudflare** → Create Token → کپی → Paste → **Install** |
+
+تمام! آدرس پنل + رمز مدیریت (خودکار ساخته می‌شود) نمایش داده می‌شود.
+Done! Your panel URL + auto-generated admin password are shown.
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
-**یا نصب با اسکریپت — توکن را Paste کن، خودش همه‌کاره می‌شود / Or install with a script — paste the token and it does everything:**
+<details>
+<summary>روش جایگزین: نصب با اسکریپت در ترمینال / Alternative: terminal script</summary>
 
 ```powershell
 # Windows PowerShell
@@ -34,6 +44,8 @@ irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 
 # Linux / macOS / WSL / Git Bash
 curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
 ```
+
+</details>
 
 Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
 
@@ -53,15 +65,15 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 
 ### نصب برای کاربر عادی
 
-**راه اول — اسکریپت (سریع‌ترین):** یک پنجره PowerShell یا ترمینال باز کنید، دستور بالا را اجرا کنید و توکن را Paste کنید. اسکریپت خودش KV می‌سازد، Worker را آپلود می‌کند، workers.dev را فعال می‌کند و در پایان آدرس پنل، رمز مدیریت و لینک کانفیگ‌ها را چاپ می‌کند.
+**راه اول — نصب‌کنندهٔ وب (بدون ترمینال، پیشنهادی):**
 
-**راه دوم — نصب‌کنندهٔ وب:**
+1. روی دکمهٔ **Deploy Installer** در بالای همین صفحه کلیک کنید و با اکانت رایگان Cloudflare، نصب را Confirm کنید؛ Cloudflare خودش نصب‌کننده را می‌سازد (۱ تا ۲ دقیقه).
+2. بعد از اتمام، روی لینک `*.workers.dev` که Cloudflare نمایش می‌دهد کلیک کنید تا صفحهٔ نصب‌کننده باز شود.
+3. در نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ صفحهٔ رسمی Cloudflare با دسترسی‌های لازم (Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read) از پیش تنظیم‌شده باز می‌شود. **Create Token** را بزنید و توکن را کپی کنید.
+4. به نصب‌کننده برگردید، توکن را Paste و Verify کنید؛ رمز مدیریت هم از قبل خودکار ساخته شده — **Install** را بزنید.
+5. تمام! آدرس پنل + رمز مدیریت نمایش داده می‌شود؛ با همان رمز وارد پنل شوید و کانفیگ/QR/Subscription را بردارید.
 
-1. روی دکمهٔ **Deploy Installer** در بالای همین صفحه بزنید و با اکانت رایگان Cloudflare آن را نصب کنید؛ آدرس `*.workers.dev` نصب‌کننده را باز کنید.
-2. در نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ صفحهٔ رسمی Cloudflare با دسترسی‌های لازم (Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read) از پیش تنظیم شده باز می‌شود.
-3. توکن را که Cloudflare فقط یک بار نشان می‌دهد کپی کنید، در نصب‌کننده Paste و Verify کنید.
-4. حساب، نام Worker و رمز مدیریت را انتخاب کنید و Install بزنید.
-5. آدرس پنل شما آماده است؛ همان رمز مدیریت را وارد کنید و کانفیگ/QR/Subscription را بردارید.
+**راه دوم — اسکریپت ترمینال:** اگر ترمینال را ترجیح می‌دهید، دستورهای بخش جایگزین در بالای صفحه را اجرا کنید و توکن را Paste کنید. (نکته: اگر در ایران هستید و دانلود اسکریپت خطا داد، از راه اول استفاده کنید.)
 
 راهنمای گام‌به‌گام: [آموزش کامل فارسی](docs/INSTALL_FA.md)
 
@@ -112,15 +124,15 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 
 ### One-click installation
 
-**Path 1 — Script (fastest):** open a PowerShell or terminal window, run the command above, paste your token. The script provisions KV, uploads the Worker, enables workers.dev and prints the panel URL, admin password and config links.
+**Path 1 — Web installer (no terminal, recommended):**
 
-**Path 2 — Web installer:**
+1. Click **Deploy Installer** at the top of this page and confirm with your free Cloudflare account; Cloudflare builds the installer for you (1–2 minutes).
+2. When it finishes, click the `*.workers.dev` link Cloudflare shows to open the installer page.
+3. Click **Generate Cloudflare Key**; Cloudflare's official page opens with the required scopes preselected (Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read). Click **Create Token** and copy it.
+4. Return to the installer, paste the token and verify; a strong admin password is already auto-generated — click **Install**.
+5. Done! Your panel URL + admin password are displayed; sign in with that password and collect configs/QR/subscription.
 
-1. Click **Deploy Installer** at the top of this page and install it with your free Cloudflare account; open the installer's `*.workers.dev` URL.
-2. Click **Generate Cloudflare Key**; Cloudflare's official page opens with the required scopes preselected (Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read).
-3. Copy the token (Cloudflare shows it once), paste it into the installer and verify.
-4. Choose your account, a Worker name and an admin password, then click Install.
-5. Your panel URL is ready; enter the same admin password and collect configs/QR/subscription.
+**Path 2 — Terminal script:** if you prefer a terminal, run the alternative commands at the top of this page and paste the token. (Note: if the script download fails — common behind Iranian filters — use Path 1.)
 
 Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 

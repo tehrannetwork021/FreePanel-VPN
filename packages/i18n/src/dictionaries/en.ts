@@ -81,6 +81,10 @@ export const en = {
   'installer.free.account': 'Cloudflare account',
   'installer.free.worker': 'Worker name',
   'installer.free.password': 'Admin password',
+  'installer.free.newPassword': 'New password',
+  'installer.free.autoPasswordHint':
+    'A strong password was generated for you; keep it or replace it with your own.',
+  'installer.free.yourPassword': 'Your admin password',
   'installer.free.install': 'Install panel',
   'installer.free.installing': 'Creating KV and Worker…',
   'installer.free.ready': 'Your panel is ready',

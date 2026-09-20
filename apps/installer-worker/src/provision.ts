@@ -1,12 +1,11 @@
-import {
-  validateAdminPassword,
-  validateWorkerName,
-  type CloudflareAccountView,
-  type InstallErrorCode,
-  type InstallRequest,
-  type InstallResult,
-  type InstallStage,
+import type {
+  CloudflareAccountView,
+  InstallErrorCode,
+  InstallRequest,
+  InstallResult,
+  InstallStage,
 } from '@tehrannetwork/shared';
+import { validateAdminPassword, validateWorkerName } from './validation';
 import {
   CloudflareApiError,
   enableScriptSubdomain,

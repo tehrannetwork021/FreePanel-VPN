@@ -59,11 +59,11 @@ describe('public install and release contract', () => {
     expect(existsSync('docs/INSTALL_EN.md')).toBe(true);
     const fa = readFileSync('docs/INSTALL_FA.md', 'utf8');
     const en = readFileSync('docs/INSTALL_EN.md', 'utf8');
-    expect(fa).toContain('نصب رایگان با توکن Cloudflare');
+    expect(fa).toContain('نصب بدون ترمینال');
     expect(fa).toContain('ساخت کلید Cloudflare');
     expect(fa).toContain('Workers Scripts');
     expect(fa).toContain(developerDeployUrl.slice(0, 60));
-    expect(en).toContain('Free installation with a Cloudflare token');
+    expect(en).toContain('No-terminal install');
     expect(en).toContain('Generate Cloudflare Key');
     expect(en).toContain('Workers Scripts');
     expect(en).toContain('no VPS, no custom domain, no GitHub connection');
@@ -76,6 +76,35 @@ describe('public install and release contract', () => {
     expect(manifest.version).toBe('0.2.0');
     expect(manifest.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(existsSync('apps/installer/dist/index.html')).toBe(true);
+  });
+
+  it('keeps the installer Worker self-contained so the Deploy button never needs a monorepo install', () => {
+    const pkg = JSON.parse(readFileSync('apps/installer-worker/package.json', 'utf8')) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+    for (const [name, spec] of Object.entries(allDeps)) {
+      expect([name, spec]).not.toContain('workspace:*');
+      expect(spec).not.toMatch(/^workspace:/);
+    }
+    expect(pkg.dependencies ?? {}).toEqual({});
+
+    for (const file of [
+      'apps/installer-worker/src/provision.ts',
+      'apps/installer-worker/src/router.ts',
+    ]) {
+      const body = readFileSync(file, 'utf8');
+      expect(body).not.toMatch(/import \{[^}]*\} from '@tehrannetwork\/shared'/);
+      expect(body).toMatch(/import type \{[^}]*\} from '@tehrannetwork\/shared'/);
+    }
+    expect(existsSync('apps/installer-worker/src/validation.ts')).toBe(true);
+    const validation = readFileSync('apps/installer-worker/src/validation.ts', 'utf8');
+    expect(validation).toContain('validateWorkerName');
+    expect(validation).toContain('validateAdminPassword');
+
+    const readme = readFileSync('README.md', 'utf8');
+    expect(readme.indexOf('Deploy Installer')).toBeLessThan(readme.indexOf('<details>'));
   });
 
   it('ships the tested script easy installers and raw bundle for token-paste installs', () => {

@@ -123,6 +123,15 @@
 - [ ] Owner deploys the installer via the README button and performs the real token install (field retest including XHTTP stream-one)
 - [ ] GitHub Release `v0.2.0` published after CI green on `main`
 
+## No-Terminal Web Install First + Self-Contained Deploy Button — 2026-09-20
+
+- [x] Owner feedback: PowerShell/script path errored (download hosts filtered in Iran) and the owner refuses any terminal — primary install path must be a pure link flow (Deploy button → installer page → token → Paste → Install)
+- [x] Re-verified Cloudflare API has no CORS; the web wizard (served by installer-worker, same-origin `/api/*`) remains the only no-terminal provisioning mechanism
+- [x] `apps/installer-worker` made fully self-contained: runtime validators vendored into `src/validation.ts`, remaining `@tehrannetwork/shared` imports are `import type` only, tsconfig `paths` resolves shared types from source, all `workspace:*` deps removed from package.json + lockfile — the Deploy button builds with any package manager or no install at all (verified: `wrangler deploy --dry-run --outdir` bundle has zero workspace references)
+- [x] Installer UI: auto-generates a strong admin password (18 chars, crypto.getRandomValues, no ambiguous glyphs) with a "New password" button; result screen now shows the panel URL **and** the admin password with copy buttons — no typing beyond the token
+- [x] README + INSTALL_FA/EN restructured: no-terminal web flow is path 1 (3-click table), terminal scripts demoted to a collapsible alternative with an Iran-filter warning; contract test updated (self-containment + path order)
+- [ ] Owner: click **Deploy Installer** → open the shown `*.workers.dev` link → Generate Key → Create Token → Paste → Install → confirm panel URL + auto password work (field retest including XHTTP stream-one)
+
 ## Script Easy Installer — 2026-09-20
 
 - [x] Cloudflare API CORS checked: no `access-control-allow-origin` on api.cloudflare.com — browser-only static installer impossible; terminal scripts CAN call the API directly
