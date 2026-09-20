@@ -177,7 +177,10 @@
 - [x] Regression tests added for 1/5/10-character passwords and for atomic KV + secret metadata upload; focused suite PASS (19 tests).
 - [x] Embedded edge Worker artifact regenerated from the fixed source.
 - [x] Full repository gate PASS: format, lint, typecheck, 124 tests, build; browser E2E PASS 6/6 after clearing stale local preview ports.
-- [ ] Public installer `https://tehran-network-installer.honored-feather.workers.dev` must be redeployed with this commit before asking owner to reinstall/retest.
+- [x] Fix pushed to `main` as `59f05ca` and GitHub CI run `35504024677` completed successfully.
+- [x] Fixed temporary installer deployed for immediate field retest: `https://tehran-network-installer.slow-saturday.workers.dev`.
+- [ ] Stable public installer `https://tehran-network-installer.honored-feather.workers.dev` is still on the previous deployment and must NOT be used for this password retest until redeployed.
+- [ ] After owner confirms the fixed temporary installer accepts the chosen password, promote/claim the fixed installer and switch README primary link if needed.
 
 ## Handoff Notes
 
