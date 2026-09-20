@@ -51,6 +51,10 @@ function makeDeps(events: string[], overrides: Partial<ProvisionDeps> = {}): Pro
       events.push('health');
       return { ok: true, version: '0.1.0', schemaVersion: 1, d1: true };
     },
+    verifyAdminLogin: async (_url, password) => {
+      events.push(`login:${password}`);
+      return true;
+    },
     generateInstallGeneration: () => 'gen-test',
     now: () => Date.now(),
     sleep: async () => undefined,
@@ -70,6 +74,7 @@ describe('panel provisioning', () => {
       'subdomain',
       'enable',
       'health',
+      'login:correct-horse-1234',
     ]);
     expect(result).toEqual({
       ok: true,
@@ -109,6 +114,27 @@ describe('panel provisioning', () => {
     expect(events.filter((event) => event === 'kv')).toHaveLength(1);
     expect(events.filter((event) => event === 'd1')).toHaveLength(1);
     expect(uploadAttempts).toBe(2);
+  });
+
+  it('does not report success when the deployed Worker rejects the displayed admin password', async () => {
+    const events: string[] = [];
+    let now = 10_000;
+    const verifyAdminLogin = vi.fn().mockResolvedValue(false);
+    const deps = makeDeps(events, {
+      verifyAdminLogin,
+      now: () => now,
+      sleep: async (ms) => {
+        now += ms;
+      },
+    });
+
+    await expect(provisionPanel(accessToken, request, deps)).rejects.toEqual(
+      new ProvisionError('health', 'health-failed'),
+    );
+    expect(verifyAdminLogin).toHaveBeenCalledWith(
+      'https://pvnetwork-client.my-subdomain.workers.dev',
+      request.adminPassword,
+    );
   });
 
   it('bounds health polling to 30 seconds and returns a health-stage failure', async () => {

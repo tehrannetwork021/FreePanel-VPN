@@ -337,3 +337,13 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 - [x] Rejected Cloudflare Deploy Button/Account Picker as a normal-user install path after live UI review.
 - [x] GitHub install CTA is locked back to the public token installer: open installer → Generate scoped API Token → Paste/Verify → select account inside installer → Install.
 - [x] README contract now forbids `deploy.workers.cloudflare.com` in the primary GitHub landing page.
+
+### Field gate blocker — stale public installer / admin-password verification — 2026-09-21
+
+- [x] Field screenshot proved the public installer deployed the legacy `/setup` Worker instead of the v0.3 `/admin` control plane.
+- [x] Public installer fingerprint is stale (`index-fun4E7D7.js`) versus current RC installer asset (`index-BTANVrJZ.js`).
+- [x] RED regression reproduced the installer flaw: health could pass and provisioning could return success without proving the displayed admin password was accepted.
+- [x] Provisioning now requires a real `POST /api/auth/login` with the exact displayed password after v0.3 health/schema/D1 readiness; a rejected password prevents success.
+- [x] Login rejection is fail-fast to avoid filling the Worker login throttle; transient network failures remain health-poll retryable.
+- [x] Focused verification PASS: installer-worker typecheck, 19/19 installer-worker tests, Wrangler dry-run, 5/5 installer UI tests, formatting and `git diff --check`.
+- [ ] Redeploy the central public installer with this v0.3 build, then repeat clean-account field installation. Do not mark v0.3 stable before that field run passes.

@@ -55,6 +55,7 @@ export type ProvisionDeps = {
   fetchHealth(
     url: string,
   ): Promise<{ ok: boolean; version?: string; schemaVersion?: number; d1?: boolean }>;
+  verifyAdminLogin(url: string, password: string): Promise<boolean>;
   generateInstallGeneration(): string;
   now(): number;
   sleep(ms: number): Promise<void>;
@@ -93,6 +94,15 @@ export const defaultProvisionDeps: ProvisionDeps = {
       schemaVersion?: number;
       d1?: boolean;
     };
+  },
+  async verifyAdminLogin(url, password) {
+    const response = await fetch(`${url}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password }),
+      cache: 'no-store',
+    });
+    return response.ok;
   },
   generateInstallGeneration: () => crypto.randomUUID(),
   now: () => Date.now(),
@@ -175,6 +185,8 @@ export async function provisionPanel(
         health.schemaVersion === 1 &&
         health.d1 === true
       ) {
+        const loginOk = await deps.verifyAdminLogin(workerUrl, request.adminPassword);
+        if (!loginOk) throw new ProvisionError('health', 'health-failed');
         return {
           ok: true,
           workerUrl,
@@ -184,7 +196,8 @@ export async function provisionPanel(
           adminUrl: `${workerUrl}/admin`,
         };
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof ProvisionError) throw error;
       // workers.dev may need a few seconds to become reachable after the upload.
     }
     const remaining = deadline - deps.now();
