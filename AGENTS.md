@@ -156,9 +156,9 @@
 - [x] Public smoke: installer root HTTP 200 with Tehran Network UI; synthetic invalid token returns HTTP 401 / `token-invalid` without raw Cloudflare body.
 - [x] TDD docs contract changed to require the direct public installer before all developer/self-host paths; README + INSTALL_FA/EN updated accordingly.
 - [x] Privacy wording corrected for hosted installer: scoped token traverses the installer Worker over HTTPS for the current request but is never persisted/logged; VPN traffic never traverses Tehran Network installer infrastructure.
-- [ ] Owner-only one-time action: claim the Cloudflare preview account before the 60-minute claim window expires so the public URL persists.
+- [x] Owner claimed the Cloudflare preview account; screenshot-confirmed persistent public installer opens at `https://tehran-network-installer.honored-feather.workers.dev`.
 - [ ] Real-token smoke on the claimed public installer: Verify → account → Install → `/health` → VLESS-WS plus Trojan/XHTTP field retest.
-- [ ] After claim + real smoke PASS: fast-forward these direct-installer docs to `main` and make the GitHub button the final public entry point.
+- [x] Owner explicitly approved publishing the direct public-installer entry point to `main` for the final real-token field test; README must no longer require each user to deploy the installer first.
 
 ## Handoff Notes
 

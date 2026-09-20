@@ -11,12 +11,12 @@ Source baseline: `2c1957338637287ba17a060bb6d9bf2d842716ba` (`main` when deploye
 - PASS — `GET /` returns the Tehran Network installer UI.
 - PASS — `POST /api/token/verify` with an invalid synthetic token returns HTTP 401 and safe body `token-invalid`.
 - PASS — no token/password values were recorded in this smoke log.
-- PENDING — owner claims the preview account so the public `workers.dev` URL becomes persistent.
+- PASS — owner claimed the preview account; screenshots confirm the persistent public installer opens successfully.
 - PENDING — clean-user real scoped token: Verify → account discovery → Install → final panel URL.
 - PENDING — final panel `/health`, VLESS-WS field connection, Trojan-WS and XHTTP field retest.
 
 ## Publication rule
 
-Do not move the direct public-installer README change to `main` until the preview account is claimed and a real-token install succeeds. The end-user path after publication must be only:
+Owner approved publishing the direct public-installer README entry point to `main` before the final real-token field test so the exact GitHub user journey can be tested. Keep real-token/protocol smoke marked pending until the owner reports results. The end-user path must be only:
 
 GitHub README → public installer → Generate Cloudflare Key → Create/Copy → Paste → Install.
