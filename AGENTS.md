@@ -197,3 +197,20 @@
 - Immediate order after reading this file: (1) commit/push this ledger, (2) relax ADMIN_PASSWORD minimum with TDD, (3) reproduce/fix production XHTTP with real Xray semantics, (4) design Clean-IP/ProxyIP + GitHub community registry, (5) expand only tested protocols/transports.
 - Session 2026-09-20 (XHTTP P0): `7f05672` already contained the ADMIN_PASSWORD fix; verified instead of redoing. XHTTP root cause was chased through Xray-core sources (`splithttp/config.go` `FillStreamRequest` sets `Content-Type: application/grpc`; `client.go` requires HTTP 200 and never checks response content-type; default padding goes to the `Referer` header, not the body), Cloudflare docs (gRPC content-type without the zone toggle ⇒ edge answers 403 before origin; no toggle exists for workers.dev) and cmliu/edgetunnel (field-proven: `application/octet-stream` + `X-Accel-Buffering: no` response). Fixes shipped with TDD: octet-stream response, `extra={"noGRPCHeader":true}` in the XHTTP link (+ `host=` parity), redacted `xhttpDiag` in `/api/status`, and `@tehrannetwork/installer` added to installer-worker devDependencies so `pnpm -r build` orders the installer dist before the wrangler dry-run (gate was order-flaky).
 - Local workerd E2E from a clean checkout: `cd deploy/worker && pnpm install --ignore-workspace && node test/protocol-e2e.mjs` (deps are outside the pnpm workspace on purpose; do not commit the generated lockfile).
+
+## Complete Cloudflare-Only Control Plane — Design Gate — 2026-09-20
+
+- [x] Re-read current `main`, recent commits and this ledger before starting the expansion.
+- [x] Re-reviewed current reference capabilities: CFnew, BPB Worker Panel, CFNext, Nahan, Nova Proxy, Re_edgetunnel, edcloudwasm and SubLink Worker.
+- [x] Re-checked current official Cloudflare Free limits for Workers, KV and D1 before choosing the storage split.
+- [x] Architecture decision captured: D1 is authoritative for users/quota/expiry/usage/audit/sessions; KV is low-write config/cache/feature state; isolate memory is cache only.
+- [x] Normal-user install remains Cloudflare-only/no-terminal/no-VPS/no-Docker/no-paid-domain and keeps the public scoped-token installer flow.
+- [x] Full design written to `docs/superpowers/specs/2026-09-20-cloudflare-only-complete-panel-design.md`.
+- [ ] Owner reviews/approves the written design.
+- [ ] Write the implementation plan after design approval.
+- [ ] Phase A implementation: D1 provisioning + migrations + multi-user/quota/expiry/private links/audit + redesigned dashboard shell.
+- [ ] Phase B implementation: native multi-format subscription engine.
+- [ ] Phase C implementation: Clean-IP/preferred endpoint platform + optional privacy-preserving community registry.
+- [ ] Phase D implementation: ProxyIP/chain/DNS/ECH/routing.
+- [ ] Phase E implementation: WARP/Fragment/extra clients/Shadowsocks only after separate tests.
+- [ ] Phase F: security hardening, Free-plan budget tests, clean-account real Cloudflare field verification and release docs.
