@@ -160,6 +160,15 @@
 - [ ] Real-token smoke on the claimed public installer: Verify → account → Install → `/health` → VLESS-WS plus Trojan/XHTTP field retest.
 - [x] Owner explicitly approved publishing the direct public-installer entry point to `main` for the final real-token field test; README must no longer require each user to deploy the installer first.
 
+## Locked Regular-User Install UX — 2026-09-20
+
+- [x] Public installer is live and externally verified: `https://tehran-network-installer.honored-feather.workers.dev` returns HTTP 200 and `/api/token/verify` handles requests.
+- [x] README regular-user flow is locked to exactly one primary action: **Install Free on Cloudflare / Open Installer**.
+- [x] Regular users must never be asked to deploy the installer, connect GitHub, use Wrangler, create KV/Workers manually, or open a terminal.
+- [x] Required user flow: GitHub button → public installer → Generate Cloudflare Key → Cloudflare Create Token → Copy → Paste → Install → receive panel URL + admin password.
+- [x] Deploy-to-Cloudflare/self-host/terminal paths are removed from the public README landing flow; technical alternatives belong only in developer documentation.
+- [ ] Owner field-retests the exact README button flow and reports Token / Install / VLESS-WS / Trojan-WS / XHTTP results.
+
 ## Handoff Notes
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.

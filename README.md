@@ -15,43 +15,24 @@
 
 ### 🚀 نصب / Install
 
-**Install Free on Cloudflare — نصب رایگان، بدون ترمینال، بدون GitHub و بدون Deploy دستی**
+## فقط همین دکمه را بزنید — Just click this button
 
-[![Install Free on Cloudflare](https://img.shields.io/badge/Install%20Free%20on%20Cloudflare-Open%20Installer-F38020?logo=cloudflare&logoColor=white)](https://tehran-network-installer.honored-feather.workers.dev)
+[![Install Free on Cloudflare](https://img.shields.io/badge/Install%20Free%20on%20Cloudflare-OPEN%20INSTALLER-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://tehran-network-installer.honored-feather.workers.dev)
 
-**۳ قدم تا پنل — 3 steps to your panel:**
+**کاربر عادی هیچ Deploy، GitHub account، Worker setup، Wrangler یا ترمینالی لازم ندارد.**
+**Regular users do not need Deploy steps, a GitHub account, Worker setup, Wrangler, or a terminal.**
 
-| گام | کار شما                                                                   |
-| --- | ------------------------------------------------------------------------- |
-| ۱   | دکمهٔ **Install Free on Cloudflare** را بزنید؛ Installer آماده باز می‌شود |
-| ۲   | **ساخت کلید Cloudflare / Generate Cloudflare Key** → Create Token → Copy  |
-| ۳   | برگردید، Token را Paste کنید → **Install**                                |
+1. دکمه بالا را بزنید / Click the button above.
+2. **Generate Cloudflare Key** → در Cloudflare روی **Create Token** بزنید → Copy.
+3. به Installer برگردید → Token را Paste کنید → **Install**.
 
-تمام. Installer خودش Account، KV، Worker، Secret و `workers.dev` را می‌سازد و آدرس پنل + رمز مدیریت را تحویل می‌دهد.
-Done. The installer provisions Account/KV/Worker/Secret/workers.dev and returns your panel URL + admin password.
+تمام. Installer خودش Account، KV، Worker، Secret و `workers.dev` را می‌سازد و **آدرس پنل + رمز مدیریت** را تحویل می‌دهد.
+Done. The installer provisions Account, KV, Worker, secret and `workers.dev`, then returns the **panel URL + admin password**.
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
-<details>
-<summary>روش‌های پیشرفته / Advanced & self-hosted alternatives</summary>
-
-اگر می‌خواهید خود Installer را داخل اکانت خودتان میزبانی کنید / If you want to self-host the installer:
-
-[Deploy Installer yourself](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
-
-```powershell
-# Windows PowerShell
-irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
-```
-
-```bash
-# Linux / macOS / WSL / Git Bash
-curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
-```
-
-</details>
-
-Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+> مسیرهای توسعه‌دهنده و self-host فقط در مستندات فنی هستند و جزو نصب کاربر عادی نیستند.
+> Developer/self-hosted paths live in the technical docs and are not part of the regular-user install flow.
 
 </div>
 
@@ -65,13 +46,13 @@ Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudfl
 
 ### پروژه چیست؟
 
-Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به یک نصب رایگان و خودکار تبدیل می‌کند. کافی است یک توکن محدود Cloudflare بسازید و به نصب‌کننده بدهید؛ بقیهٔ کار — ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز مدیریت و فعال‌سازی `workers.dev` — در چند ثانیه و داخل اکانت خودتان انجام می‌شود. مسیر پیشرفتهٔ Deploy-to-Cloudflare برای توسعه‌دهندگان جداگانه باقی مانده است.
+Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به یک نصب رایگان و خودکار تبدیل می‌کند. کافی است یک توکن محدود Cloudflare بسازید و به نصب‌کننده بدهید؛ بقیهٔ کار — ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز مدیریت و فعال‌سازی `workers.dev` — در چند ثانیه و داخل اکانت خودتان انجام می‌شود. مسیر کاربر عادی فقط همین Installer عمومی است؛ مسیرهای توسعه‌دهنده در مستندات فنی نگه‌داری می‌شوند.
 
 ### نصب برای کاربر عادی
 
 **فقط همین لینک را باز کنید:** [https://tehran-network-installer.honored-feather.workers.dev](https://tehran-network-installer.honored-feather.workers.dev)
 
-1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه Deploy Installer، نه Wrangler و نه ترمینال.
+1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه مرحلهٔ Deploy، نه Wrangler و نه ترمینال.
 2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit و Account Settings Read.
 3. **Create Token** را بزنید و Token را کپی کنید.
 4. به Installer برگردید، Token را Paste و Verify کنید. اگر چند Account دارید یکی را انتخاب کنید؛ نام Worker و رمز مدیریت هم قابل تغییر است و رمز پیش‌فرض خودکار ساخته می‌شود.
@@ -79,8 +60,6 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 6. آدرس پنل و رمز مدیریت را بردارید و وارد پنل شوید.
 
 Token فقط برای همین درخواست نصب از طریق HTTPS به Installer Worker ارسال می‌شود، در KV/DB/Cookie/localStorage/log ذخیره نمی‌شود و بعد از تلاش نصب پاک می‌شود. پنل نهایی هیچ وابستگی‌ای به Installer ندارد و می‌توانید Token نصب را بعداً از Cloudflare حذف کنید.
-
-**راه جایگزین برای کاربران فنی:** اسکریپت ترمینال و Self-hosted Installer داخل بخش Advanced بالای README باقی مانده‌اند.
 
 راهنمای گام‌به‌گام: [آموزش کامل فارسی](docs/INSTALL_FA.md)
 
@@ -127,7 +106,7 @@ CI همین Quality Gateها را در Pull Request اجرا می‌کند.
 
 ### What is it?
 
-Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into a free, automated installation. Create a narrowly scoped Cloudflare token, paste it into the installer, and everything else — KV provisioning, signed Worker upload, admin secret and `workers.dev` enablement — happens inside your own account in seconds. The developer-focused Deploy-to-Cloudflare path remains as an advanced alternative.
+Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into a free, automated installation. Create a narrowly scoped Cloudflare token, paste it into the installer, and everything else — KV provisioning, signed Worker upload, admin secret and `workers.dev` enablement — happens inside your own account in seconds. The regular-user path is only the public installer; developer workflows live in the technical documentation.
 
 ### One-click installation
 
@@ -141,8 +120,6 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 6. Open the returned panel URL and keep the displayed admin password.
 
 The token is sent over HTTPS to the installer Worker only for the current install request. It is never persisted to KV/database/cookies/browser storage/logs and is cleared after the attempt. The installed panel is independent from the public installer, so you may revoke the setup token afterwards.
-
-**Technical alternatives:** terminal scripts and a self-hosted installer remain under the Advanced section at the top of this README.
 
 Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 
@@ -182,22 +159,21 @@ packages/shared       → product contracts shared across apps
 
 ## نقشه راه / Roadmap
 
-| بخش / Area                          | وضعیت / Status    |
-| ----------------------------------- | ----------------- |
-| TypeScript monorepo + CI            | ✅ Ready          |
-| Persian/English RTL/LTR             | ✅ Ready          |
-| Responsive dashboard                | ✅ Ready          |
-| Free Cloudflare token installer     | ✅ Ready          |
-| Automatic KV/secret/workers.dev     | ✅ Ready          |
-| Official Deploy to Cloudflare (dev) | ✅ Ready          |
-| Volatile token handling             | ✅ Ready          |
-| Worker rollback                     | 🚧 In development |
-| VLESS-WS core                       | ✅ Ready          |
-| Trojan-WS core                      | ✅ Ready          |
-| VLESS-XHTTP stream-one              | 🧪 Field retest   |
-| Smart endpoints / rotation          | 🧭 Planned        |
-| Subscription + QR                   | ✅ Ready          |
-| DNS / ECH / Network Lab             | 🧭 Planned        |
+| بخش / Area                      | وضعیت / Status    |
+| ------------------------------- | ----------------- |
+| TypeScript monorepo + CI        | ✅ Ready          |
+| Persian/English RTL/LTR         | ✅ Ready          |
+| Responsive dashboard            | ✅ Ready          |
+| Free Cloudflare token installer | ✅ Ready          |
+| Automatic KV/secret/workers.dev | ✅ Ready          |
+| Volatile token handling         | ✅ Ready          |
+| Worker rollback                 | 🚧 In development |
+| VLESS-WS core                   | ✅ Ready          |
+| Trojan-WS core                  | ✅ Ready          |
+| VLESS-XHTTP stream-one          | 🧪 Field retest   |
+| Smart endpoints / rotation      | 🧭 Planned        |
+| Subscription + QR               | ✅ Ready          |
+| DNS / ECH / Network Lab         | 🧭 Planned        |
 
 ## امنیت / Security
 

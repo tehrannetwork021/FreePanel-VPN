@@ -3,10 +3,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const publicInstallerUrl = 'https://tehran-network-installer.honored-feather.workers.dev';
-const installerDeployUrl =
-  'https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker';
-const developerDeployUrl =
-  'https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker';
 
 describe('public install and release contract', () => {
   it('ships an isolated Deploy to Cloudflare Worker template', () => {
@@ -37,16 +33,15 @@ describe('public install and release contract', () => {
     });
   });
 
-  it('publishes the free token installer as the primary path and the template as developer path', () => {
+  it('publishes one direct free installer path for regular users', () => {
     const readme = readFileSync('README.md', 'utf8');
     expect(readme).toContain(publicInstallerUrl);
-    expect(readme).toContain(developerDeployUrl);
     expect(readme).toContain('docs/INSTALL_FA.md');
     expect(readme).toContain('docs/INSTALL_EN.md');
     expect(readme).toContain('Install Free on Cloudflare');
     expect(readme).toContain('Generate Cloudflare Key');
-    expect(readme.indexOf(publicInstallerUrl)).toBeLessThan(readme.indexOf(developerDeployUrl));
-    expect(readme.indexOf(installerDeployUrl)).toBeGreaterThan(readme.indexOf('<details>'));
+    expect(readme).not.toContain('deploy.workers.cloudflare.com/?url=');
+    expect(readme).not.toContain('Deploy Installer');
   });
 
   it('documents the token scopes required by the installer', () => {
@@ -65,7 +60,6 @@ describe('public install and release contract', () => {
     expect(fa).toContain('نصب بدون ترمینال');
     expect(fa).toContain('ساخت کلید Cloudflare');
     expect(fa).toContain('Workers Scripts');
-    expect(fa).toContain(developerDeployUrl.slice(0, 60));
     expect(en).toContain(publicInstallerUrl);
     expect(en).toContain('No-terminal install');
     expect(en).toContain('Generate Cloudflare Key');
@@ -108,8 +102,8 @@ describe('public install and release contract', () => {
     expect(validation).toContain('validateAdminPassword');
 
     const readme = readFileSync('README.md', 'utf8');
-    expect(readme.indexOf(publicInstallerUrl)).toBeLessThan(readme.indexOf('<details>'));
-    expect(readme.indexOf('Deploy Installer')).toBeGreaterThan(readme.indexOf('<details>'));
+    expect(readme).not.toContain('Deploy Installer');
+    expect(readme).not.toContain('deploy.workers.cloudflare.com');
   });
 
   it('ships the tested script easy installers and raw bundle for token-paste installs', () => {
@@ -131,8 +125,8 @@ describe('public install and release contract', () => {
     }
 
     const readme = readFileSync('README.md', 'utf8');
-    expect(readme).toContain('install.ps1');
-    expect(readme).toContain('install.sh');
+    expect(readme).not.toContain('install.ps1');
+    expect(readme).not.toContain('install.sh');
 
     const bundle = readFileSync('dist/edge-worker.js', 'utf8');
     const manifest = JSON.parse(
