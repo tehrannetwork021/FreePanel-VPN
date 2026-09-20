@@ -1,4 +1,4 @@
-import type { InstallRequest, InstallResult, InstallerSessionView } from '@tehrannetwork/shared';
+import type { InstallResult, TokenInstallRequest, TokenVerifyResult } from '@tehrannetwork/shared';
 
 export class InstallerClientError extends Error {
   constructor(
@@ -11,10 +11,8 @@ export class InstallerClientError extends Error {
 }
 
 export interface InstallerApi {
-  getSession(): Promise<InstallerSessionView>;
-  startOAuth(): void;
-  installPanel(request: InstallRequest): Promise<InstallResult>;
-  logout(): Promise<void>;
+  verifyToken(token: string): Promise<TokenVerifyResult>;
+  installPanel(request: TokenInstallRequest): Promise<InstallResult>;
 }
 
 async function readError(response: Response): Promise<InstallerClientError> {
@@ -25,18 +23,19 @@ async function readError(response: Response): Promise<InstallerClientError> {
     return new InstallerClientError('installation-failed');
   }
 }
-
-export async function getSession(): Promise<InstallerSessionView> {
-  const response = await fetch('/api/session', { cache: 'no-store', credentials: 'same-origin' });
+export async function verifyToken(token: string): Promise<TokenVerifyResult> {
+  const response = await fetch('/api/token/verify', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token }),
+    cache: 'no-store',
+    credentials: 'same-origin',
+  });
   if (!response.ok) throw await readError(response);
-  return (await response.json()) as InstallerSessionView;
+  return (await response.json()) as TokenVerifyResult;
 }
 
-export function startOAuth(): void {
-  window.location.assign('/api/oauth/start');
-}
-
-export async function installPanel(request: InstallRequest): Promise<InstallResult> {
+export async function installPanel(request: TokenInstallRequest): Promise<InstallResult> {
   const response = await fetch('/api/install', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -48,29 +47,7 @@ export async function installPanel(request: InstallRequest): Promise<InstallResu
   return (await response.json()) as InstallResult;
 }
 
-export async function logout(): Promise<void> {
-  await fetch('/api/logout', {
-    method: 'POST',
-    cache: 'no-store',
-    credentials: 'same-origin',
-  });
-}
-
 export const browserInstallerApi: InstallerApi = {
-  getSession,
-  startOAuth,
+  verifyToken,
   installPanel,
-  logout,
-};
-
-export type TokenInstallFn = (token: string) => Promise<void>;
-export const startTokenInstall: TokenInstallFn = async (token) => {
-  const response = await fetch('/api/token-install', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token }),
-    cache: 'no-store',
-    credentials: 'same-origin',
-  });
-  if (!response.ok) throw new InstallerClientError('advanced-installer-unavailable');
 };
