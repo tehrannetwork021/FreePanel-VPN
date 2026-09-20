@@ -21,15 +21,15 @@ Click **Generate Cloudflare Key** and create a scoped token with only these perm
 
 Do not use the Global API Key. Cloudflare displays the token once; copy it and return to the installer.
 
-### Step 3 — Verify and install
+### Step 3 — Paste and install
 
-1. Paste and verify the token.
-2. Select the target account if you have more than one.
-3. Choose the Worker name; keep the same name when upgrading an existing install.
-4. The installer generates an admin password automatically; keep a strong unique value.
-5. Click **Install**.
-6. The installer creates or reuses KV + D1, uploads the Worker, sets secrets and enables `workers.dev` inside your account.
-7. The result shows the **Worker URL, `/admin` URL, and admin password**.
+1. Paste the token and click **Install with key**.
+2. The installer automatically selects the first accessible Cloudflare account.
+3. The Worker name is fixed to `tehran-network-edge`; there is nothing to configure.
+4. A secure random 18-character admin password is generated automatically; no password form is shown before installation.
+5. The installer creates or reuses KV + D1, uploads the Worker, sets secrets and enables `workers.dev`.
+6. Before reporting success, it checks `/health` and performs a real `/api/auth/login` with the exact generated password.
+7. The result returns only the **Worker URL, `/admin` URL, and admin password** for copy/open.
 
 ## Token privacy
 
@@ -62,9 +62,9 @@ This is not exact per-packet billing. With concurrent connections, bounded overs
 - **KV is for low-write state:** global protocol/legacy-owner configuration plus bounded diagnostics/cache state.
 - Raw per-user secrets are not stored in D1. They are derived from the persistent installation seed plus per-secret versions; only versions and lookup hashes are persisted.
 
-## Upgrade / reinstall with the same Worker name
+## Upgrade / reinstall
 
-The installer reuses `${workerName}-config` for KV and `${workerName}-control` for D1. Reinstalling the same Worker name:
+The installer always uses `tehran-network-edge` and reuses `tehran-network-edge-config` for KV and `tehran-network-edge-control` for D1. Reinstalling the same Worker name:
 
 - does not rewrite the legacy protocol config or owner credentials in KV;
 - preserves the D1 installation seed and per-user secret versions, so existing user links/credentials stay stable;

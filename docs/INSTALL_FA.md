@@ -21,15 +21,15 @@ Installer فقط کنترل‌پلین نصب است؛ ترافیک VPN شما �
 
 از Global API Key استفاده نکنید. Token را Cloudflare فقط یک‌بار نمایش می‌دهد؛ آن را Copy کنید و به Installer برگردید.
 
-### گام ۳ — Verify و Install
+### گام ۳ — Paste و نصب
 
-1. Token را Paste و Verify کنید.
-2. اگر چند Account دارید، حساب موردنظر را انتخاب کنید.
-3. نام Worker را تعیین کنید؛ برای Upgrade همان نام قبلی را نگه دارید.
-4. رمز مدیریت خودکار تولید می‌شود و قابل تغییر است؛ رمز قوی و یکتا را نگه دارید.
-5. **Install** را بزنید.
-6. Installer، KV + D1 + Worker + Secret + `workers.dev` را داخل حساب خودتان ایجاد یا reuse می‌کند.
-7. نتیجه شامل **Worker URL، آدرس `/admin` و رمز مدیریت** است.
+1. Token را Paste کنید و **نصب با کلید** را بزنید.
+2. Installer اولین Account قابل‌دسترسی را خودکار انتخاب می‌کند.
+3. نام Worker همیشه `tehran-network-edge` است و نیازی به واردکردن یا انتخاب آن ندارید.
+4. یک رمز مدیریت ۱۸ کاراکتری امن به‌صورت خودکار ساخته می‌شود؛ هیچ فرم Password قبل از نصب وجود ندارد.
+5. Installer، KV + D1 + Worker + Secret + `workers.dev` را داخل حساب شما ایجاد یا reuse می‌کند.
+6. قبل از اعلام موفقیت، `/health` و ورود واقعی `/api/auth/login` با همان رمز تولیدشده بررسی می‌شوند.
+7. نتیجه فقط **Worker URL، آدرس `/admin` و رمز مدیریت** را برای Copy/Open تحویل می‌دهد.
 
 ## Token و حریم خصوصی
 
@@ -62,9 +62,9 @@ Subscription URL یک **Credential** است؛ آن را عمومی نکنید. T
 - **KV برای state کم‌نوشتن است:** تنظیمات global پروتکل/owner و diagnostics/cacheهای محدود.
 - Secretهای خام هر کاربر در D1 ذخیره نمی‌شوند؛ از installation seed پایدار و version هر secret مشتق می‌شوند و فقط lookup hash/version نگه‌داری می‌شود.
 
-## Upgrade / Reinstall با همان Worker name
+## Upgrade / Reinstall
 
-Installer نام‌های `${workerName}-config` برای KV و `${workerName}-control` برای D1 را reuse می‌کند. نصب دوباره:
+Installer همیشه نام `tehran-network-edge` را استفاده می‌کند و `tehran-network-edge-config` برای KV و `tehran-network-edge-control` برای D1 را reuse می‌کند. نصب دوباره:
 
 - protocol config و owner credentialهای legacy در KV را بازنویسی نمی‌کند؛
 - installation seed و secret-version کاربران را در D1 حفظ می‌کند، پس لینک‌ها و credentialهای موجود کاربران ثابت می‌مانند؛

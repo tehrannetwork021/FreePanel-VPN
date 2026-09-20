@@ -326,7 +326,7 @@
 - [x] Step 5 release state bumped in lockstep to `0.3.0`; stale-manifest RED was observed before regeneration, then panel → edge artifact regeneration produced verified SHA-256 and version parity (`e5ec6f0`).
 - [x] Step 6 bilingual Phase A operator/user/security docs verified; README/install/security/changelog contracts and formatting PASS.
 - [x] Step 7 complete fresh local release gate: `pnpm install --frozen-lockfile`; `pnpm check` PASS (48 files / 214 tests at the full gate); Playwright PASS (10 passed / 2 intentional project skips); standalone Worker check PASS (26 files / 152 tests); owner protocol E2E PASS (VLESS-WS, Trojan-WS, VLESS-XHTTP stream-one, negative auth); Phase A Xray E2E PASS through usage/pause/resume/quota/token+credential rotation/legacy compatibility; Wrangler 4.135 dry-run PASS with `C`, `DB`, `INSTALL_GENERATION`; `ADMIN_PASSWORD` separately verified in `secrets.required` and installer upload metadata as `secret_text`; generated Worker contains no secret sentinel/value; dry bundle 451,007 bytes (<64 MiB). Follow-up release/security contract run PASS (48 files / 215 tests).
-- [x] GitHub one-click field path prepared: permanent `one-click` branch contains a self-contained `apps/installer-worker` with embedded built assets; isolated copy + fresh `npm install` + Wrangler 4.135 dry-run PASS. README/FA/EN install docs expose the official Cloudflare Deploy Button and document the expected Account-selection screen.
+- [x] Public installer remains the only regular-user entry point; Cloudflare Deploy Button/Account Picker was rejected after live UX review and is not part of normal installation.
 - [ ] Step 8 real Cloudflare clean-account + existing-v0.2 field checklist. **Do not mark stable before this passes.**
 - [ ] Step 9 release-candidate ledger/push state after local gate; field results must be a separate evidence commit.
 
@@ -335,7 +335,7 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 ### Installer UX correction — 2026-09-21
 
 - [x] Rejected Cloudflare Deploy Button/Account Picker as a normal-user install path after live UI review.
-- [x] GitHub install CTA is locked back to the public token installer: open installer → Generate scoped API Token → Paste/Verify → select account inside installer → Install.
+- [x] GitHub install CTA is locked to the public token installer: open installer → Generate scoped API Token → Paste → **Install with key**; account selection, Worker name and admin password are automatic and never shown as pre-install fields.
 - [x] README contract now forbids `deploy.workers.cloudflare.com` in the primary GitHub landing page.
 
 ### Field gate blocker — stale public installer / admin-password verification — 2026-09-21
@@ -347,3 +347,16 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 - [x] Login rejection is fail-fast to avoid filling the Worker login throttle; transient network failures remain health-poll retryable.
 - [x] Focused verification PASS: installer-worker typecheck, 19/19 installer-worker tests, Wrangler dry-run, 5/5 installer UI tests, formatting and `git diff --check`.
 - [ ] Redeploy the central public installer with this v0.3 build, then repeat clean-account field installation. Do not mark v0.3 stable before that field run passes.
+
+### Final single-token installer UX — 2026-09-21
+
+- [x] Owner explicitly locked the regular-user flow to **Generate API Token → Paste once → Install → receive `/admin` URL + generated password**; no Account picker, Worker-name field, password field, Deploy Button, CLI, VPS or domain step.
+- [x] Installer automatically selects the first accessible Cloudflare account, uses fixed Worker name `tehran-network-edge`, and generates an 18-character admin password with `crypto.getRandomValues`.
+- [x] Installer clears the token input immediately, never persists it to browser storage/history, and uses it only for verify + install requests.
+- [x] Provisioning already requires v0.3 health/schema readiness **and a real `/api/auth/login` with the exact generated password** before success can be returned.
+- [x] Installer unit/i18n contract PASS: 8/8 focused tests; browser contract PASS on desktop/mobile: 5 passed / 1 intentional project skip.
+- [x] Stale-installer packaging root cause fixed: `scripts/sync-installer-assets.mjs` replaces `apps/installer-worker/public` with the exact Vite build on every release build; RED missing-module test then GREEN parity test observed.
+- [x] Current generated installer assets are byte-identical between `apps/installer/dist` and `apps/installer-worker/public`; stale assets are deleted during sync.
+- [ ] Fresh full release gate on the final staging commit.
+- [ ] Central public installer redeployed with this exact v0.3 build and `/api/health` confirms edge artifact `0.3.0`.
+- [ ] Real Cloudflare single-token field install passes health + admin login + user/protocol smoke before stable release is declared.

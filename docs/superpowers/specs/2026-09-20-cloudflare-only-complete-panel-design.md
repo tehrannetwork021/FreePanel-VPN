@@ -10,7 +10,7 @@ Build a genuinely complete open-source proxy control panel that runs on the **Cl
 
 Locked normal-user flow:
 
-`GitHub README -> public Tehran Network installer -> Generate Cloudflare API Token -> Paste -> Select account -> Install -> panel URL + admin password + subscription links`
+`GitHub README -> public Tehran Network installer -> Generate Cloudflare API Token -> Paste -> automatic account/provisioning -> panel URL + admin password + subscription links`
 
 The API token is request-scoped in memory only. It must never be persisted in KV, D1, logs, cookies, browser storage, repository files, or analytics.
 

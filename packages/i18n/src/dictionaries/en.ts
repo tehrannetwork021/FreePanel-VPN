@@ -76,7 +76,7 @@ export const en = {
     'Cloudflare opens with the required permissions prefilled; the key value is shown only once.',
   'installer.free.tokenLabel': 'Cloudflare API Token',
   'installer.free.tokenPlaceholder': 'Paste the generated key here',
-  'installer.free.verify': 'Verify key',
+  'installer.free.verify': 'Install with key',
   'installer.free.verifying': 'Verifying key…',
   'installer.free.account': 'Cloudflare account',
   'installer.free.worker': 'Worker name',
@@ -96,7 +96,7 @@ export const en = {
   'installer.free.cleanupHelp':
     'The key is not stored by this browser or installer after setup; you can also delete it in Cloudflare for extra hygiene.',
   'installer.free.step1': 'Generate key',
-  'installer.free.step2': 'Verify account',
+  'installer.free.step2': 'Paste token',
   'installer.free.step3': 'Automatic install',
   'installer.free.step4': 'Connect',
   'installer.free.freeBadge': 'Cloudflare Free · No VPS · No custom domain',

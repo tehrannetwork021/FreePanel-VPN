@@ -13,11 +13,11 @@ function api(overrides: Partial<InstallerApi> = {}): InstallerApi {
     }),
     installPanel: vi.fn().mockResolvedValue({
       ok: true,
-      workerUrl: 'https://pvnetwork-client.example.workers.dev',
-      workerName: 'pvnetwork-client',
-      version: '0.1.0',
+      workerUrl: 'https://client.example.workers.dev',
+      workerName: 'tehran-network-edge',
+      version: '0.3.0',
       schemaVersion: 1,
-      adminUrl: 'https://pvnetwork-client.example.workers.dev/admin',
+      adminUrl: 'https://client.example.workers.dev/admin',
     }),
     ...overrides,
   } as InstallerApi;
@@ -28,20 +28,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('free Cloudflare key installer', () => {
-  it('starts with Generate Key and token paste, without OAuth/domain/GitHub requirements', () => {
+describe('one-token Cloudflare installer', () => {
+  it('starts with only key creation and token paste for normal users', () => {
     render(<App api={api()} />);
     expect(screen.getByRole('link', { name: 'ساخت کلید Cloudflare' })).toBeVisible();
     expect(screen.getByLabelText('Cloudflare API Token')).toHaveAttribute('type', 'password');
+    expect(screen.getByRole('button', { name: 'نصب با کلید' })).toBeVisible();
+    expect(screen.queryByLabelText('حساب Cloudflare')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('نام Worker')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('رمز مدیریت')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Developer \/ Advanced install/i)).not.toBeInTheDocument();
+
     const permissions = JSON.parse(
       new URL(CLOUDFLARE_TOKEN_TEMPLATE_URL).searchParams.get('permissionGroupKeys') ?? '[]',
     );
     expect(permissions).toContainEqual({ key: 'd1', type: 'edit' });
-    expect(
-      screen.queryByText(/OAuth|consent|Client ID|GitHub connection/i),
-    ).not.toBeInTheDocument();
   });
-  it('verifies token, selects account, installs, and shows the workers.dev result', async () => {
+
+  it('verifies and installs automatically using the first accessible account', async () => {
     const verifyToken = vi.fn().mockResolvedValue({
       ok: true,
       accounts: [
@@ -51,94 +55,69 @@ describe('free Cloudflare key installer', () => {
     });
     const installPanel = vi.fn().mockResolvedValue({
       ok: true,
-      workerUrl: 'https://pvnetwork-client.example.workers.dev',
-      workerName: 'pvnetwork-client',
-      version: '0.1.0',
+      workerUrl: 'https://client.example.workers.dev',
+      workerName: 'tehran-network-edge',
+      version: '0.3.0',
       schemaVersion: 1,
-      adminUrl: 'https://pvnetwork-client.example.workers.dev/admin',
+      adminUrl: 'https://client.example.workers.dev/admin',
     });
     render(<App api={api({ verifyToken, installPanel })} />);
 
-    const tokenInput = screen.getByLabelText('Cloudflare API Token');
-    fireEvent.change(tokenInput, { target: { value: 'cf-token-value-12345678901234567890' } });
-    fireEvent.click(screen.getByRole('button', { name: 'بررسی کلید' }));
-    await waitFor(() =>
-      expect(verifyToken).toHaveBeenCalledWith('cf-token-value-12345678901234567890'),
-    );
-    expect(tokenInput).not.toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText('حساب Cloudflare'), { target: { value: 'a2' } });
-    fireEvent.change(screen.getByLabelText('نام Worker'), {
-      target: { value: 'pvnetwork-client' },
+    fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
+      target: { value: 'cf-token-value-12345678901234567890' },
     });
-    fireEvent.change(screen.getByLabelText('رمز مدیریت'), {
-      target: { value: 'correct-horse-1234' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'نصب پنل' }));
+    fireEvent.click(screen.getByRole('button', { name: 'نصب با کلید' }));
 
-    await waitFor(() =>
-      expect(installPanel).toHaveBeenCalledWith({
-        token: 'cf-token-value-12345678901234567890',
-        accountId: 'a2',
-        workerName: 'pvnetwork-client',
-        adminPassword: 'correct-horse-1234',
-      }),
-    );
-    expect(await screen.findByText('https://pvnetwork-client.example.workers.dev')).toBeVisible();
-    expect(screen.getByRole('link', { name: 'باز کردن پنل مدیریت' })).toHaveAttribute(
-      'href',
-      'https://pvnetwork-client.example.workers.dev/admin',
-    );
-    expect(screen.getByRole('link', { name: 'باز کردن Worker' })).toHaveAttribute(
-      'href',
-      'https://pvnetwork-client.example.workers.dev',
-    );
+    await waitFor(() => expect(verifyToken).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(installPanel).toHaveBeenCalledTimes(1));
+    expect(installPanel).toHaveBeenCalledWith({
+      token: 'cf-token-value-12345678901234567890',
+      accountId: 'a1',
+      workerName: 'tehran-network-edge',
+      adminPassword: expect.stringMatching(/^[A-Za-z0-9]{18}$/),
+    });
+    expect(await screen.findByText('https://client.example.workers.dev/admin')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'رمز مدیریت شما' })).toBeVisible();
   });
-  it('keeps the token only in volatile memory and clears it after install attempt', async () => {
-    const verifyToken = vi
-      .fn()
-      .mockResolvedValue({ ok: true, accounts: [{ id: 'a1', name: 'One' }] });
+
+  it('never persists the token and clears the input after a failed install', async () => {
     const installPanel = vi.fn().mockRejectedValue(new Error('network'));
     const storageSet = vi.spyOn(Storage.prototype, 'setItem');
     const pushState = vi.spyOn(history, 'pushState');
     const replaceState = vi.spyOn(history, 'replaceState');
-    render(<App api={api({ verifyToken, installPanel })} />);
+    render(<App api={api({ installPanel })} />);
 
     fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
       target: { value: 'cf-token-value-12345678901234567890' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'بررسی کلید' }));
-    await screen.findByLabelText('حساب Cloudflare');
+    fireEvent.click(screen.getByRole('button', { name: 'نصب با کلید' }));
+
+    await waitFor(() => expect(installPanel).toHaveBeenCalledTimes(1));
     expect(storageSet).not.toHaveBeenCalled();
     expect(pushState).not.toHaveBeenCalled();
     expect(replaceState).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByLabelText('رمز مدیریت'), {
-      target: { value: 'correct-horse-1234' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'نصب پنل' }));
-    await waitFor(() => expect(installPanel).toHaveBeenCalledTimes(1));
     expect(await screen.findByLabelText('Cloudflare API Token')).toHaveValue('');
   });
 
-  it('allows a short non-empty admin password after token verification', async () => {
-    render(<App api={api()} />);
+  it('shows a safe error when the token has no accessible account', async () => {
+    render(
+      <App
+        api={api({ verifyToken: vi.fn().mockResolvedValue({ ok: true, accounts: [] }) })}
+      />,
+    );
     fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
       target: { value: 'cf-token-value-12345678901234567890' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'بررسی کلید' }));
-    const password = await screen.findByLabelText('رمز مدیریت');
-    expect(password).toHaveAttribute('minlength', '1');
-    fireEvent.change(password, { target: { value: '12345' } });
-    expect(password).toHaveValue('12345');
+    fireEvent.click(screen.getByRole('button', { name: 'نصب با کلید' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('هیچ حساب Cloudflare');
   });
 
-  it('switches Persian RTL to English LTR with the same key flow', () => {
+  it('switches Persian RTL to English LTR with the same single-token flow', () => {
     render(<App api={api()} />);
     expect(document.querySelector('main')).toHaveAttribute('dir', 'rtl');
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
     expect(document.querySelector('main')).toHaveAttribute('dir', 'ltr');
     expect(screen.getByRole('link', { name: 'Generate Cloudflare Key' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Verify key' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Install with key' })).toBeVisible();
   });
 });

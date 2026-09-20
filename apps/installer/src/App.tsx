@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   ArrowUpRight,
   Check,
@@ -9,9 +9,8 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
-import type { CloudflareAccountView, InstallResult } from '@tehrannetwork/shared';
+import type { InstallResult } from '@tehrannetwork/shared';
 import { createTranslator, getDirection, type Locale } from '@tehrannetwork/i18n';
-import { createVolatileTokenVault } from './tokenVault';
 import { browserInstallerApi, InstallerClientError, type InstallerApi } from './installClient';
 import './app.css';
 
@@ -26,11 +25,8 @@ export const CLOUDFLARE_TOKEN_TEMPLATE_URL =
   `https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=${encodeURIComponent(JSON.stringify(permissions))}` +
   '&accountId=%2A&zoneId=all&name=Tehran%20Network%20Installer';
 export const CLOUDFLARE_TOKEN_CLEANUP_URL = 'https://dash.cloudflare.com/profile/api-tokens';
-export const DEVELOPER_INSTALL_URL =
-  'https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker';
-
 type Props = { api?: InstallerApi };
-type Screen = 'token' | 'config' | 'installing' | 'result';
+type Screen = 'token' | 'verifying' | 'installing' | 'result';
 
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -49,75 +45,55 @@ export function App({ api = browserInstallerApi }: Props) {
   const [locale, setLocale] = useState<Locale>('fa');
   const [screen, setScreen] = useState<Screen>('token');
   const [tokenInput, setTokenInput] = useState('');
-  const [accounts, setAccounts] = useState<CloudflareAccountView[]>([]);
-  const [accountId, setAccountId] = useState('');
-  const [workerName, setWorkerName] = useState('tehran-network-edge');
-  const [adminPassword, setAdminPassword] = useState('');
   const [usedPassword, setUsedPassword] = useState('');
   const [result, setResult] = useState<InstallResult | null>(null);
   const [error, setError] = useState('');
-  const vault = useMemo(() => createVolatileTokenVault(), []);
   const t = createTranslator(locale);
   const dir = getDirection(locale);
   async function handleVerify(event: FormEvent) {
     event.preventDefault();
-    const clean = tokenInput.trim();
-    if (clean.length < 20) {
+    const token = tokenInput.trim();
+    if (token.length < 20) {
       setError(t('installer.free.invalid'));
       return;
     }
-    vault.clear();
-    vault.set(clean);
+
+    setTokenInput('');
     setError('');
+    setScreen('verifying');
+    const adminPassword = generatePassword();
+
     try {
-      const verified = await api.verifyToken(clean);
-      if (!verified.accounts.length) {
-        vault.clear();
-        setTokenInput('');
+      const verified = await api.verifyToken(token);
+      const accountId = verified.accounts[0]?.id;
+      if (!accountId) {
         setError(t('installer.free.noAccounts'));
+        setScreen('token');
         return;
       }
-      setAccounts(verified.accounts);
-      setAccountId(verified.accounts[0]?.id ?? '');
-      setTokenInput('');
-      setAdminPassword(generatePassword());
-      setScreen('config');
+
+      setScreen('installing');
+      const installed = await api.installPanel({
+        token,
+        accountId,
+        workerName: 'tehran-network-edge',
+        adminPassword,
+      });
+      setUsedPassword(adminPassword);
+      setResult(installed);
+      setScreen('result');
     } catch (cause) {
-      vault.clear();
-      setTokenInput('');
       setError(
         errorCode(cause) === 'token-invalid'
           ? t('installer.free.invalid')
           : t('installer.free.generic'),
       );
-    }
-  }
-  async function handleInstall(event: FormEvent) {
-    event.preventDefault();
-    const token = vault.read();
-    if (!token) {
-      setError(t('installer.free.invalid'));
       setScreen('token');
-      return;
-    }
-    setScreen('installing');
-    setError('');
-    try {
-      const installed = await api.installPanel({ token, accountId, workerName, adminPassword });
-      setUsedPassword(adminPassword);
-      setResult(installed);
-      setScreen('result');
-    } catch {
-      setError(t('installer.free.generic'));
-      setScreen('token');
-    } finally {
-      vault.clear();
-      setTokenInput('');
-      setAdminPassword('');
     }
   }
 
-  const step = screen === 'token' ? 1 : screen === 'config' ? 2 : screen === 'installing' ? 3 : 4;
+
+  const step = screen === 'token' ? 1 : screen === 'verifying' ? 2 : screen === 'installing' ? 3 : 4;
 
   return (
     <main className="installer" dir={dir}>
@@ -212,62 +188,14 @@ export function App({ api = browserInstallerApi }: Props) {
           </>
         ) : null}
 
-        {screen === 'config' || screen === 'installing' ? (
-          <form className="oauth-form" onSubmit={handleInstall}>
-            <label htmlFor="cloudflare-account">{t('installer.free.account')}</label>
-            <select
-              id="cloudflare-account"
-              aria-label={t('installer.free.account')}
-              value={accountId}
-              onChange={(event) => setAccountId(event.target.value)}
-              disabled={screen === 'installing'}
-            >
-              {accounts.map((account) => (
-                <option value={account.id} key={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="worker-name">{t('installer.free.worker')}</label>
-            <input
-              id="worker-name"
-              aria-label={t('installer.free.worker')}
-              value={workerName}
-              onChange={(event) => setWorkerName(event.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              disabled={screen === 'installing'}
-            />
-            <label htmlFor="admin-password">{t('installer.free.password')}</label>
-            <div className="password-row">
-              <input
-                id="admin-password"
-                aria-label={t('installer.free.password')}
-                type="text"
-                minLength={1}
-                value={adminPassword}
-                onChange={(event) => setAdminPassword(event.target.value)}
-                autoComplete="new-password"
-                spellCheck={false}
-                disabled={screen === 'installing'}
-              />
-              <button
-                type="button"
-                className="password-regen"
-                title={t('installer.free.newPassword')}
-                onClick={() => setAdminPassword(generatePassword())}
-                disabled={screen === 'installing'}
-              >
-                <Sparkles size={15} /> {t('installer.free.newPassword')}
-              </button>
-            </div>
-            <p className="password-hint">{t('installer.free.autoPasswordHint')}</p>
-            <button className="install-button" type="submit" disabled={screen === 'installing'}>
-              {screen === 'installing'
-                ? t('installer.free.installing')
-                : t('installer.free.install')}
-            </button>
-          </form>
+        {screen === 'verifying' || screen === 'installing' ? (
+          <div className="oauth-form" role="status">
+            <strong>
+              {screen === 'verifying'
+                ? t('installer.free.verifying')
+                : t('installer.free.installing')}
+            </strong>
+          </div>
         ) : null}
 
         {screen === 'result' && result ? (
@@ -320,20 +248,6 @@ export function App({ api = browserInstallerApi }: Props) {
           </div>
         ) : null}
 
-        <details className="advanced-install">
-          <summary className="advanced-toggle">Developer / Advanced install</summary>
-          <div className="advanced-panel">
-            <p>Git-based deployment is optional and is not required for normal users.</p>
-            <a
-              className="developer-link"
-              href={DEVELOPER_INSTALL_URL}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              Developer install <ArrowUpRight size={15} />
-            </a>
-          </div>
-        </details>
       </section>
     </main>
   );

@@ -75,7 +75,7 @@ export const fa = {
     'Cloudflare با دسترسی\u200cهای لازم از قبل تنظیم\u200cشده باز می\u200cشود؛ کلید فقط یک\u200cبار نمایش داده می\u200cشود.',
   'installer.free.tokenLabel': 'Cloudflare API Token',
   'installer.free.tokenPlaceholder': 'کلید ساخته\u200cشده را اینجا Paste کنید',
-  'installer.free.verify': 'بررسی کلید',
+  'installer.free.verify': 'نصب با کلید',
   'installer.free.verifying': 'در حال بررسی کلید…',
   'installer.free.account': 'حساب Cloudflare',
   'installer.free.worker': 'نام Worker',
@@ -95,7 +95,7 @@ export const fa = {
   'installer.free.cleanupHelp':
     'بعد از نصب، کلید در این مرورگر یا Installer ذخیره نمی\u200cشود؛ برای احتیاط می\u200cتوانید آن را از Cloudflare هم حذف کنید.',
   'installer.free.step1': 'ساخت کلید',
-  'installer.free.step2': 'بررسی حساب',
+  'installer.free.step2': 'وارد کردن کلید',
   'installer.free.step3': 'نصب خودکار',
   'installer.free.step4': 'اتصال',
   'installer.free.freeBadge': 'Cloudflare Free · بدون VPS · بدون دامنه اختصاصی',

@@ -58,9 +58,9 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه مرحلهٔ Deploy، نه Wrangler و نه ترمینال.
 2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit، D1 Write و Account Settings Read.
 3. **Create Token** را بزنید و Token را کپی کنید.
-4. به Installer برگردید، Token را Paste و Verify کنید. اگر چند Account دارید یکی را انتخاب کنید؛ نام Worker و رمز مدیریت هم قابل تغییر است و رمز پیش‌فرض خودکار ساخته می‌شود.
-5. **Install** را بزنید. KV + D1 + Worker + Secret + workers.dev به‌صورت خودکار داخل اکانت خودتان ساخته می‌شود.
-6. آدرس پنل و رمز مدیریت را بردارید و وارد پنل شوید.
+4. به Installer برگردید، Token را Paste کنید و **نصب با کلید** را بزنید. Installer اولین Account قابل‌دسترسی را خودکار انتخاب می‌کند، Worker ثابت `tehran-network-edge` و یک رمز مدیریت تصادفی می‌سازد.
+5. KV + D1 + Worker + Secret + workers.dev خودکار ساخته/reuse می‌شوند و Installer همان رمز را با login واقعی verify می‌کند.
+6. فقط آدرس پنل و رمز مدیریت تحویل داده می‌شود؛ آن را Copy و وارد `/admin` شوید.
 
 Token فقط برای همین درخواست نصب از طریق HTTPS به Installer Worker ارسال می‌شود، در KV/DB/Cookie/localStorage/log ذخیره نمی‌شود و بعد از تلاش نصب پاک می‌شود. پنل نهایی هیچ وابستگی‌ای به Installer ندارد و می‌توانید Token نصب را بعداً از Cloudflare حذف کنید.
 
@@ -122,9 +122,9 @@ Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into 
 1. The ready-to-use installer opens directly. No GitHub account, installer deployment, Wrangler or terminal is required.
 2. Click **Generate Cloudflare Key**. Cloudflare opens the official token builder with Workers Scripts Edit, Workers KV Storage Edit, D1 Write and Account Settings Read.
 3. Click **Create Token**, copy it, return to the installer and paste/verify it.
-4. Pick an account if needed; the Worker name and auto-generated admin password remain editable.
-5. Click **Install**. KV + D1 + Worker + secret + workers.dev are provisioned automatically inside your Cloudflare account.
-6. Open the returned panel URL and keep the displayed admin password.
+4. Return to the installer, paste the token and click **Install with key**. The installer automatically picks the first accessible account, uses the fixed `tehran-network-edge` Worker name, and generates a random admin password.
+5. KV + D1 + Worker + secret + workers.dev are created/reused automatically, and the installer verifies the exact password with a real login before success.
+6. Keep the returned admin URL and generated password; no account/Worker/password configuration form is shown.
 
 The token is sent over HTTPS to the installer Worker only for the current install request. It is never persisted to KV/database/cookies/browser storage/logs and is cleared after the attempt. The installed panel is independent from the public installer, so you may revoke the setup token afterwards.
 
@@ -141,7 +141,7 @@ Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 - **Security-oriented boundaries** — the deployed artifact is SHA-256 pinned and secrets are separated by concern.
 - **Real D1 multi-user control** — users, expiry, total/daily quota, private subscriptions and independent credentials stay Cloudflare-only with no VPS.
 - **Periodic edge quota enforcement** — actual upload/download is checkpointed at 4 MiB or 60 seconds; this is not exact per-packet billing, and bounded overshoot is checkpoint size × concurrent connections.
-- **Credential-stable reinstall** — reinstalling the same Worker name reuses named KV/D1 state, preserving the installation seed and per-user secret versions; a fresh `INSTALL_GENERATION` intentionally synchronizes the admin password to the newly displayed installer password and invalidates older admin sessions.
+- **Credential-stable reinstall** — reinstalling the fixed `tehran-network-edge` Worker reuses named KV/D1 state, preserving the installation seed and per-user secret versions; a fresh `INSTALL_GENERATION` intentionally synchronizes the admin password to the newly displayed installer password and invalidates older admin sessions.
 - **Explicit Phase A limits** — full Backup/Restore and speed limiting are not implemented yet; quota enforcement is checkpoint-based only.
 
 ### Quick start

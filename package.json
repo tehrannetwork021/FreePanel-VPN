@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm --filter @tehrannetwork/panel build && pnpm build:edge-artifact && pnpm --filter @tehrannetwork/installer build && pnpm --filter @tehrannetwork/installer-worker build && pnpm --filter @tehrannetwork/shared build && pnpm --filter @tehrannetwork/ui build && pnpm --filter @tehrannetwork/i18n build",
+    "build": "pnpm --filter @tehrannetwork/panel build && pnpm build:edge-artifact && pnpm build:installer-assets && pnpm --filter @tehrannetwork/installer-worker build && pnpm --filter @tehrannetwork/shared build && pnpm --filter @tehrannetwork/ui build && pnpm --filter @tehrannetwork/i18n build",
     "test": "vitest --run",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
@@ -18,7 +18,8 @@
     "test:protocol": "pnpm --dir deploy/worker test:protocol",
     "test:legacy-upgrade": "pnpm --dir deploy/worker test:legacy-upgrade",
     "test:phase-a": "pnpm --dir deploy/worker test:phase-a",
-    "test:tunnels": "pnpm --dir deploy/worker test:tunnels"
+    "test:tunnels": "pnpm --dir deploy/worker test:tunnels",
+    "build:installer-assets": "pnpm --filter @tehrannetwork/installer build && node scripts/sync-installer-assets.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
