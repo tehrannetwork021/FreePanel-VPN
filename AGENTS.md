@@ -87,6 +87,32 @@
 - [ ] Safe upgrade
 - [x] Release + changelog
 
+## Post-v0.1 Competitive / Field-Test Milestone — 2026-09-20
+
+- [x] Free token-based installer implemented: Generate Cloudflare Key → Paste → Account → automatic KV/Worker/Secret/workers.dev
+- [x] Installer unit suite + browser E2E green before field test
+- [x] Clean-user field install completed by owner from separate Cloudflare account
+- [x] Real VLESS-WS connectivity confirmed by owner on deployed workers.dev panel
+- [ ] **BUG P0:** VLESS-XHTTP works in local/workerd/Xray harness but fails in owner's real Cloudflare deployment; reproduce against production semantics before changing implementation
+- [ ] Remove fixed 16-character ADMIN_PASSWORD minimum; accept any non-empty owner password (UI + shared validator + deployed panel setup form + tests)
+- [ ] Competitive transport/protocol expansion after field-stable core; benchmark BPB + yonggekkk/3Kmfi6HP-style Worker panels before adding each feature
+- [ ] Clean IP / preferred endpoint support with manual IP/domain list, operator-aware testing, health/latency metadata and safe fallback
+- [ ] ProxyIP / chain outbound support for fixed egress where Cloudflare Worker architecture permits it
+- [ ] Community Clean-IP Registry in this GitHub project: store candidate endpoint + first/last-seen date + daily confirmation/use counts; never store Cloudflare tokens, VPN credentials or user identity
+- [ ] Panel shows dated Trending Clean IPs (e.g. confirmations today / recent success) and lets each installer opt to contribute a tested endpoint
+- [ ] Fragment controls for compatible subscription outputs
+- [ ] Private/custom DoH + DNS settings
+- [ ] Routing profiles and QUIC/LAN/ad-malware blocking options in generated client configs
+- [ ] Chain proxy inputs: VLESS / Trojan / Shadowsocks / SOCKS / HTTP where supported by generated client config / architecture
+- [ ] Subscription output parity for Xray, Sing-box and Clash/Mihomo; proxy aggregation/node-sharing evaluated after core reliability
+- [ ] Warp/WireGuard and Warp endpoint scanner evaluated as separate module; do not claim Worker UDP support for VLESS/Trojan
+
+### Competitive references checked 2026-09-20
+
+- BPB-Worker-Panel current README: VLESS, Trojan, Warp, private DoH, Fragment, routing rules, chain proxies (VLESS/Trojan/Shadowsocks/SOCKS/HTTP), Clean IP/domain, Proxy IP, Warp endpoints, Xray/Sing-box/Clash-Mihomo subscriptions, node sharing and aggregation.
+- BPB explicitly documents that VLESS/Trojan UDP on Workers is not reliable; Tehran Network must not advertise unsupported UDP merely to increase protocol count.
+- Product rule: keep install free/no-VPS/no-custom-domain for normal users; new features must not reintroduce GitHub connection, local Wrangler, or paid infrastructure.
+
 ## Handoff Notes
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.
@@ -96,3 +122,6 @@
 - VLESS-WS، Trojan-WS، VLESS-XHTTP stream-one و negative-auth همگی PASS شدند.
 - Xray-core v26.9.9 به‌عنوان کلاینت واقعی برای هر سه مسیر تست شد و هر سه از طریق SOCKS به مقصد HTTP واقعی متصل شدند.
 - انتشار فقط بعد از Quality Gate نهایی و Push انجام می‌شود.
+- Field test 2026-09-20: owner installed from a separate Cloudflare account; VLESS-WS connection works in real use; XHTTP currently does not and is the immediate P0 debug target.
+- Current feature branch published for testing: `feat/cloudflare-free-token-installer`; local worktree may still retain the older branch name.
+- Immediate order after reading this file: (1) commit/push this ledger, (2) relax ADMIN_PASSWORD minimum with TDD, (3) reproduce/fix production XHTTP with real Xray semantics, (4) design Clean-IP/ProxyIP + GitHub community registry, (5) expand only tested protocols/transports.
