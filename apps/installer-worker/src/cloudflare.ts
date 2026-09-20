@@ -109,11 +109,15 @@ export async function uploadWorkerModule(
   workerName: string,
   namespaceId: string,
   source: string,
+  adminPassword: string,
 ): Promise<void> {
   const metadata = {
     main_module: 'worker.mjs',
     compatibility_date: '2026-09-19',
-    bindings: [{ type: 'kv_namespace', name: 'C', namespace_id: namespaceId }],
+    bindings: [
+      { type: 'kv_namespace', name: 'C', namespace_id: namespaceId },
+      { type: 'secret_text', name: 'ADMIN_PASSWORD', text: adminPassword },
+    ],
   };
   const form = new FormData();
   form.set('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
@@ -126,27 +130,6 @@ export async function uploadWorkerModule(
     token,
     `/accounts/${encodeURIComponent(accountId)}/workers/scripts/${encodeURIComponent(workerName)}`,
     { method: 'PUT', body: form },
-  );
-}
-
-export async function putAdminSecret(
-  token: string,
-  accountId: string,
-  workerName: string,
-  adminPassword: string,
-): Promise<void> {
-  await cfRequest(
-    token,
-    `/accounts/${encodeURIComponent(accountId)}/workers/scripts/${encodeURIComponent(workerName)}/secrets`,
-    {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        name: 'ADMIN_PASSWORD',
-        text: adminPassword,
-        type: 'secret_text',
-      }),
-    },
   );
 }
 

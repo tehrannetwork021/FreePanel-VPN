@@ -169,6 +169,16 @@
 - [x] Deploy-to-Cloudflare/self-host/terminal paths are removed from the public README landing flow; technical alternatives belong only in developer documentation.
 - [ ] Owner field-retests the exact README button flow and reports Token / Install / VLESS-WS / Trojan-WS / XHTTP results.
 
+## Admin Password Field Bug Fix — 2026-09-20
+
+- [x] Field report reproduced conceptually across two independent Cloudflare installs: install succeeds, selected/admin password is rejected by deployed panel.
+- [x] Root cause #1 confirmed with RED test: installer accepts any non-empty password, but deployed Worker still rejected configured secrets shorter than 16 characters in `deploy/worker/src/config/admin.ts`. Runtime validation now matches installer policy: only empty/placeholder values are rejected.
+- [x] Root cause #2 hardened: `ADMIN_PASSWORD` is now uploaded atomically as a `secret_text` binding in the same multipart Worker deploy as KV `C`, instead of a second `/secrets` call that creates a separate Worker version.
+- [x] Regression tests added for 1/5/10-character passwords and for atomic KV + secret metadata upload; focused suite PASS (19 tests).
+- [x] Embedded edge Worker artifact regenerated from the fixed source.
+- [x] Full repository gate PASS: format, lint, typecheck, 124 tests, build; browser E2E PASS 6/6 after clearing stale local preview ports.
+- [ ] Public installer `https://tehran-network-installer.honored-feather.workers.dev` must be redeployed with this commit before asking owner to reinstall/retest.
+
 ## Handoff Notes
 
 - مالک در 2026-09-19 Spec، Scope و اجرای Native را تایید کرد.

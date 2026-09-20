@@ -24,11 +24,8 @@ function makeDeps(events: string[], overrides: Partial<ProvisionDeps> = {}): Pro
       events.push('kv');
       return { id: 'kv-1', title: 'pvnetwork-client-config' };
     },
-    uploadWorkerModule: async () => {
-      events.push('worker');
-    },
-    putAdminSecret: async () => {
-      events.push('secret');
+    uploadWorkerModule: async (_token, _account, _worker, _kv, _source, password) => {
+      events.push(`worker:${password}`);
     },
     ensureAccountSubdomain: async () => {
       events.push('subdomain');
@@ -51,7 +48,14 @@ describe('panel provisioning', () => {
   it('validates then provisions in order and returns the final workers.dev URL', async () => {
     const events: string[] = [];
     const result = await provisionPanel(accessToken, request, makeDeps(events));
-    expect(events).toEqual(['account', 'kv', 'worker', 'secret', 'subdomain', 'enable', 'health']);
+    expect(events).toEqual([
+      'account',
+      'kv',
+      'worker:correct-horse-1234',
+      'subdomain',
+      'enable',
+      'health',
+    ]);
     expect(result).toEqual({
       ok: true,
       workerUrl: 'https://pvnetwork-client.my-subdomain.workers.dev',

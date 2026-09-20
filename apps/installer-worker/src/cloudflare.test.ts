@@ -5,7 +5,6 @@ import {
   ensureAccountSubdomain,
   findOrCreateKvNamespace,
   listAccounts,
-  putAdminSecret,
   uploadWorkerModule,
   verifyApiToken,
 } from './cloudflare';
@@ -100,10 +99,17 @@ describe('Cloudflare provisioning API', () => {
     );
   });
 
-  it('uploads exact Worker metadata and keeps ADMIN_PASSWORD out of source/metadata', async () => {
+  it('uploads KV and ADMIN_PASSWORD atomically in the deployed Worker version', async () => {
     const fetchMock = vi.fn().mockResolvedValue(ok({}));
     vi.stubGlobal('fetch', fetchMock);
-    await uploadWorkerModule('token', 'acct', 'pvnetwork-client', 'kv-id', 'export default {};');
+    await uploadWorkerModule(
+      'token',
+      'acct',
+      'pvnetwork-client',
+      'kv-id',
+      'export default {};',
+      'short-pass',
+    );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain('/accounts/acct/workers/scripts/pvnetwork-client');
@@ -113,34 +119,30 @@ describe('Cloudflare provisioning API', () => {
     expect(metadata).toEqual({
       main_module: 'worker.mjs',
       compatibility_date: '2026-09-19',
-      bindings: [{ type: 'kv_namespace', name: 'C', namespace_id: 'kv-id' }],
+      bindings: [
+        { type: 'kv_namespace', name: 'C', namespace_id: 'kv-id' },
+        { type: 'secret_text', name: 'ADMIN_PASSWORD', text: 'short-pass' },
+      ],
     });
     expect(await (form.get('worker.mjs') as Blob).text()).toBe('export default {};');
-    expect(JSON.stringify(metadata)).not.toContain('ADMIN_PASSWORD');
+    expect(await (form.get('worker.mjs') as Blob).text()).not.toContain('short-pass');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('writes the admin secret separately and enables workers.dev', async () => {
+  it('enables workers.dev after upload', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(ok({ name: 'ADMIN_PASSWORD', type: 'secret_text' }))
       .mockResolvedValueOnce(ok({ subdomain: 'existing-subdomain' }))
       .mockResolvedValueOnce(ok({ enabled: true, previews_enabled: false }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await putAdminSecret('token', 'acct', 'pvnetwork-client', 'super-secret-password');
     await expect(ensureAccountSubdomain('token', 'acct', 'pvnetwork-client')).resolves.toBe(
       'existing-subdomain',
     );
     await enableScriptSubdomain('token', 'acct', 'pvnetwork-client');
 
-    const secretInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    expect(JSON.parse(String(secretInit.body))).toEqual({
-      name: 'ADMIN_PASSWORD',
-      text: 'super-secret-password',
-      type: 'secret_text',
-    });
-    expect(fetchMock.mock.calls[2]?.[0]).toContain('/workers/scripts/pvnetwork-client/subdomain');
-    expect((fetchMock.mock.calls[2]?.[1] as RequestInit).body).toBe(
+    expect(fetchMock.mock.calls[1]?.[0]).toContain('/workers/scripts/pvnetwork-client/subdomain');
+    expect((fetchMock.mock.calls[1]?.[1] as RequestInit).body).toBe(
       JSON.stringify({ enabled: true, previews_enabled: false }),
     );
   });

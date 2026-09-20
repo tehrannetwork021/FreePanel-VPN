@@ -3,7 +3,7 @@ import { constantTimeEqual } from '../core/bytes';
 const PLACEHOLDER = 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD';
 
 export function validateAdminSecret(secret: string): void {
-  if (secret.length < 16 || secret === PLACEHOLDER) throw new Error('unsafe-admin-secret');
+  if (!secret || secret === PLACEHOLDER) throw new Error('unsafe-admin-secret');
 }
 
 async function digest(value: string): Promise<Uint8Array> {

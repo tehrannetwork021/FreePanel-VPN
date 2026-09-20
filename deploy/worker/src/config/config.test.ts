@@ -53,19 +53,19 @@ describe('protocol config', () => {
 });
 
 describe('admin password', () => {
-  it('accepts only the configured password', async () => {
-    expect(
-      await verifyAdminPassword('a-very-long-admin-password-123', 'a-very-long-admin-password-123'),
-    ).toBe(true);
-    expect(
-      await verifyAdminPassword('wrong-but-long-password', 'a-very-long-admin-password-123'),
-    ).toBe(false);
+  it('accepts only the configured password, including short non-empty values', async () => {
+    expect(await verifyAdminPassword('12345', '12345')).toBe(true);
+    expect(await verifyAdminPassword('wrong', '12345')).toBe(false);
   });
 
-  it.each(['', 'short', 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD'])(
-    'rejects unsafe deployment secret %j',
+  it.each(['', 'CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD'])(
+    'rejects invalid deployment secret %j',
     (secret) => {
       expect(() => validateAdminSecret(secret)).toThrow();
     },
   );
+
+  it.each(['1', 'short', '1234567890'])('accepts non-empty deployment secret %j', (secret) => {
+    expect(() => validateAdminSecret(secret)).not.toThrow();
+  });
 });

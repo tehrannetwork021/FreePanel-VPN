@@ -12,7 +12,6 @@ import {
   ensureAccountSubdomain,
   findOrCreateKvNamespace,
   listAccounts,
-  putAdminSecret,
   uploadWorkerModule,
 } from './cloudflare';
 import {
@@ -44,11 +43,6 @@ export type ProvisionDeps = {
     workerName: string,
     namespaceId: string,
     source: string,
-  ): Promise<void>;
-  putAdminSecret(
-    token: string,
-    accountId: string,
-    workerName: string,
     adminPassword: string,
   ): Promise<void>;
   ensureAccountSubdomain(token: string, accountId: string, workerName: string): Promise<string>;
@@ -79,7 +73,6 @@ export const defaultProvisionDeps: ProvisionDeps = {
   listAccounts,
   findOrCreateKvNamespace,
   uploadWorkerModule,
-  putAdminSecret,
   ensureAccountSubdomain,
   enableScriptSubdomain,
   async fetchHealth(url) {
@@ -139,10 +132,8 @@ export async function provisionPanel(
       worker.value,
       kv.id,
       deps.artifact.source,
+      request.adminPassword,
     ),
-  );
-  await stageCall('secret', 'secret-failed', () =>
-    deps.putAdminSecret(accessToken, request.accountId, worker.value, request.adminPassword),
   );
 
   const subdomain = await stageCall('subdomain', 'subdomain-failed', () =>

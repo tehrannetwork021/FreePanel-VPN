@@ -963,7 +963,7 @@ function constantTimeEqual(a, b) {
 // deploy/worker/src/config/admin.ts
 var PLACEHOLDER = "CHANGE-ME-TO-A-LONG-RANDOM-PASSWORD";
 function validateAdminSecret(secret) {
-  if (secret.length < 16 || secret === PLACEHOLDER) throw new Error("unsafe-admin-secret");
+  if (!secret || secret === PLACEHOLDER) throw new Error("unsafe-admin-secret");
 }
 async function digest(value) {
   const bytes = new TextEncoder().encode(value);
