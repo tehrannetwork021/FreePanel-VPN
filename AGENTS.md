@@ -331,3 +331,9 @@
 - [ ] Step 9 release-candidate ledger/push state after local gate; field results must be a separate evidence commit.
 
 Current implementation branch: `feat/complete-cloudflare-control-plane`. Older branch names in historical ledger entries are retained only as history and are not the current execution target.
+
+### Installer UX correction — 2026-09-21
+
+- [x] Rejected Cloudflare Deploy Button/Account Picker as a normal-user install path after live UI review.
+- [x] GitHub install CTA is locked back to the public token installer: open installer → Generate scoped API Token → Paste/Verify → select account inside installer → Install.
+- [x] README contract now forbids `deploy.workers.cloudflare.com` in the primary GitHub landing page.

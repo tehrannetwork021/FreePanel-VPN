@@ -12,10 +12,9 @@ describe('GitHub landing page contract', () => {
     expect(readme).toContain('SECURITY.md');
     expect(readme).toContain('https://tehran-network-installer.honored-feather.workers.dev');
     expect(readme).toContain('Install Free on Cloudflare');
-    expect(readme).toContain(
-      'https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/one-click/apps/installer-worker',
-    );
-    expect(readme).toContain('GitHub one-click');
+    expect(readme).not.toContain('deploy.workers.cloudflare.com');
+    expect(readme).toContain('Generate Cloudflare Key');
+    expect(readme).toContain('Paste');
     expect(readme).toMatch(/در حال توسعه|In development/);
   });
 
