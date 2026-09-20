@@ -38,6 +38,17 @@ function post(path: string, body: unknown, headers: Record<string, string> = {})
 afterEach(() => vi.restoreAllMocks());
 
 describe('stateless token installer router', () => {
+  it('exposes the exact edge artifact version without requiring a token', async () => {
+    const response = await handleInstallerRequest(
+      new Request('https://installer.example/api/health'),
+      env,
+      deps(),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    await expect(response.json()).resolves.toEqual({ ok: true, edgeVersion: '0.3.0' });
+  });
+
   it('verifies a token and returns every accessible account', async () => {
     const d = deps();
     const response = await handleInstallerRequest(

@@ -112,6 +112,10 @@ export async function handleInstallerRequest(
   deps: RouterDeps = defaultDeps,
 ): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === '/api/health') {
+    if (request.method !== 'GET') return json({ ok: false, code: 'method-not-allowed' }, 405);
+    return json({ ok: true, edgeVersion: defaultProvisionDeps.artifact.version });
+  }
   if (url.pathname === '/api/token/verify' && request.method === 'POST') {
     return handleVerify(request, deps);
   }
