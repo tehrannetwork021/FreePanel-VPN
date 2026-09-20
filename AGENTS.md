@@ -110,6 +110,19 @@
 - [ ] Subscription output parity for Xray, Sing-box and Clash/Mihomo; proxy aggregation/node-sharing evaluated after core reliability
 - [ ] Warp/WireGuard and Warp endpoint scanner evaluated as separate module; do not claim Worker UDP support for VLESS/Trojan
 
+## Release v0.2.0 — Free Token Installer Publication — 2026-09-20
+
+- [x] Stale embedded edge artifact detected and regenerated: committed artifact predated the XHTTP stream-one fix, so the installer would have uploaded the old Worker; fresh artifact is `v0.2.0` / SHA-256 `52cdcff6bd5fd2d64aac793bb295ec73f668aadd148cc78867f26e4e98d14abc`
+- [x] Version bump to `0.2.0` across root, `deploy/worker` (+ lockfile sync) and `apps/installer-worker`; panel `VERSION` kept in parity with artifact health-check
+- [x] `apps/installer/dist` committed (gitignore negation) so the Deploy-to-Cloudflare button installs the installer without a build step; `dist/installer-artifacts` manifest negation added too
+- [x] README reworked: **Deploy Installer** is now the primary install action (token flow), old Deploy to Cloudflare labeled Developer/advanced path; roadmap updated
+- [x] INSTALL_FA/INSTALL_EN rewritten around the free token flow: Generate Key → Paste → Verify → Account → Install → panel URL, plus error meanings (`token-invalid`, `insufficient-scope`, `health-failed`) and workers.dev restriction note
+- [x] `scripts/release-install-contract.test.ts` updated to pin the new primary/developer path order, token scopes, v0.2.0 manifest and committed installer dist
+- [x] CHANGELOG published as `v0.2.0` with the free token installer, XHTTP fix, ADMIN_PASSWORD relax and artifact refresh
+- [x] Full local gates re-run on the release candidate: `pnpm check` (format + lint + typecheck + 118 tests + build + installer dry-run), `deploy/worker` check (72 tests), workerd E2E (VLESS-WS / Trojan-WS / XHTTP stream-one / negative-auth PASS), `wrangler deploy --dry-run` with KV binding `C`
+- [ ] Owner deploys the installer via the README button and performs the real token install (field retest including XHTTP stream-one)
+- [ ] GitHub Release `v0.2.0` published after CI green on `main`
+
 ### Competitive references checked 2026-09-20
 
 - BPB-Worker-Panel current README: VLESS, Trojan, Warp, private DoH, Fragment, routing rules, chain proxies (VLESS/Trojan/Shadowsocks/SOCKS/HTTP), Clean IP/domain, Proxy IP, Warp endpoints, Xray/Sing-box/Clash-Mihomo subscriptions, node sharing and aggregation.
@@ -125,6 +138,7 @@
 - VLESS-WS، Trojan-WS، VLESS-XHTTP stream-one و negative-auth همگی PASS شدند.
 - Xray-core v26.9.9 به‌عنوان کلاینت واقعی برای هر سه مسیر تست شد و هر سه از طریق SOCKS به مقصد HTTP واقعی متصل شدند.
 - انتشار فقط بعد از Quality Gate نهایی و Push انجام می‌شود.
+- Session 2026-09-20 (release prep): branch `feat/cloudflare-free-token-installer` verified end-to-end locally, stale artifact regenerated, docs/contracts switched to the free token installer as primary path, release candidate committed for merge into `main` + tag `v0.2.0` after CI.
 - Field test 2026-09-20: owner installed from a separate Cloudflare account; VLESS-WS connection works in real use; XHTTP currently does not and is the immediate P0 debug target.
 - Current feature branch published for testing: `feat/cloudflare-free-token-installer`; local worktree may still retain the older branch name.
 - Immediate order after reading this file: (1) commit/push this ledger, (2) relax ADMIN_PASSWORD minimum with TDD, (3) reproduce/fix production XHTTP with real Xray semantics, (4) design Clean-IP/ProxyIP + GitHub community registry, (5) expand only tested protocols/transports.

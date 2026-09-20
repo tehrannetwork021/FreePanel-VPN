@@ -31,7 +31,7 @@ describe('edge Worker install artifact', () => {
     expect(hash).toBe(actualHash);
     expect(manifest.sha256).toBe(actualHash);
     expect(manifest.bytes).toBe(Buffer.byteLength(source));
-    expect(manifest.version).toBe('0.1.0');
+    expect(manifest.version).toBe('0.2.0');
     expect(source).not.toMatch(/from\s+['"]\.\.?\//);
 
     execFileSync(process.execPath, ['scripts/build-edge-worker-artifact.mjs']);

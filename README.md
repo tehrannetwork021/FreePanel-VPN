@@ -15,15 +15,21 @@
 
 ### 🚀 نصب / Install
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+**Install Free on Cloudflare — نصب رایگان روی کلادفلر**
+
+[![Deploy Installer](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/apps/installer-worker)
+
+**Generate Cloudflare Key → Paste → Automatic install — بدون VPS، دامنه، GitHub یا ترمینال**
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
+
+Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
 
 </div>
 
 > [!IMPORTANT]
-> **وضعیت فعلی:** نسخه `v0.1.0` برای نصب مستقیم روی Cloudflare آماده است و هسته‌های **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** با تست end-to-end واقعی فعال هستند.
-> **Current status:** `v0.1.0` is ready for direct Cloudflare deployment with **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** verified end-to-end and through Xray-core v26.9.9.
+> **وضعیت فعلی:** نسخه `v0.2.0` با **نصب‌کنندهٔ رایگان مبتنی بر توکن Cloudflare** منتشر شد: کلید بساز → Paste کن → Worker، KV، Secret و workers.dev خودکار نصب می‌شوند. هسته‌های **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** با تست end-to-end واقعی فعال هستند.
+> **Current status:** `v0.2.0` ships the **free Cloudflare token installer**: generate the key, paste it, and the Worker, KV, secret and workers.dev are provisioned automatically. **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** are verified end-to-end.
 
 ![Tehran Network one-click installer](assets/readme/installer-fa.png)
 
@@ -31,25 +37,27 @@
 
 ### پروژه چیست؟
 
-Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به نصب رسمی یک‌کلیکی Cloudflare تبدیل می‌کند. مسیر پیشنهادی از Deploy to Cloudflare استفاده می‌کند تا Worker و KV روی حساب خود کاربر ساخته شوند؛ مسیر پیشرفته‌ی API Token نیز جداگانه در حال توسعه است.
+Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به یک نصب رایگان و خودکار تبدیل می‌کند. کافی است یک توکن محدود Cloudflare بسازید و به نصب‌کننده بدهید؛ بقیهٔ کار — ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز مدیریت و فعال‌سازی `workers.dev` — در چند ثانیه و داخل اکانت خودتان انجام می‌شود. مسیر پیشرفتهٔ Deploy-to-Cloudflare برای توسعه‌دهندگان جداگانه باقی مانده است.
 
 ### نصب برای کاربر عادی
 
-1. روی **Deploy to Cloudflare** بزنید.
-2. وارد Cloudflare شوید و برای `ADMIN_PASSWORD` یک رمز قوی حداقل 16 کاراکتری تعیین کنید.
-3. Deploy را تأیید کنید؛ Cloudflare به‌صورت خودکار Worker و KV را می‌سازد و Binding `C` را متصل می‌کند.
-4. آدرس `*.workers.dev` را باز کنید، همان `ADMIN_PASSWORD` را وارد کنید و کانفیگ/QR/Subscription را بردارید.
+1. روی دکمهٔ **Deploy Installer** در بالای همین صفحه بزنید و با اکانت رایگان Cloudflare آن را نصب کنید؛ آدرس `*.workers.dev` نصب‌کننده را باز کنید.
+2. در نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ صفحهٔ رسمی Cloudflare با دسترسی‌های لازم (Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read) از پیش تنظیم شده باز می‌شود.
+3. توکن را که Cloudflare فقط یک بار نشان می‌دهد کپی کنید، در نصب‌کننده Paste و Verify کنید.
+4. حساب، نام Worker و رمز مدیریت را انتخاب کنید و Install بزنید.
+5. آدرس پنل شما آماده است؛ همان رمز مدیریت را وارد کنید و کانفیگ/QR/Subscription را بردارید.
 
-برای جزئیات و مسیر پیشرفته‌ی API Token، [آموزش کامل فارسی](docs/INSTALL_FA.md) را ببینید.
+راهنمای گام‌به‌گام: [آموزش کامل فارسی](docs/INSTALL_FA.md)
 
 ### چرا متفاوت است؟
 
-- **Local-first:** Credential قرار نیست روی سرور مرکزی Tehran Network ذخیره شود.
+- **رایگان و بدون سرور:** همه‌چیز روی پلن رایگان Cloudflare و داخل اکانت خود شما ساخته می‌شود؛ نه VPS می‌خواهد نه دامنه.
+- **Local-first:** توکن Cloudflare فقط در حافظهٔ موقت مرورگر می‌ماند و پس از هر تلاش نصب پاک می‌شود.
 - **فارسی واقعی + English:** RTL/LTR در تست‌های Unit و Browser کنترل می‌شود.
 - **ظاهر اختصاصی:** Prismatic Network Console به‌جای Dashboard templateهای تکراری.
-- **Responsive:** تست خودکار در عرض 375px و Desktop انجام می‌شود.
-- **کد ماژولار:** UI، i18n، Installer و بخش‌های آینده‌ی Worker از هم جدا هستند.
-- **Security-first:** Secretها از Admin، Subscription و Protocol credentials جدا طراحی می‌شوند.
+- **Responsive:** تست خودکار در عرض موبایل و Desktop انجام می‌شود.
+- **کد ماژولار:** UI، i18n، Installer و Worker از هم جدا هستند.
+- **Security-first:** Artifact نصب‌شده SHA-256 امضادار است و Secretها از هم جدا طراحی می‌شوند.
 
 ### داشبورد فارسی
 
@@ -63,10 +71,9 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 
 **برای کاربر عادی هیچ ابزار توسعه‌ای لازم نیست.**
 
-1. روی دکمه **Deploy to Cloudflare** در بالای همین صفحه بزنید.
-2. وارد Cloudflare شوید و Deploy را تأیید کنید.
-3. Cloudflare Worker و KV را خودکار می‌سازد و Binding `C` را متصل می‌کند.
-4. پس از Build، آدرس `*.workers.dev` را باز کنید.
+1. دکمهٔ **Deploy Installer** را بزنید تا نصب‌کننده روی اکانت Cloudflare شما ساخته شود.
+2. داخل نصب‌کننده، با لینک «ساخت کلید Cloudflare» توکن بسازید و Paste کنید.
+3. Install را بزنید و آدرس `*.workers.dev` پنل خود را بگیرید.
 
 آموزش کامل: [docs/INSTALL_FA.md](docs/INSTALL_FA.md)
 
@@ -85,34 +92,35 @@ CI همین Quality Gateها را در Pull Request اجرا می‌کند.
 
 ### What is it?
 
-Tehran Network Edge Panel is a clean-room, modular Cloudflare Workers control panel with an official one-click Cloudflare deployment path. The recommended flow lets Cloudflare create and bind the Worker and KV directly in the user’s own account; an advanced scoped-token installer is developed separately.
+Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into a free, automated installation. Create a narrowly scoped Cloudflare token, paste it into the installer, and everything else — KV provisioning, signed Worker upload, admin secret and `workers.dev` enablement — happens inside your own account in seconds. The developer-focused Deploy-to-Cloudflare path remains as an advanced alternative.
 
 ### One-click installation
 
-1. Click **Deploy to Cloudflare**.
-2. Sign in to Cloudflare and set a strong `ADMIN_PASSWORD` of at least 16 characters.
-3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
-4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
+1. Click **Deploy Installer** at the top of this page and install it with your free Cloudflare account; open the installer's `*.workers.dev` URL.
+2. Click **Generate Cloudflare Key**; Cloudflare's official page opens with the required scopes preselected (Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read).
+3. Copy the token (Cloudflare shows it once), paste it into the installer and verify.
+4. Choose your account, a Worker name and an admin password, then click Install.
+5. Your panel URL is ready; enter the same admin password and collect configs/QR/subscription.
 
-See the [English installation guide](docs/INSTALL_EN.md) for details and the advanced API-token path.
+Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 
 ### Why this project?
 
-- **Local-first credentials** — designed so Cloudflare credentials do not need to be stored by a Tehran Network server.
+- **Free and serverless** — everything runs on the Cloudflare Free plan inside your own account; no VPS, no custom domain.
+- **Local-first credentials** — the Cloudflare token stays in volatile browser memory and is cleared after every attempt.
 - **Persian + English** — tested RTL/LTR parity, not a translated afterthought.
 - **Distinct visual system** — a colorful Prismatic Network Console instead of a generic admin template.
-- **Responsive by test** — browser tests cover desktop and 375px mobile layouts.
-- **Modular codebase** — installer, dashboard, translations and future worker core are isolated packages.
-- **Security-oriented boundaries** — Cloudflare token, admin auth, subscriptions and protocol secrets are separate concerns.
+- **Responsive by test** — browser tests cover desktop and mobile layouts.
+- **Modular codebase** — installer, dashboard, translations and worker core are isolated packages.
+- **Security-oriented boundaries** — the deployed artifact is SHA-256 pinned and secrets are separated by concern.
 
 ### Quick start
 
 **Regular users do not need local development tools.**
 
-1. Click **Deploy to Cloudflare** at the top of this README.
-2. Sign in to Cloudflare and set a strong `ADMIN_PASSWORD` of at least 16 characters.
-3. Approve deployment; Cloudflare provisions the Worker and KV and binds it as `C`.
-4. Open the generated `*.workers.dev` URL, enter the same `ADMIN_PASSWORD`, then copy a config/QR/subscription.
+1. Click **Deploy Installer** to put the installer on your Cloudflare account.
+2. Inside the installer, use "Generate Cloudflare Key", create the token and paste it.
+3. Click Install and receive your panel's `*.workers.dev` URL.
 
 Full guide: [docs/INSTALL_EN.md](docs/INSTALL_EN.md)
 
@@ -121,34 +129,33 @@ For local UI development, see [docs/QUICKSTART_EN.md](docs/QUICKSTART_EN.md).
 ### Architecture
 
 ```text
-deploy/worker   → isolated Cloudflare template → Worker + auto-provisioned KV
-apps/installer  → advanced local-first token setup UI
-apps/panel      → bilingual network dashboard
-packages/ui     → Prismatic Network Console design primitives
-packages/i18n   → Persian/English dictionaries + RTL/LTR rules
-packages/shared → product contracts shared across apps
+apps/installer-worker → token-based provisioning Worker (KV + Worker + secret + workers.dev)
+apps/installer        → free installer UI served by installer-worker
+deploy/worker         → isolated panel Worker template (developer path)
+apps/panel            → bilingual network dashboard
+packages/ui           → Prismatic Network Console design primitives
+packages/i18n         → Persian/English dictionaries + RTL/LTR rules
+packages/shared       → product contracts shared across apps
 ```
 
 ## نقشه راه / Roadmap
 
-| بخش / Area                         | وضعیت / Status    |
-| ---------------------------------- | ----------------- |
-| TypeScript monorepo + CI           | ✅ Ready          |
-| Persian/English RTL/LTR            | ✅ Ready          |
-| Responsive dashboard               | ✅ Ready          |
-| Official Deploy to Cloudflare      | ✅ Ready          |
-| Automatic KV provisioning          | ✅ Ready          |
-| Graphical installer source         | 📦 Source ready   |
-| One-click token creation UX        | ✅ Ready          |
-| Volatile token handling            | ✅ Ready          |
-| Advanced token verification/deploy | 🚧 In development |
-| Worker rollback                    | 🚧 In development |
-| VLESS-WS core                      | ✅ Ready          |
-| Trojan-WS core                     | ✅ Ready          |
-| VLESS-XHTTP stream-one             | ✅ Ready          |
-| Smart endpoints / rotation         | 🧭 Planned        |
-| Subscription + QR                  | ✅ Ready          |
-| DNS / ECH / Network Lab            | 🧭 Planned        |
+| بخش / Area                          | وضعیت / Status    |
+| ----------------------------------- | ----------------- |
+| TypeScript monorepo + CI            | ✅ Ready          |
+| Persian/English RTL/LTR             | ✅ Ready          |
+| Responsive dashboard                | ✅ Ready          |
+| Free Cloudflare token installer     | ✅ Ready          |
+| Automatic KV/secret/workers.dev     | ✅ Ready          |
+| Official Deploy to Cloudflare (dev) | ✅ Ready          |
+| Volatile token handling             | ✅ Ready          |
+| Worker rollback                     | 🚧 In development |
+| VLESS-WS core                       | ✅ Ready          |
+| Trojan-WS core                      | ✅ Ready          |
+| VLESS-XHTTP stream-one              | ✅ Ready          |
+| Smart endpoints / rotation          | 🧭 Planned        |
+| Subscription + QR                   | ✅ Ready          |
+| DNS / ECH / Network Lab             | 🧭 Planned        |
 
 ## امنیت / Security
 

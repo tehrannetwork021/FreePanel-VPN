@@ -11,7 +11,7 @@ import { handleSubscriptionRoute } from './routes/subscription';
 import { handleWebSocketRoute } from './routes/ws';
 import { handleXhttpRoute } from './routes/xhttp';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 type FetchContext = {
   waitUntil(promise: Promise<void>): void;
