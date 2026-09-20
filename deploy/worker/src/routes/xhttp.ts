@@ -8,6 +8,8 @@ type StreamInput = Parameters<typeof createXhttpStream>[0];
 type RouteDeps = {
   connectTcp?: ConnectTcp;
   createStreamResponse?: (input: StreamInput) => Promise<Response>;
+  /** Called with the final status for every POST that matched the configured path. */
+  onAttempt?: (status: number) => void;
 };
 
 const text = (status: number, message: string) =>
@@ -34,14 +36,22 @@ export async function handleXhttpRoute(
     return null;
   }
   if (!isXhttpPath(url.pathname, config.xhttp.path)) return null;
-  if (!config.xhttp.enabled) return text(404, 'Not found');
+  if (!config.xhttp.enabled) {
+    if (request.method === 'POST') deps.onAttempt?.(404);
+    return text(404, 'Not found');
+  }
   if (request.method !== 'POST') return text(405, 'Method not allowed');
-  if (!request.body) return text(400, 'Request body required');
+  if (!request.body) {
+    deps.onAttempt?.(400);
+    return text(400, 'Request body required');
+  }
 
-  return (deps.createStreamResponse ?? createXhttpStream)({
+  const response = await (deps.createStreamResponse ?? createXhttpStream)({
     body: request.body,
     parseFirstPacket: (bytes) => parseVlessRequest(bytes, config.vless.uuid),
     connectTcp: deps.connectTcp ?? openTcp,
     selfHost: url.hostname,
   });
+  deps.onAttempt?.(response.status);
+  return response;
 }

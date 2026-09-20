@@ -60,7 +60,12 @@ describe('XHTTP stream-one transport', () => {
       selfHost: 'edge.example.dev',
     });
     expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toBe('text/event-stream');
+    // Production semantics: Cloudflare edge mishandles SSE-typed responses to
+    // gRPC-typed stream-one requests; field-proven deployments answer with
+    // application/octet-stream and disable edge buffering explicitly.
+    expect(response.headers.get('content-type')).toBe('application/octet-stream');
+    expect(response.headers.get('x-accel-buffering')).toBe('no');
+    expect(response.headers.get('cache-control')).toBe('no-store');
     const bytes = new Uint8Array(await response.arrayBuffer());
     expect([...bytes.slice(0, 2)]).toEqual([0, 0]);
     expect(new TextDecoder().decode(bytes.slice(2))).toContain('HTTP/1.1 200 OK');

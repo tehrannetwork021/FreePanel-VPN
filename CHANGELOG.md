@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — 2026-09-20
+
+### Fixed
+
+- XHTTP stream-one برای deployment واقعی Cloudflare اصلاح شد: پاسخ Worker به‌جای `text/event-stream` اکنون `application/octet-stream` با `X-Accel-Buffering: no` است تا edge درخواست‌های gRPC-نما را درست پاس کند (ریشه‌یابی از سورس Xray، مستندات Cloudflare و discussion رسمی XHTTP).
+- لینک اشتراک XHTTP اکنون `extra={"noGRPCHeader":true}` و `host=` را نیز ارسال می‌کند تا کلاینت Xray هدر `Content-Type: application/grpc` نفرستد و درخواست قبل از رسیدن به Worker به‌عنوان gRPC طبقه‌بندی نشود.
+
+### Added
+
+- Diagnostics محدودشدهٔ XHTTP در `/api/status` (کلید KV `diag:xhttp:v1`): فقط شمارندهٔ تلاش/موفق، آخرین وضعیت HTTP و زمان — بدون هیچ credential، UUID یا IP — برای تفکیک خطای edge از خطای Worker در field retest.
+
+### Internal
+
+- `@tehrannetwork/installer` به devDependencies مربوط به `installer-worker` اضافه شد تا ترتیب build در `pnpm -r build` قطعی باشد (dry-run Wrangler به `apps/installer/dist` نیاز دارد).
+
 ## v0.1.0 — 2026-09-19
 
 اولین Release عمومی Tehran Network Edge Panel.

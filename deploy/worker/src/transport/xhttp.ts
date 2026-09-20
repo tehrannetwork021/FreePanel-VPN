@@ -103,7 +103,14 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
     status: 200,
     headers: {
       'cache-control': 'no-store',
-      'content-type': 'text/event-stream',
+      // Production semantics (P0 field fix): the Xray stream-one client sends
+      // Content-Type: application/grpc, and Cloudflare's edge treats SSE-typed
+      // responses to gRPC requests specially (buffering/mangling risk). Real
+      // Xray servers answer SSE, which the official XHTTP discussion flags as
+      // problematic through CDNs; field-proven Workers deployments answer with
+      // application/octet-stream and disable edge buffering explicitly. The
+      // Xray client never inspects this content-type, so this is safe.
+      'content-type': 'application/octet-stream',
       'x-accel-buffering': 'no',
       'x-content-type-options': 'nosniff',
     },

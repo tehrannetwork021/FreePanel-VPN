@@ -43,4 +43,35 @@ describe('XHTTP route', () => {
     expect((await handleXhttpRoute(req('/xhttp'), disabled))?.status).toBe(404);
     expect((await handleXhttpRoute(req('/xhttp', 'GET'), config))?.status).toBe(405);
   });
+
+  it('reports POST attempts for diagnostics but never non-POST or foreign paths', async () => {
+    const statuses: number[] = [];
+    const deps = {
+      createStreamResponse: vi.fn(async () => new Response('ok')),
+      onAttempt: (status: number) => statuses.push(status),
+    };
+    await handleXhttpRoute(req('/xhttp'), config, deps);
+    expect(statuses).toEqual([200]);
+
+    statuses.length = 0;
+    const invalidAuth = {
+      ...deps,
+      createStreamResponse: vi.fn(
+        async () => new Response('Invalid XHTTP handshake', { status: 403 }),
+      ),
+    };
+    await handleXhttpRoute(req('/xhttp'), config, invalidAuth);
+    expect(statuses).toEqual([403]);
+
+    statuses.length = 0;
+    const disabled = structuredClone(config);
+    disabled.xhttp.enabled = false;
+    await handleXhttpRoute(req('/xhttp'), disabled, deps);
+    expect(statuses).toEqual([404]);
+
+    statuses.length = 0;
+    await handleXhttpRoute(req('/xhttp/session-id'), config, deps);
+    await handleXhttpRoute(req('/xhttp', 'GET'), config, deps);
+    expect(statuses).toEqual([]);
+  });
 });

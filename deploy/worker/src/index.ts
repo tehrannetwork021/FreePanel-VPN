@@ -1,5 +1,6 @@
 import type { Env } from './config/model';
 import { loadProtocolConfig, publicProtocolStatus } from './config/store';
+import { createXhttpDiagnostics, type XhttpDiagnostics } from './observability/xhttpDiagnostics';
 import {
   handleAdminApiSetup,
   handleSetupForm,
@@ -11,6 +12,20 @@ import { handleWebSocketRoute } from './routes/ws';
 import { handleXhttpRoute } from './routes/xhttp';
 
 const VERSION = '0.1.0';
+
+type FetchContext = {
+  waitUntil(promise: Promise<void>): void;
+};
+
+const diagnosticsByKv = new WeakMap<object, XhttpDiagnostics>();
+
+function diagnosticsFor(env: Env): XhttpDiagnostics {
+  const existing = diagnosticsByKv.get(env.C as unknown as object);
+  if (existing) return existing;
+  const created = createXhttpDiagnostics(env.C);
+  diagnosticsByKv.set(env.C as unknown as object, created);
+  return created;
+}
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data, null, 2), {
@@ -24,7 +39,7 @@ const json = (data: unknown, status = 200) =>
 
 const methodNotAllowed = () => json({ ok: false, error: 'method-not-allowed' }, 405);
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: FetchContext): Promise<Response> {
     const url = new URL(request.url);
     let protocolConfig;
     try {
@@ -35,7 +50,14 @@ export default {
 
     const wsResponse = await handleWebSocketRoute(request, protocolConfig);
     if (wsResponse) return wsResponse;
-    const xhttpResponse = await handleXhttpRoute(request, protocolConfig);
+    const diagnostics = diagnosticsFor(env);
+    const xhttpResponse = await handleXhttpRoute(request, protocolConfig, {
+      onAttempt: (status) => {
+        diagnostics.record(status);
+        const flush = diagnostics.flushIfNeeded();
+        if (ctx?.waitUntil) ctx.waitUntil(flush);
+      },
+    });
     if (xhttpResponse) return xhttpResponse;
     const subscriptionResponse = await handleSubscriptionRoute(request, protocolConfig);
     if (subscriptionResponse) return subscriptionResponse;
@@ -59,6 +81,7 @@ export default {
         version: VERSION,
         kv: true,
         protocols: protocolConfig ? publicProtocolStatus(protocolConfig) : 'setup-required',
+        xhttpDiag: await diagnostics.snapshot(),
       });
     }
     if (url.pathname === '/') {

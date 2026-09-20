@@ -28,9 +28,14 @@ export function buildNamedProtocolLinks(config: ProtocolConfig, host: string): P
       '#Tehran-Network-Trojan-WS';
   }
   if (config.xhttp.enabled) {
+    // Xray stream-one clients send Content-Type: application/grpc unless
+    // noGRPCHeader is set in the client-side extra config. Cloudflare's edge
+    // classifies gRPC requests before they ever reach the Worker (and answers
+    // 403 for zones without gRPC enabled), so the shared link must opt out.
+    const extra = JSON.stringify({ noGRPCHeader: true });
     const params =
       `encryption=none&security=tls&sni=${q(cleanHost)}&fp=chrome&type=xhttp` +
-      `&path=${q(config.xhttp.path)}&mode=stream-one`;
+      `&host=${q(cleanHost)}&path=${q(config.xhttp.path)}&mode=stream-one&extra=${q(extra)}`;
     links.vlessXhttp =
       `vless://${config.vless.uuid}@${cleanHost}:443?${params}` + '#Tehran-Network-VLESS-XHTTP';
   }

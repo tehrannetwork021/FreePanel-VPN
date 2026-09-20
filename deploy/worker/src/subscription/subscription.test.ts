@@ -29,6 +29,12 @@ describe('subscription links and formats', () => {
     const xhttp = new URL(links[2]!.replace('vless://', 'https://'));
     expect(xhttp.searchParams.get('type')).toBe('xhttp');
     expect(xhttp.searchParams.get('mode')).toBe('stream-one');
+    expect(xhttp.searchParams.get('host')).toBe(host);
+    // Xray sends Content-Type: application/grpc for stream-one unless the
+    // client-side extra config sets noGRPCHeader; Cloudflare's edge classifies
+    // gRPC requests before they reach the Worker, so the link must opt out.
+    const extra = JSON.parse(xhttp.searchParams.get('extra') ?? '{}') as Record<string, unknown>;
+    expect(extra).toEqual({ noGRPCHeader: true });
   });
 
   it('renders base64, sing-box and Mihomo without lying about unsupported XHTTP schemas', () => {
