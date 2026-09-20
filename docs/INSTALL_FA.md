@@ -1,5 +1,36 @@
 # آموزش نصب و استفاده — فارسی
 
+## نصب با اسکریپت — توکن را Paste کن، تمام
+
+سریع‌ترین روش اگر دسترسی به PowerShell (ویندوز) یا ترمینال (لینوکس/مک/WSL) داری. اسکریپت خودش همه‌کار را می‌کند: بررسی توکن، ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز مدیریت، فعال‌سازی workers.dev و چاپ کانفیگ‌ها. توکن فقط در حافظهٔ همان اجرا می‌ماند.
+
+**ویندوز (PowerShell):**
+
+```powershell
+irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
+```
+
+اگر jsDelivr باز نشد از لینک مستقیم گیت‌هاب استفاده کن:
+
+```powershell
+irm https://raw.githubusercontent.com/tehrannetwork021/FreePanel-VPN/main/install.ps1 | iex
+```
+
+**لینوکس / مک / WSL / Git Bash:**
+
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
+```
+
+**مراحل:**
+
+1. اسکریپت لینک ساخت توکن (پیش‌تنظیم با سه دسترسی لازم) را نشان می‌دهد؛ باز کن و **Create Token** بزن.
+2. توکن را کپی و در اسکریپت Paste کن و Enter بزن.
+3. اگر چند حساب داشته باشی، شمارهٔ حساب را انتخاب کن؛ نام Worker و رمز مدیریت را وارد کن (یا Enter بزن تا رمز تصادفی ساخته شود).
+4. در پایان: آدرس پنل، رمز مدیریت، لینک‌های VLESS-WS / Trojan-WS / XHTTP و آدرس Subscription چاپ می‌شود — همان‌ها را در کلاینت وارد کن.
+
+پرچم‌های اختیاری: `--name` برای نام Worker، `--password` برای رمز، `--account` برای انتخاب حساب در اجرای غیرتعاملی.
+
 ## نصب رایگان با توکن Cloudflare (مسیر پیشنهادی)
 
 این مسیر رسمی نصب است و **نیازی به VPS، دامنه، اتصال GitHub، Wrangler یا ترمینال ندارد** و روی پلن رایگان Cloudflare انجام می‌شود. کل کار دو مرحله است: اول نصب‌کننده، بعد ساخت توکن.

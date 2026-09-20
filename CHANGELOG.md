@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — 2026-09-20
+
+### Added
+
+- **نصب با اسکریپت (Easy Installer script edition):** `install.sh` برای Linux/macOS/WSL/Git Bash و `install.ps1` برای Windows PowerShell 5.1+. توکن را Paste می‌کنید؛ اسکریپت خودش توکن را verify می‌کند، حساب را پیدا/انتخاب می‌کند، KV را می‌سازد، Worker امضاشده را با بایندینگ `C` و سکرت `ADMIN_PASSWORD` آپلود می‌کند، workers.dev را فعال می‌کند، health را چک می‌کند و در پایان آدرس پنل + لینک‌های VLESS-WS/Trojan-WS/XHTTP و Subscription را چاپ می‌کند.
+- باندل خام `dist/edge-worker.js` به مخزن اضافه شد تا اسکریپت‌ها بتوانند با بررسی SHA-256 (از `edge-worker-manifest.json`) آن را از GitHub یا jsDelivr دانلود کنند.
+- `scripts/mock-cloudflare-api.py`: سرور Mock برای تست E2E اسکریپت‌ها بدون توکن واقعی.
+- توکن در هر دو اسکریپت فقط در حافظه می‌ماند؛ در دیسک، تاریخچه یا خروجی نوشته نمی‌شود و پیام‌های خطای `token-invalid` / `insufficient-scope` به فارسی/انگلیسی نمایش داده می‌شود.
+
+### Verified
+
+- هر دو اسکریپت با Mock سرور به‌صورت E2E تست شدند (مسیر jq و مسیر بدون-jq در bash؛ PowerShell 7.4.6 روی لینوکس): آپلود با metadata درست (KV binding `C` + `secret_text`)، SHA-256 باندل درست، health و /api/setup پاس شدند.
+- آرتیفکت (TS تولیدشده + manifest + باندل خام) از یک build مشترک بازتولید شد تا هر سه هم‌SHA باشند (`0b24b3d6…`).
+
 ## v0.2.0 — 2026-09-20
 
 نسخهٔ «نصب رایگان با توکن Cloudflare» — کل مسیر نصب بدون VPS، دامنه، GitHub یا ترمینال.

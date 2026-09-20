@@ -1,5 +1,36 @@
 # Installation and Usage — English
 
+## Script install — paste the token, done
+
+The fastest path if you have PowerShell (Windows) or a terminal (Linux/macOS/WSL). The script does everything itself: verifies the token, provisions KV, uploads the signed Worker, sets the admin secret, enables workers.dev and prints the configs. The token stays in memory for that run only.
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
+```
+
+If jsDelivr is unreachable, use the direct GitHub link:
+
+```powershell
+irm https://raw.githubusercontent.com/tehrannetwork021/FreePanel-VPN/main/install.ps1 | iex
+```
+
+**Linux / macOS / WSL / Git Bash:**
+
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
+```
+
+**Steps:**
+
+1. The script prints the token creation link (pre-configured with the three required scopes); open it and click **Create Token**.
+2. Copy the token and paste it into the script.
+3. If you have several accounts, pick one; enter a Worker name and an admin password (or press Enter for a random one).
+4. At the end the script prints the panel URL, the admin password, the VLESS-WS / Trojan-WS / XHTTP links and the Subscription URL — add them to your client.
+
+Optional flags: `--name`, `--password`, `--account` for non-interactive runs.
+
 ## Free installation with a Cloudflare token (recommended)
 
 This is the official install path. It requires **no VPS, no custom domain, no GitHub connection, no Wrangler and no terminal**, and it runs entirely on the Cloudflare Free plan. There are two stages: deploy the installer once, then create the token.

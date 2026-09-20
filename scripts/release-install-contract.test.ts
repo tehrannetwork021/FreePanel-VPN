@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
@@ -75,6 +76,35 @@ describe('public install and release contract', () => {
     expect(manifest.version).toBe('0.2.0');
     expect(manifest.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(existsSync('apps/installer/dist/index.html')).toBe(true);
+  });
+
+  it('ships the tested script easy installers and raw bundle for token-paste installs', () => {
+    expect(existsSync('install.sh')).toBe(true);
+    expect(existsSync('install.ps1')).toBe(true);
+    expect(existsSync('scripts/mock-cloudflare-api.py')).toBe(true);
+    expect(existsSync('dist/edge-worker.js')).toBe(true);
+
+    for (const script of ['install.sh', 'install.ps1']) {
+      const body = readFileSync(script, 'utf8');
+      expect(body).toContain('/user/tokens/verify');
+      expect(body).toContain('/storage/kv/namespaces');
+      expect(body).toContain('/workers/scripts/');
+      expect(body).toContain('ADMIN_PASSWORD');
+      expect(body).toContain('edge-worker.js');
+      expect(body).toContain('jsdelivr');
+      expect(body).toContain('main_module');
+      expect(body).not.toMatch(/TOKEN\s*=\s*['"][A-Za-z0-9_-]{20,}/);
+    }
+
+    const readme = readFileSync('README.md', 'utf8');
+    expect(readme).toContain('install.ps1');
+    expect(readme).toContain('install.sh');
+
+    const bundle = readFileSync('dist/edge-worker.js', 'utf8');
+    const manifest = JSON.parse(
+      readFileSync('dist/installer-artifacts/edge-worker-manifest.json', 'utf8'),
+    ) as { sha256: string };
+    expect(createHash('sha256').update(bundle).digest('hex')).toBe(manifest.sha256);
   });
 });
 

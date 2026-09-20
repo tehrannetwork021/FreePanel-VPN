@@ -123,6 +123,16 @@
 - [ ] Owner deploys the installer via the README button and performs the real token install (field retest including XHTTP stream-one)
 - [ ] GitHub Release `v0.2.0` published after CI green on `main`
 
+## Script Easy Installer — 2026-09-20
+
+- [x] Cloudflare API CORS checked: no `access-control-allow-origin` on api.cloudflare.com — browser-only static installer impossible; terminal scripts CAN call the API directly
+- [x] `install.sh` (bash, Linux/macOS/WSL/Git Bash): token paste → verify → account pick → KV → multipart Worker upload (KV `C` + `secret_text` in metadata) → subdomain → workers.dev enable → health → `/api/setup` link printing; jq preferred with pure sed/grep fallback (`TN_NO_JQ=1`)
+- [x] `install.ps1` (Windows PowerShell 5.1+): same flow with manual multipart construction, raw→jsDelivr fallback download and SHA-256 verification; UTF-8 BOM for Persian output
+- [x] `dist/edge-worker.js` raw bundle committed and manifest extended (`file` field); build script emits TS + manifest + raw bundle from one build so all three share SHA `0b24b3d6…`
+- [x] `scripts/mock-cloudflare-api.py` added; both scripts tested E2E against the mock (bash with and without jq; pwsh 7.4.6 on Linux) — correct upload metadata, health and links output
+- [x] README + INSTALL_FA/EN document the script path as the fastest route (`irm … | iex` / `curl … && bash install.sh`)
+- [ ] Owner runs the script with a real token (paste → panel URL) and confirms VLESS-WS connectivity
+
 ### Competitive references checked 2026-09-20
 
 - BPB-Worker-Panel current README: VLESS, Trojan, Warp, private DoH, Fragment, routing rules, chain proxies (VLESS/Trojan/Shadowsocks/SOCKS/HTTP), Clean IP/domain, Proxy IP, Warp endpoints, Xray/Sing-box/Clash-Mihomo subscriptions, node sharing and aggregation.

@@ -23,6 +23,18 @@
 
 **[راهنمای فارسی](docs/INSTALL_FA.md)** · **[English guide](docs/INSTALL_EN.md)**
 
+**یا نصب با اسکریپت — توکن را Paste کن، خودش همه‌کاره می‌شود / Or install with a script — paste the token and it does everything:**
+
+```powershell
+# Windows PowerShell
+irm https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.ps1 | iex
+```
+
+```bash
+# Linux / macOS / WSL / Git Bash
+curl -fsSL https://cdn.jsdelivr.net/gh/tehrannetwork021/FreePanel-VPN@main/install.sh -o install.sh && bash install.sh
+```
+
 Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
 
 </div>
@@ -40,6 +52,10 @@ Developer/advanced path: [![Deploy to Cloudflare](https://deploy.workers.cloudfl
 Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم دستی KV/Worker» را به یک نصب رایگان و خودکار تبدیل می‌کند. کافی است یک توکن محدود Cloudflare بسازید و به نصب‌کننده بدهید؛ بقیهٔ کار — ساخت KV، آپلود Worker امضاشده، ست‌کردن رمز مدیریت و فعال‌سازی `workers.dev` — در چند ثانیه و داخل اکانت خودتان انجام می‌شود. مسیر پیشرفتهٔ Deploy-to-Cloudflare برای توسعه‌دهندگان جداگانه باقی مانده است.
 
 ### نصب برای کاربر عادی
+
+**راه اول — اسکریپت (سریع‌ترین):** یک پنجره PowerShell یا ترمینال باز کنید، دستور بالا را اجرا کنید و توکن را Paste کنید. اسکریپت خودش KV می‌سازد، Worker را آپلود می‌کند، workers.dev را فعال می‌کند و در پایان آدرس پنل، رمز مدیریت و لینک کانفیگ‌ها را چاپ می‌کند.
+
+**راه دوم — نصب‌کنندهٔ وب:**
 
 1. روی دکمهٔ **Deploy Installer** در بالای همین صفحه بزنید و با اکانت رایگان Cloudflare آن را نصب کنید؛ آدرس `*.workers.dev` نصب‌کننده را باز کنید.
 2. در نصب‌کننده روی **ساخت کلید Cloudflare** بزنید؛ صفحهٔ رسمی Cloudflare با دسترسی‌های لازم (Workers Scripts Edit، Workers KV Storage Edit، Account Settings Read) از پیش تنظیم شده باز می‌شود.
@@ -95,6 +111,10 @@ CI همین Quality Gateها را در Pull Request اجرا می‌کند.
 Tehran Network Edge Panel turns "copy a script and wire KV/Worker by hand" into a free, automated installation. Create a narrowly scoped Cloudflare token, paste it into the installer, and everything else — KV provisioning, signed Worker upload, admin secret and `workers.dev` enablement — happens inside your own account in seconds. The developer-focused Deploy-to-Cloudflare path remains as an advanced alternative.
 
 ### One-click installation
+
+**Path 1 — Script (fastest):** open a PowerShell or terminal window, run the command above, paste your token. The script provisions KV, uploads the Worker, enables workers.dev and prints the panel URL, admin password and config links.
+
+**Path 2 — Web installer:**
 
 1. Click **Deploy Installer** at the top of this page and install it with your free Cloudflare account; open the installer's `*.workers.dev` URL.
 2. Click **Generate Cloudflare Key**; Cloudflare's official page opens with the required scopes preselected (Workers Scripts Edit, Workers KV Storage Edit, Account Settings Read).
