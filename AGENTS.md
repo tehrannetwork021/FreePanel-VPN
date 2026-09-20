@@ -206,8 +206,9 @@
 - [x] Architecture decision captured: D1 is authoritative for users/quota/expiry/usage/audit/sessions; KV is low-write config/cache/feature state; isolate memory is cache only.
 - [x] Normal-user install remains Cloudflare-only/no-terminal/no-VPS/no-Docker/no-paid-domain and keeps the public scoped-token installer flow.
 - [x] Full design written to `docs/superpowers/specs/2026-09-20-cloudflare-only-complete-panel-design.md`.
-- [ ] Owner reviews/approves the written design.
-- [ ] Write the implementation plan after design approval.
+- [x] Owner reviewed and approved the written design — 2026-09-20.
+- [x] Phase A implementation plan written and self-reviewed: `docs/superpowers/plans/2026-09-20-phase-a-control-plane.md` — 2026-09-20.
+- [ ] Owner reviews the implementation plan and chooses the execution method before code changes begin.
 - [ ] Phase A implementation: D1 provisioning + migrations + multi-user/quota/expiry/private links/audit + redesigned dashboard shell.
 - [ ] Phase B implementation: native multi-format subscription engine.
 - [ ] Phase C implementation: Clean-IP/preferred endpoint platform + optional privacy-preserving community registry.
