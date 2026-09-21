@@ -28,9 +28,6 @@
       },
       "ADMIN_PASSWORD": {
         "description": "Required owner password. Any non-empty value is accepted; a longer unique password is recommended because it protects setup/config access and is never reused as a VPN credential."
-      },
-      "DB": {
-        "description": "Tehran Network D1 control-plane database. Cloudflare creates and binds this database automatically."
       }
     }
   },

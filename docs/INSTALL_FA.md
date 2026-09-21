@@ -1,74 +1,88 @@
 # آموزش نصب و استفاده — فارسی
 
-## نصب بدون ترمینال
+## نصب بدون ترمینال (مسیر رسمی Phase A)
 
-مسیر رسمی پروژه **GitHub → Deploy to Cloudflare** است: بدون VPS، بدون دامنه اجباری، بدون Wrangler محلی، بدون SSH/PowerShell و بدون API Token دستی.
+این مسیر برای کاربر عادی است: **بدون VPS، دامنه پولی، GitHub connection، Wrangler، PowerShell یا ترمینال**.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
+### گام ۱ — Installer عمومی را باز کنید
 
-### گام ۱ — Deploy to Cloudflare
+https://tehran-network-installer.honored-feather.workers.dev
 
-دکمه بالا را بزنید. Cloudflare template مستقل `deploy/worker` را مستقیماً از GitHub می‌خواند. اگر لازم باشد از شما می‌خواهد وارد GitHub و Cloudflare شوید و Account مقصد را انتخاب کنید.
+Installer فقط کنترل‌پلین نصب است؛ ترافیک VPN شما از آن عبور نمی‌کند و پنل نهایی بعد از نصب مستقل است.
 
-### گام ۲ — تنظیمات نصب
+### گام ۲ — ساخت کلید Cloudflare
 
-نام‌های پیش‌فرض Worker، KV و D1 را می‌توانید بدون تغییر قبول کنید. تنها مقدار امنیتی لازم `ADMIN_PASSWORD` است؛ یک رمز قوی و یکتا انتخاب کنید.
+روی **ساخت کلید Cloudflare / Generate Cloudflare Key** بزنید و توکن Scoped بسازید. دسترسی‌های لازم:
 
-این رمز توسط صفحه Deploy خود Cloudflare به‌عنوان Secret دریافت می‌شود و داخل GitHub commit نمی‌شود.
+- `Workers Scripts: Edit`
+- `Workers KV Storage: Edit`
+- `D1 Write`
+- `Account Settings: Read`
 
-### گام ۳ — Deploy
+از Global API Key استفاده نکنید. Token را Cloudflare فقط یک‌بار نمایش می‌دهد؛ آن را Copy کنید و به Installer برگردید.
 
-Cloudflare خودش:
+### گام ۳ — Paste و نصب
 
-- repository/template را clone و build می‌کند؛
-- Worker را روی `workers.dev` منتشر می‌کند؛
-- KV binding با نام `C` را provision می‌کند؛
-- D1 binding با نام `DB` را provision می‌کند؛
-- `ADMIN_PASSWORD` را به‌صورت Secret به Worker می‌دهد.
+1. Token را Paste کنید و **نصب با کلید** را بزنید.
+2. Installer اولین Account قابل‌دسترسی را خودکار انتخاب می‌کند.
+3. نام Worker همیشه `tehran-network-edge` است و نیازی به واردکردن یا انتخاب آن ندارید.
+4. یک رمز مدیریت ۱۸ کاراکتری امن به‌صورت خودکار ساخته می‌شود؛ هیچ فرم Password قبل از نصب وجود ندارد.
+5. Installer، KV + D1 + Worker + Secret + `workers.dev` را داخل حساب شما ایجاد یا reuse می‌کند.
+6. قبل از اعلام موفقیت، `/health` و ورود واقعی `/api/auth/login` با همان رمز تولیدشده بررسی می‌شوند.
+7. نتیجه فقط **Worker URL، آدرس `/admin` و رمز مدیریت** را برای Copy/Open تحویل می‌دهد.
 
-Schema D1 در اولین اجرای Worker به‌صورت idempotent ساخته/بررسی می‌شود.
+## Token و حریم خصوصی
 
-### گام ۴ — ورود به پنل
-
-بعد از Deploy، آدرس `https://<worker>.<subdomain>.workers.dev` را باز کنید. برای مدیریت وارد `/admin` شوید و همان `ADMIN_PASSWORD` را وارد کنید.
-
-## چیزی که لازم ندارید
-
-- VPS یا سرور واسط
-- دامنه پولی
-- API Token دستی یا Global API Key
-- Wrangler روی کامپیوتر کاربر
-- SSH، PowerShell یا ترمینال
-- سرویس پولی جانبی
+Token فقط در درخواست HTTPS نصب استفاده می‌شود و نباید در KV، D1، Cookie، localStorage، sessionStorage، analytics یا log persist شود. بعد از موفقیت یا خطا، Installer آن را از state مرورگر پاک می‌کند. پنل نصب‌شده به Token نصب وابسته نیست و می‌توانید بعداً آن را revoke کنید.
 
 ## داخل پنل `/admin`
 
-پس از ورود می‌توانید کاربر بسازید، Pause/Resume کنید، expiry و quota تعیین کنید، VLESS-WS/Trojan-WS/VLESS-XHTTP را مدیریت کنید، Subscription و QR بگیرید، credentialها را rotate کنید و usage/audit را ببینید.
+پس از ورود با رمز مدیریت می‌توانید:
 
-## سهمیه و Usage
+- کاربر بسازید، ویرایش، Pause/Resume یا حذف کنید.
+- تاریخ انقضا، سهمیه کل و سهمیه روزانه UTC تعیین کنید.
+- VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one را برای هر کاربر فعال/غیرفعال کنید.
+- لینک Subscription خصوصی، QR و credentialهای همان کاربر را بگیرید.
+- Subscription token یا credentialهای VLESS/Trojan را rotate کنید.
+- Usage روزانه/تجمیعی، Audit و Login events را ببینید.
 
-مصرف upload/download در checkpointهای درشت به D1 نوشته می‌شود: پیش‌فرض هر `4 MiB`، هر `60 ثانیه` یا هنگام بسته‌شدن اتصال. این مدل برای کاهش write روی پلن رایگان طراحی شده و billing دقیق per-packet نیست.
+Subscription URL یک **Credential** است؛ آن را عمومی نکنید. Token قدیمی بعد از rotation فوراً 404 می‌شود و credential قدیمی بعد از rotation دیگر اجازه اتصال ندارد.
 
-## داده‌ها کجا هستند؟
+## سهمیه و Usage چگونه اعمال می‌شود؟
 
-- D1: users، quota/expiry، usage، audit، login events، sessions و installation state.
-- KV: تنظیمات کم‌نوشتن و stateهای محدود.
-- Password ادمین به‌صورت Secret در Cloudflare وارد می‌شود؛ hash احراز هویت در D1 نگه‌داری می‌شود.
+مصرف upload/download برای کاربران D1 در checkpointهای درشت ثبت می‌شود: به‌طور پیش‌فرض هر `4 MiB`، هر `60 ثانیه` یا هنگام بسته‌شدن اتصال. این طراحی writeهای D1 را برای پلن رایگان محدود می‌کند.
 
-## Upgrade
+این سیستم billing دقیق per-packet نیست. در اتصال‌های هم‌زمان، مصرف ممکن است تا حدود اندازه checkpoint × تعداد connectionها از quota عبور کند و سپس اتصال/شروع بعدی رد شود. `NULL` یعنی بدون سهمیه؛ `0` یعنی از ابتدا exhausted.
 
-Cloudflare Deploy Button یک repository قابل توسعه برای شما می‌سازد و Workers Builds می‌تواند pushهای branch تولید را خودکار deploy کند. برای تغییر رمز Admin از خود پنل استفاده کنید تا sessionهای قبلی باطل شوند.
+**Speed limiting هنوز در Phase A پیاده‌سازی نشده است.**
 
-## محدودیت‌های فعلی Release Candidate
+## محل نگه‌داری داده‌ها
 
-- Backup/Restore کامل هنوز در حال توسعه است.
-- Speed limiting هنوز پیاده‌سازی نشده است.
-- VLESS-XHTTP هنوز به field retest واقعی Cloudflare نیاز دارد.
+- **D1 منبع اصلی control plane است:** installation state، credential index/version، users، quota/expiry، usage، audit، login events و admin sessions.
+- **KV برای state کم‌نوشتن است:** تنظیمات global پروتکل/owner و diagnostics/cacheهای محدود.
+- Secretهای خام هر کاربر در D1 ذخیره نمی‌شوند؛ از installation seed پایدار و version هر secret مشتق می‌شوند و فقط lookup hash/version نگه‌داری می‌شود.
+
+## Upgrade / Reinstall
+
+Installer همیشه نام `tehran-network-edge` را استفاده می‌کند و `tehran-network-edge-config` برای KV و `tehran-network-edge-control` برای D1 را reuse می‌کند. نصب دوباره:
+
+- protocol config و owner credentialهای legacy در KV را بازنویسی نمی‌کند؛
+- installation seed و secret-version کاربران را در D1 حفظ می‌کند، پس لینک‌ها و credentialهای موجود کاربران ثابت می‌مانند؛
+- یک `INSTALL_GENERATION` تازه می‌فرستد تا رمز ادمین یک‌بار با رمز جدیدی که Installer نشان می‌دهد sync شود؛
+- sessionهای ادمین قبلی را نامعتبر می‌کند.
+
+بنابراین بعد از reinstall باید با **رمز جدید نمایش‌داده‌شده در نتیجه Installer** وارد `/admin` شوید، درحالی‌که access کاربران قبلی نباید تغییر کند.
+
+## محدودیت‌های فعلی Release Candidate 0.3.0
+
+- Backup/Restore کامل هنوز آماده نیست؛ حذف دستی D1/KV می‌تواند داده‌های control plane یا config را از بین ببرد.
+- Speed limiting وجود ندارد؛ فقط quota/expiry و checkpoint accounting اعمال می‌شوند.
+- Field gate واقعی Cloudflare برای v0.3.0 هنوز pending است؛ این نسخه تا تکمیل آن stable اعلام نمی‌شود.
 
 ## حذف
 
-برای حذف کامل، Worker و KV/D1 ساخته‌شده را از Cloudflare Dashboard حذف کنید. قبل از حذف D1/KV فرض کنید داده بدون export مستقل قابل بازیابی نیست.
+برای حذف کامل، Worker، KV namespace مربوط، D1 database مربوط و در صورت عدم نیاز API Token نصب را از Cloudflare Dashboard حذف کنید. قبل از حذف D1/KV فرض کنید داده قابل بازیابی نیست مگر خودتان export مستقل داشته باشید.
 
 ## امنیت
 
-رمز Admin، Subscription URL، UUID/Password پروتکل، session cookie یا اطلاعات D1/KV را در Issue یا Screenshot عمومی قرار ندهید. جزئیات بیشتر: [SECURITY.md](../SECURITY.md).
+Token، Subscription URL، UUID/Password پروتکل، session cookie یا اطلاعات D1/KV را در Issue یا Screenshot عمومی قرار ندهید. جزئیات بیشتر: [SECURITY.md](../SECURITY.md).
