@@ -8,11 +8,12 @@
     "required": ["ADMIN_PASSWORD"],
   },
   "vars": {
-    "INSTALL_GENERATION": "local-dev",
+    "INSTALL_GENERATION": "github-deploy-v1",
   },
   "kv_namespaces": [
     {
       "binding": "C",
+      "id": "00000000000000000000000000000000",
     },
   ],
   "d1_databases": [

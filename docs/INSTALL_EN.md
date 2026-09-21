@@ -1,88 +1,74 @@
 # Installation and Usage — English
 
-## No-terminal install (official Phase A path)
+## No-terminal install
 
-This is the regular-user path: **no VPS, no custom domain, no GitHub connection, no Wrangler, no PowerShell, and no terminal**.
+The official path is **GitHub → Deploy to Cloudflare**: no VPS, no required custom domain, no local Wrangler, no SSH/PowerShell, and no pasted Cloudflare API token.
 
-### Step 1 — Open the public installer
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker)
 
-https://tehran-network-installer.honored-feather.workers.dev
+### Step 1 — Deploy to Cloudflare
 
-The installer is setup control-plane only. VPN traffic never traverses it, and the installed panel is independent after provisioning.
+Click the button above. Cloudflare reads the isolated `deploy/worker` template directly from GitHub. If needed, sign in to GitHub and Cloudflare and choose the destination Cloudflare account.
 
-### Step 2 — Generate Cloudflare Key
+### Step 2 — Install settings
 
-Click **Generate Cloudflare Key** and create a scoped token with only these permissions:
+You can accept the default Worker, KV and D1 names. The only security value you must provide is `ADMIN_PASSWORD`; use a strong unique password.
 
-- `Workers Scripts: Edit`
-- `Workers KV Storage: Edit`
-- `D1 Write`
-- `Account Settings: Read`
+Cloudflare collects this value as a Worker secret during its deploy flow. It is not committed to GitHub.
 
-Do not use the Global API Key. Cloudflare displays the token once; copy it and return to the installer.
+### Step 3 — Deploy
 
-### Step 3 — Paste and install
+Cloudflare automatically:
 
-1. Paste the token and click **Install with key**.
-2. The installer automatically selects the first accessible Cloudflare account.
-3. The Worker name is fixed to `tehran-network-edge`; there is nothing to configure.
-4. A secure random 18-character admin password is generated automatically; no password form is shown before installation.
-5. The installer creates or reuses KV + D1, uploads the Worker, sets secrets and enables `workers.dev`.
-6. Before reporting success, it checks `/health` and performs a real `/api/auth/login` with the exact generated password.
-7. The result returns only the **Worker URL, `/admin` URL, and admin password** for copy/open.
+- clones/builds the GitHub template;
+- publishes the Worker on `workers.dev`;
+- provisions the KV binding named `C`;
+- provisions the D1 binding named `DB`;
+- injects `ADMIN_PASSWORD` as a Worker secret.
 
-## Token privacy
+The D1 schema is created/verified idempotently on the Worker's first run.
 
-The token is used only for the HTTPS installation request and must not be persisted to KV, D1, cookies, localStorage, sessionStorage, analytics, or logs. The installer clears it from browser state after success or failure. The deployed panel does not depend on the setup token, so you may revoke it afterwards.
+### Step 4 — Open the panel
+
+After deployment, open `https://<worker>.<subdomain>.workers.dev`. Use `/admin` for management and sign in with the same `ADMIN_PASSWORD` you supplied during deployment.
+
+## What you do not need
+
+- a VPS or intermediary server;
+- a paid custom domain;
+- a pasted API token or Global API Key;
+- local Wrangler;
+- SSH, PowerShell, or a terminal;
+- any paid third-party deployment tool.
 
 ## Inside `/admin`
 
-After logging in with the admin password you can:
+After login you can create users, pause/resume access, set expiry and quota, manage VLESS-WS/Trojan-WS/VLESS-XHTTP, obtain private subscriptions and QR payloads, rotate credentials, and inspect usage/audit data.
 
-- create, edit, pause/resume, and delete users;
-- set expiry, total quota, and UTC daily quota;
-- enable/disable VLESS-WS, Trojan-WS, and VLESS-XHTTP stream-one per user;
-- obtain each user's private subscription URL, QR payload, and credentials;
-- rotate the subscription token or VLESS/Trojan credentials;
-- inspect daily/aggregate usage, audit entries, and login events.
+## Quota and usage
 
-A subscription URL is a **credential**. Do not publish it. The old URL returns the same generic 404 immediately after rotation, and old protocol credentials stop authorizing after credential rotation.
-
-## How quota and usage enforcement works
-
-Per-user upload/download is checkpointed to D1 in coarse batches: by default at `4 MiB`, after `60 seconds`, or when a connection closes. This keeps D1 writes bounded for the free plan.
-
-This is not exact per-packet billing. With concurrent connections, bounded overshoot can be roughly checkpoint size × concurrent connections before the next checkpoint/start is denied. `NULL` means unlimited quota; numeric `0` means exhausted immediately.
-
-**Speed limiting is not implemented in Phase A.**
+Upload/download is checkpointed to D1 in coarse batches: by default every `4 MiB`, after `60 seconds`, or when a connection closes. This reduces D1 writes on the free plan and is not exact per-packet billing.
 
 ## Where data lives
 
-- **D1 is authoritative for control-plane state:** installation state, credential indexes/versions, users, quota/expiry, usage, audit, login events, and admin sessions.
-- **KV is for low-write state:** global protocol/legacy-owner configuration plus bounded diagnostics/cache state.
-- Raw per-user secrets are not stored in D1. They are derived from the persistent installation seed plus per-secret versions; only versions and lookup hashes are persisted.
+- D1: users, quota/expiry, usage, audit, login events, sessions, and installation state.
+- KV: low-write configuration and bounded state.
+- The admin password enters Cloudflare as a secret; the authentication hash lives in D1.
 
-## Upgrade / reinstall
+## Upgrades
 
-The installer always uses `tehran-network-edge` and reuses `tehran-network-edge-config` for KV and `tehran-network-edge-control` for D1. Reinstalling the same Worker name:
+The Deploy to Cloudflare flow creates a repository you can continue developing, and Workers Builds can automatically deploy production-branch pushes. Change the admin password from inside the panel so existing sessions are invalidated correctly.
 
-- does not rewrite the legacy protocol config or owner credentials in KV;
-- preserves the D1 installation seed and per-user secret versions, so existing user links/credentials stay stable;
-- sends a fresh `INSTALL_GENERATION`, intentionally syncing the admin password once to the new password shown by the installer;
-- invalidates older admin sessions.
+## Current release-candidate limitations
 
-After reinstall, use the **new password shown on the installer result screen** for `/admin`; existing user access should remain unchanged.
-
-## Current v0.3.0 release-candidate limitations
-
-- Full Backup/Restore is not implemented yet. Deleting D1/KV manually can destroy control-plane/config state.
-- Speed limiting is not implemented; only quota/expiry and checkpoint-based usage enforcement are present.
-- The real Cloudflare field gate for v0.3.0 is still pending, so the release is not described as stable yet.
+- Full Backup/Restore is still in development.
+- Speed limiting is not implemented yet.
+- VLESS-XHTTP still needs a real Cloudflare field retest.
 
 ## Uninstalling
 
-For a complete uninstall, delete the Worker, its KV namespace, its D1 database, and the setup API token if you no longer need it. Until Backup/Restore lands, assume deleted D1/KV state is unrecoverable unless you created an independent export.
+Delete the Worker and its KV/D1 resources from the Cloudflare dashboard. Until Backup/Restore is complete, assume deleted state is unrecoverable without an independent export.
 
 ## Security
 
-Never paste the Cloudflare token, subscription URL, protocol UUID/password, session cookie, or D1/KV secret material into a public issue or screenshot. See [SECURITY.md](../SECURITY.md).
+Never publish the admin password, subscription URL, protocol UUID/password, session cookie, or sensitive D1/KV data in a public issue or screenshot. See [SECURITY.md](../SECURITY.md).
