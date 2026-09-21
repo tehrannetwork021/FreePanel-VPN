@@ -21,6 +21,16 @@ const defaultDeps: RouterDeps = {
 
 const MAX_BODY_BYTES = 16 * 1024;
 
+const ADMIN_PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+function generateAdminPassword(): string {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  let password = '';
+  for (const byte of bytes)
+    password += ADMIN_PASSWORD_ALPHABET[byte % ADMIN_PASSWORD_ALPHABET.length];
+  return password;
+}
+
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
@@ -94,13 +104,17 @@ async function handleInstall(request: Request, deps: RouterDeps): Promise<Respon
   if (!token) return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
   try {
     await deps.verifyApiToken(token);
+    const accounts = await deps.listAccounts(token);
+    const accountId = accounts[0]?.id;
+    if (!accountId) throw new ProvisionError('account', 'invalid-account');
+    const adminPassword = generateAdminPassword();
     const installRequest: InstallRequest = {
-      accountId: body.accountId,
-      workerName: body.workerName,
-      adminPassword: body.adminPassword,
+      accountId,
+      workerName: 'tehran-network-edge',
+      adminPassword,
     };
     const result = await deps.provisionPanel(token, installRequest, defaultProvisionDeps);
-    return json(result);
+    return json({ ...result, adminPassword });
   } catch (error) {
     return installError(error);
   }

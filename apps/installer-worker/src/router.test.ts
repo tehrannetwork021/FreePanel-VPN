@@ -128,32 +128,34 @@ describe('stateless token installer router', () => {
       code: 'insufficient-scope',
     });
   });
-  it('installs directly from the request token and preserves retryable safe errors', async () => {
+  it('installs from only the token and chooses all hidden settings server-side', async () => {
     const d = deps();
     const response = await handleInstallerRequest(
-      post('/api/install', {
-        token: 'TOKEN_VALUE',
-        accountId: 'a2',
-        workerName: 'pvnetwork-client',
-        adminPassword: 'correct-horse-1234',
-      }),
+      post('/api/install', { token: 'TOKEN_VALUE' }),
       env,
       d,
     );
     expect(response.status).toBe(200);
-    expect(d.provisionPanel).toHaveBeenCalledWith(
-      'TOKEN_VALUE',
-      { accountId: 'a2', workerName: 'pvnetwork-client', adminPassword: 'correct-horse-1234' },
-      expect.any(Object),
-    );
+    expect(d.listAccounts).toHaveBeenCalledWith('TOKEN_VALUE');
+    expect(d.provisionPanel).toHaveBeenCalledTimes(1);
+    const [, installRequest] = vi.mocked(d.provisionPanel).mock.calls[0];
+    expect(installRequest).toEqual({
+      accountId: 'a1',
+      workerName: 'tehran-network-edge',
+      adminPassword: expect.stringMatching(/^[A-Za-z0-9]{18}$/),
+    });
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      workerUrl: 'https://pvnetwork-client.sub.workers.dev',
+      workerName: 'pvnetwork-client',
+      version: '0.1.0',
+      schemaVersion: 1,
+      adminUrl: 'https://pvnetwork-client.sub.workers.dev/admin',
+      adminPassword: installRequest.adminPassword,
+    });
 
     const retryable = await handleInstallerRequest(
-      post('/api/install', {
-        token: 'TOKEN_VALUE',
-        accountId: 'a2',
-        workerName: 'pvnetwork-client',
-        adminPassword: 'correct-horse-1234',
-      }),
+      post('/api/install', { token: 'TOKEN_VALUE' }),
       env,
       deps({
         provisionPanel: vi
@@ -168,21 +170,15 @@ describe('stateless token installer router', () => {
       code: 'worker-upload-failed',
     });
   });
-  it('never leaks token/password through logs or responses', async () => {
+  it('never leaks the submitted token through logs or failed responses', async () => {
     const token = 'SENTINEL_VALUE_A';
-    const password = 'SENTINEL_VALUE_B_1234';
     const spies = [
       vi.spyOn(console, 'log').mockImplementation(() => undefined),
       vi.spyOn(console, 'error').mockImplementation(() => undefined),
       vi.spyOn(console, 'warn').mockImplementation(() => undefined),
     ];
     const response = await handleInstallerRequest(
-      post('/api/install', {
-        token,
-        accountId: 'a1',
-        workerName: 'pvnetwork-client',
-        adminPassword: password,
-      }),
+      post('/api/install', { token }),
       env,
       deps({
         provisionPanel: vi.fn().mockRejectedValue(new ProvisionError('secret', 'secret-failed')),
@@ -190,7 +186,6 @@ describe('stateless token installer router', () => {
     );
     const text = await response.text();
     expect(text).not.toContain(token);
-    expect(text).not.toContain(password);
     for (const spy of spies) expect(JSON.stringify(spy.mock.calls)).not.toContain('SENTINEL');
   });
 

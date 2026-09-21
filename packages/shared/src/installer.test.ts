@@ -4,6 +4,7 @@ import type {
   InstallErrorCode,
   InstallResult,
   TokenInstallRequest,
+  TokenInstallResult,
   TokenVerifyRequest,
   TokenVerifyResult,
 } from './installer';
@@ -31,12 +32,7 @@ describe('token installer contracts', () => {
       ok: true;
       accounts: Array<{ id: string; name: string }>;
     }>();
-    expectTypeOf<TokenInstallRequest>().toMatchTypeOf<{
-      token: string;
-      accountId: string;
-      workerName: string;
-      adminPassword: string;
-    }>();
+    expectTypeOf<TokenInstallRequest>().toEqualTypeOf<{ token: string }>();
     expectTypeOf<InstallResult>().toEqualTypeOf<{
       ok: true;
       workerUrl: string;
@@ -45,5 +41,6 @@ describe('token installer contracts', () => {
       schemaVersion: number;
       adminUrl: string;
     }>();
+    expectTypeOf<TokenInstallResult>().toEqualTypeOf<InstallResult & { adminPassword: string }>();
   });
 });

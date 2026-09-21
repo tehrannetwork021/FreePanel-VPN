@@ -1,4 +1,8 @@
-import type { InstallResult, TokenInstallRequest, TokenVerifyResult } from '@tehrannetwork/shared';
+import type {
+  TokenInstallRequest,
+  TokenInstallResult,
+  TokenVerifyResult,
+} from '@tehrannetwork/shared';
 
 export class InstallerClientError extends Error {
   constructor(
@@ -12,7 +16,7 @@ export class InstallerClientError extends Error {
 
 export interface InstallerApi {
   verifyToken(token: string): Promise<TokenVerifyResult>;
-  installPanel(request: TokenInstallRequest): Promise<InstallResult>;
+  installPanel(request: TokenInstallRequest): Promise<TokenInstallResult>;
 }
 
 async function readError(response: Response): Promise<InstallerClientError> {
@@ -35,7 +39,7 @@ export async function verifyToken(token: string): Promise<TokenVerifyResult> {
   return (await response.json()) as TokenVerifyResult;
 }
 
-export async function installPanel(request: TokenInstallRequest): Promise<InstallResult> {
+export async function installPanel(request: TokenInstallRequest): Promise<TokenInstallResult> {
   const response = await fetch('/api/install', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -44,7 +48,7 @@ export async function installPanel(request: TokenInstallRequest): Promise<Instal
     credentials: 'same-origin',
   });
   if (!response.ok) throw await readError(response);
-  return (await response.json()) as InstallResult;
+  return (await response.json()) as TokenInstallResult;
 }
 
 export const browserInstallerApi: InstallerApi = {
