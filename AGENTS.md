@@ -360,3 +360,13 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 - [x] Fresh v0.3.1 token-only release gate: `pnpm check` PASS (48 files / 217 tests); Playwright PASS (9 executed / 3 intentional project skips); standalone Worker PASS (26 files / 152 tests); protocol E2E PASS VLESS-WS/Trojan-WS/XHTTP/negative-auth; Phase A lifecycle PASS; legacy-upgrade PASS; installer assets rebuilt and synchronized deterministically.
 - [ ] Central public installer redeployed with this exact v0.3.1 build and `/api/health` confirms edge artifact `0.3.1`.
 - [ ] Real Cloudflare single-token v0.3.1 field install passes health + admin login + user/protocol smoke before stable release is declared.
+
+### No-VPS public installer delivery — 2026-09-21
+
+- [x] Root cause identified: the public installer itself was correct, but publishing updates still depended on a maintainer-side local Wrangler session, which caused the stale live installer and repeated VPS/OAuth detours.
+- [x] Publishing design switched to **Cloudflare Workers Builds + GitHub**. No VPS/SSH hop, GitHub Actions deploy secret, local Wrangler login, or separate server is part of the production path.
+- [x] Added root `deploy:public-installer` command plus a release contract that builds the current installer assets and deploys the `tehran-network-installer` Worker directly from the repository.
+- [x] Added maintainer-only `docs/CLOUDFLARE_BUILDS.md`; normal users still see only **Generate API Token → Paste → Install**.
+- [x] Cloudflare can manage the Workers Builds deployment token itself; no repository-stored Cloudflare deploy token or Account ID is required for this publishing path.
+- [ ] One-time owner action: connect existing Worker `tehran-network-installer` to `tehrannetwork021/FreePanel-VPN` under **Settings → Builds**, production branch `main`, root `/`, deploy command `pnpm deploy:public-installer`.
+- [ ] After Cloudflare Builds publishes the current main, verify public `/api/health` reports `edgeVersion: 0.3.1`, then run the real single-token clean-account field install before declaring stable.

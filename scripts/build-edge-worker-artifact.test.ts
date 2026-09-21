@@ -52,6 +52,9 @@ describe('edge Worker install artifact', () => {
     expect(manifest.bytes).toBe(Buffer.byteLength(source));
     expect(manifest.version).toBe(releaseVersion);
     expect(source).not.toMatch(/from\s+['"]\.\.?\//);
+    expect(source).not.toContain('node_modules/.pnpm/');
+    expect(source).not.toContain('deploy/worker/node_modules/');
+    expect(source).toContain('// node_modules/uqr/dist/index.mjs');
     const buildScript = readFileSync('scripts/build-edge-worker-artifact.mjs', 'utf8');
     expect(buildScript).toContain("loader: { '.sql': 'text' }");
 

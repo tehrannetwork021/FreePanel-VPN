@@ -1,6 +1,6 @@
 {
   "version": "0.3.1",
-  "sha256": "87335ee7f2dca8690d290c93a3b0ca827de4b8d52e92466d742aacc8e43c5b1a",
-  "bytes": 434463,
+  "sha256": "d4ae95147c0bcfda2d6413aae679f8a0685c88f304186a76e46034e9216ed2de",
+  "bytes": 434449,
   "file": "edge-worker.js"
 }

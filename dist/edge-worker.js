@@ -482,7 +482,7 @@ function createXhttpDiagnostics(kv, options = {}) {
   };
 }
 
-// deploy/worker/node_modules/uqr/dist/index.mjs
+// node_modules/uqr/dist/index.mjs
 var QrCodeDataType = /* @__PURE__ */ ((QrCodeDataType2) => {
   QrCodeDataType2[QrCodeDataType2["Border"] = -1] = "Border";
   QrCodeDataType2[QrCodeDataType2["Data"] = 0] = "Data";

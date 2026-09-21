@@ -26,7 +26,14 @@ if (result.outputFiles.length !== 1) {
   throw new Error('expected-single-worker-artifact');
 }
 
-const source = result.outputFiles[0].text;
+const source = result.outputFiles[0].text.replace(
+  /^\/\/ .*node_modules\/(.+)$/gm,
+  (_line, tail) => {
+    const nested = tail.lastIndexOf('node_modules/');
+    const packagePath = nested >= 0 ? tail.slice(nested + 'node_modules/'.length) : tail;
+    return `// node_modules/${packagePath}`;
+  },
+);
 const sha256 = createHash('sha256').update(source).digest('hex');
 const bytes = Buffer.byteLength(source);
 

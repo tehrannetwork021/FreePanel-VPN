@@ -19,7 +19,8 @@
     "test:legacy-upgrade": "pnpm --dir deploy/worker test:legacy-upgrade",
     "test:phase-a": "pnpm --dir deploy/worker test:phase-a",
     "test:tunnels": "pnpm --dir deploy/worker test:tunnels",
-    "build:installer-assets": "pnpm --filter @tehrannetwork/installer build && node scripts/sync-installer-assets.mjs"
+    "build:installer-assets": "pnpm --filter @tehrannetwork/installer build && node scripts/sync-installer-assets.mjs",
+    "deploy:public-installer": "pnpm build:installer-assets && pnpm --filter @tehrannetwork/installer-worker exec wrangler deploy"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
