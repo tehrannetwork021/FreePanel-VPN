@@ -100,36 +100,38 @@
           نصب پنل تهران نتورک روی Cloudflare
         </h1>
         <p
-          data-fa="روش پیشنهادی، نصب رسمی یک‌کلیکی Cloudflare است. KV و Worker روی حساب خودت ساخته می‌شوند و نیازی نیست Token را به سرور ما بدهی."
-          data-en="The recommended path is Cloudflare's official one-click deploy. Worker and KV are created in your own account without sending a token to our server."
+          data-fa="فقط یک API Token محدود Cloudflare لازم است. نصب‌کننده روی Cloudflare اجرا می‌شود و Worker، KV و D1 را داخل اکانت خودت می‌سازد؛ VPS، GitHub و CLI لازم نیست."
+          data-en="Only one scoped Cloudflare API token is required. The installer runs on Cloudflare and creates the Worker, KV and D1 inside your account; no VPS, GitHub account or CLI is required."
         >
-          روش پیشنهادی، نصب رسمی یک‌کلیکی Cloudflare است. KV و Worker روی حساب خودت ساخته می‌شوند و
-          نیازی نیست Token را به سرور ما بدهی.
+          فقط یک API Token محدود Cloudflare لازم است. نصب‌کننده روی Cloudflare اجرا می‌شود و Worker،
+          KV و D1 را داخل اکانت خودت می‌سازد؛ VPS، GitHub و CLI لازم نیست.
         </p>
         <section class="actions">
           <a
             class="primary"
-            href="https://deploy.workers.cloudflare.com/?url=https://github.com/tehrannetwork021/FreePanel-VPN/tree/main/deploy/worker"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span>☁</span
-            ><strong data-fa="نصب یک‌کلیکی روی Cloudflare" data-en="Deploy to Cloudflare"
-              >نصب یک‌کلیکی روی Cloudflare</strong
-            ><small data-fa="Worker + KV خودکار" data-en="Automatic Worker + KV"
-              >Worker + KV خودکار</small
-            >
-          </a>
-          <a
-            class="secondary"
-            href="https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=Tehran%20Network%20Installer"
+            href="https://tehran-network-installer.honored-feather.workers.dev"
             target="_blank"
             rel="noopener noreferrer"
           >
             <span>🔑</span
-            ><strong data-fa="ساخت Cloudflare API Token" data-en="Create Cloudflare API Token"
-              >ساخت Cloudflare API Token</strong
-            ><small data-fa="مسیر پیشرفته" data-en="Advanced path">مسیر پیشرفته</small>
+            ><strong data-fa="ساخت کلید Cloudflare" data-en="Generate Cloudflare Key"
+              >ساخت کلید Cloudflare</strong
+            ><small data-fa="Token → Install → /admin" data-en="Token → Install → /admin"
+              >Token → Install → /admin</small
+            >
+          </a>
+          <a
+            class="secondary"
+            href="https://github.com/tehrannetwork021/FreePanel-VPN"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>⌘</span><strong data-fa="مشاهده سورس" data-en="View source">مشاهده سورس</strong
+            ><small
+              data-fa="اختیاری؛ برای نصب لازم نیست"
+              data-en="Optional; not required to install"
+              >اختیاری؛ برای نصب لازم نیست</small
+            >
           </a>
         </section>
         <section class="cards">

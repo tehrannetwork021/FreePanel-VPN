@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const generatedPath = 'apps/installer-worker/src/generated/edgeWorkerArtifact.ts';
 const manifestPath = 'dist/installer-artifacts/edge-worker-manifest.json';
-const releaseVersion = '0.3.0';
+const releaseVersion = '0.3.1';
 
 function extractJsonString(source: string, name: string): string {
   const match = source.match(new RegExp(`export const ${name} = (.+);`));

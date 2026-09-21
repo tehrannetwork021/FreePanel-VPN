@@ -46,7 +46,7 @@ describe('stateless token installer router', () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    await expect(response.json()).resolves.toEqual({ ok: true, edgeVersion: '0.3.0' });
+    await expect(response.json()).resolves.toEqual({ ok: true, edgeVersion: '0.3.1' });
   });
 
   it('verifies a token and returns every accessible account', async () => {

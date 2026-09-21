@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.3.1 Release Candidate — 2026-09-21
+
+Finalizes the regular-user install contract as **Cloudflare-only + one scoped API token**. No VPS/external server, GitHub account, Wrangler/CLI, account picker, Worker-name field or user-created admin password is part of the user flow.
+
+### Changed
+
+- Public README, quick-start guides and docs landing page now point only to the hosted Cloudflare installer for regular users; stale Deploy Button entrypoints were removed.
+- Installer chooses the first accessible Cloudflare account, uses fixed Worker name `tehran-network-edge`, creates/reuses KV + D1, generates an 18-character admin password and enables `workers.dev`.
+- Success remains fail-closed: deployed health/schema and a real admin login with the generated password must pass before credentials are shown.
+- Cloudflare API token is accepted only for the HTTPS install request and is not persisted by the installer.
+- Release/runtime/artifact version is advanced to `0.3.1`.
+
+### Release gate
+
+- Fresh local gate PASS: `pnpm check` 48 files / 217 tests, Playwright 9 passed / 3 intentional skips, standalone Worker 26 files / 152 tests, protocol E2E, legacy-upgrade and Phase A lifecycle all PASS.
+- Exact v0.3.1 edge artifact regenerated: 434,463 bytes, SHA-256 `87335ee7f2dca8690d290c93a3b0ca827de4b8d52e92466d742aacc8e43c5b1a`.
+- The real Cloudflare single-token field install remains required before `v0.3.1` is marked stable.
+
 ## v0.3.0 Release Candidate — 2026-09-21
 
 Phase A adds the Cloudflare-only multi-user control plane. This entry records locally proven behavior only; the real Cloudflare field checklist is still pending and this release is not yet marked stable.

@@ -40,8 +40,8 @@ Done. The installer provisions Account, KV, D1, Worker, secret and `workers.dev`
 </div>
 
 > [!IMPORTANT]
-> **وضعیت فعلی:** `v0.3.0` یک **Release Candidate برای Phase A** است. نصب عمومی Cloudflare، D1 control plane، مولتی‌یوزر، quota/expiry، لینک خصوصی، rotation، audit/usage و هر سه مسیر **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** در gate محلی واقعی تست شده‌اند. **Field gate واقعی Cloudflare هنوز pending است؛ تا پایان آن v0.3.0 را stable نمی‌نامیم.**
-> **Current status:** `v0.3.0` is a **Phase A release candidate**. The public Cloudflare installer, D1 control plane, multi-user lifecycle, quota/expiry, private subscriptions, rotation, audit/usage, and **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** have passed real local gates. **The real Cloudflare field gate is still pending; v0.3.0 is not called stable until it passes.**
+> **وضعیت فعلی:** `v0.3.1` کاندید نهایی **Cloudflare-only / single-token** برای Phase A است. نصب عمومی Cloudflare، D1 control plane، مولتی‌یوزر، quota/expiry، لینک خصوصی، rotation، audit/usage و هر سه مسیر **VLESS-WS، Trojan-WS و VLESS-XHTTP stream-one** در gate محلی واقعی تست شده‌اند. **Field gate واقعی Cloudflare هنوز pending است؛ تا پایان آن v0.3.1 را stable نمی‌نامیم.**
+> **Current status:** `v0.3.1` is the final **Cloudflare-only / single-token Phase A candidate**. The public Cloudflare installer, D1 control plane, multi-user lifecycle, quota/expiry, private subscriptions, rotation, audit/usage, and **VLESS-WS, Trojan-WS and VLESS-XHTTP stream-one** have passed real local gates. **The real Cloudflare field gate is still pending; v0.3.1 is not called stable until it passes.**
 
 ![Tehran Network one-click installer](assets/readme/installer-fa.png)
 

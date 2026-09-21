@@ -87,7 +87,7 @@ describe('public install and release contract', () => {
     const manifest = JSON.parse(
       readFileSync('dist/installer-artifacts/edge-worker-manifest.json', 'utf8'),
     ) as { version: string; sha256: string };
-    expect(manifest.version).toBe('0.3.0');
+    expect(manifest.version).toBe('0.3.1');
     expect(manifest.sha256).toMatch(/^[0-9a-f]{64}$/);
     expect(existsSync('apps/installer/dist/index.html')).toBe(true);
   });
@@ -157,5 +157,27 @@ describe('public installer source', () => {
     const readme = readFileSync('README.md', 'utf8');
     expect(readme).not.toContain('https://tehrannetwork021.github.io/FreePanel-VPN/');
     expect(existsSync('docs/site/index.html')).toBe(true);
+  });
+});
+
+describe('regular-user single-token entrypoints', () => {
+  it('keeps all public entrypoints on the Cloudflare-only token installer', () => {
+    const files = [
+      'README.md',
+      'docs/INSTALL_FA.md',
+      'docs/INSTALL_EN.md',
+      'docs/QUICKSTART_FA.md',
+      'docs/QUICKSTART_EN.md',
+      'docs/site/index.html',
+    ];
+    for (const file of files) {
+      const body = readFileSync(file, 'utf8');
+      expect(body, file).toContain(publicInstallerUrl);
+      expect(body, file).not.toContain('deploy.workers.cloudflare.com');
+      expect(body, file).not.toContain('Deploy to Cloudflare');
+    }
+    const site = readFileSync('docs/site/index.html', 'utf8');
+    expect(site).toContain('Generate Cloudflare Key');
+    expect(site).toContain('ساخت کلید Cloudflare');
   });
 });

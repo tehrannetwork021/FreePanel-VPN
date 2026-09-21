@@ -482,7 +482,7 @@ function createXhttpDiagnostics(kv, options = {}) {
   };
 }
 
-// deploy/worker/node_modules/.pnpm/uqr@0.1.3/node_modules/uqr/dist/index.mjs
+// deploy/worker/node_modules/uqr/dist/index.mjs
 var QrCodeDataType = /* @__PURE__ */ ((QrCodeDataType2) => {
   QrCodeDataType2[QrCodeDataType2["Border"] = -1] = "Border";
   QrCodeDataType2[QrCodeDataType2["Data"] = 0] = "Data";
@@ -3423,7 +3423,7 @@ async function handleXhttpRoute(request, config, deps = {}) {
 }
 
 // deploy/worker/src/index.ts
-var VERSION2 = "0.3.0";
+var VERSION2 = "0.3.1";
 var diagnosticsByKv = /* @__PURE__ */ new WeakMap();
 function diagnosticsFor(env) {
   const existing = diagnosticsByKv.get(env.C);
