@@ -28,15 +28,6 @@ export const CLOUDFLARE_TOKEN_CLEANUP_URL = 'https://dash.cloudflare.com/profile
 type Props = { api?: InstallerApi };
 type Screen = 'token' | 'verifying' | 'installing' | 'result';
 
-function generatePassword(): string {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  const bytes = new Uint8Array(18);
-  crypto.getRandomValues(bytes);
-  let out = '';
-  for (const byte of bytes) out += alphabet[byte % alphabet.length];
-  return out;
-}
-
 function errorCode(error: unknown): string {
   return error instanceof InstallerClientError ? error.code : 'installation-failed';
 }
@@ -60,33 +51,21 @@ export function App({ api = browserInstallerApi }: Props) {
 
     setTokenInput('');
     setError('');
-    setScreen('verifying');
-    const adminPassword = generatePassword();
+    setScreen('installing');
 
     try {
-      const verified = await api.verifyToken(token);
-      const accountId = verified.accounts[0]?.id;
-      if (!accountId) {
-        setError(t('installer.free.noAccounts'));
-        setScreen('token');
-        return;
-      }
-
-      setScreen('installing');
-      const installed = await api.installPanel({
-        token,
-        accountId,
-        workerName: 'tehran-network-edge',
-        adminPassword,
-      });
-      setUsedPassword(adminPassword);
+      const installed = await api.installPanel({ token });
+      setUsedPassword(installed.adminPassword);
       setResult(installed);
       setScreen('result');
     } catch (cause) {
+      const code = errorCode(cause);
       setError(
-        errorCode(cause) === 'token-invalid'
+        code === 'token-invalid'
           ? t('installer.free.invalid')
-          : t('installer.free.generic'),
+          : code === 'invalid-account'
+            ? t('installer.free.noAccounts')
+            : t('installer.free.generic'),
       );
       setScreen('token');
     }

@@ -27,7 +27,7 @@ export type InstallRequest = {
   workerName: string;
   adminPassword: string;
 };
-export type TokenInstallRequest = InstallRequest & { token: string };
+export type TokenInstallRequest = { token: string };
 
 export type InstallResult = {
   ok: true;
@@ -37,6 +37,7 @@ export type InstallResult = {
   schemaVersion: number;
   adminUrl: string;
 };
+export type TokenInstallResult = InstallResult & { adminPassword: string };
 
 export function validateWorkerName(input: string) {
   const value = input.trim();

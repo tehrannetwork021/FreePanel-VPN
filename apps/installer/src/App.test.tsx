@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App, CLOUDFLARE_TOKEN_TEMPLATE_URL } from './App';
-import type { InstallerApi } from './installClient';
+import { InstallerClientError, type InstallerApi } from './installClient';
 
 function api(overrides: Partial<InstallerApi> = {}): InstallerApi {
   return {
@@ -18,6 +18,7 @@ function api(overrides: Partial<InstallerApi> = {}): InstallerApi {
       version: '0.3.0',
       schemaVersion: 1,
       adminUrl: 'https://client.example.workers.dev/admin',
+      adminPassword: 'generated-value',
     }),
     ...overrides,
   } as InstallerApi;
@@ -45,14 +46,8 @@ describe('one-token Cloudflare installer', () => {
     expect(permissions).toContainEqual({ key: 'd1', type: 'edit' });
   });
 
-  it('verifies and installs automatically using the first accessible account', async () => {
-    const verifyToken = vi.fn().mockResolvedValue({
-      ok: true,
-      accounts: [
-        { id: 'a1', name: 'First' },
-        { id: 'a2', name: 'Second' },
-      ],
-    });
+  it('installs with one API request containing only the pasted token', async () => {
+    const verifyToken = vi.fn();
     const installPanel = vi.fn().mockResolvedValue({
       ok: true,
       workerUrl: 'https://client.example.workers.dev',
@@ -60,6 +55,7 @@ describe('one-token Cloudflare installer', () => {
       version: '0.3.0',
       schemaVersion: 1,
       adminUrl: 'https://client.example.workers.dev/admin',
+      adminPassword: 'ServerGeneratedPass9',
     });
     render(<App api={api({ verifyToken, installPanel })} />);
 
@@ -68,15 +64,13 @@ describe('one-token Cloudflare installer', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'نصب با کلید' }));
 
-    await waitFor(() => expect(verifyToken).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(installPanel).toHaveBeenCalledTimes(1));
+    expect(verifyToken).not.toHaveBeenCalled();
     expect(installPanel).toHaveBeenCalledWith({
       token: 'cf-token-value-12345678901234567890',
-      accountId: 'a1',
-      workerName: 'tehran-network-edge',
-      adminPassword: expect.stringMatching(/^[A-Za-z0-9]{18}$/),
     });
     expect(await screen.findByText('https://client.example.workers.dev/admin')).toBeVisible();
+    expect(screen.getByText('ServerGeneratedPass9')).toBeVisible();
     expect(screen.getByRole('button', { name: 'رمز مدیریت شما' })).toBeVisible();
   });
 
@@ -100,9 +94,10 @@ describe('one-token Cloudflare installer', () => {
   });
 
   it('shows a safe error when the token has no accessible account', async () => {
-    render(
-      <App api={api({ verifyToken: vi.fn().mockResolvedValue({ ok: true, accounts: [] }) })} />,
-    );
+    const installPanel = vi
+      .fn()
+      .mockRejectedValue(new InstallerClientError('invalid-account', 'account'));
+    render(<App api={api({ installPanel })} />);
     fireEvent.change(screen.getByLabelText('Cloudflare API Token'), {
       target: { value: 'cf-token-value-12345678901234567890' },
     });

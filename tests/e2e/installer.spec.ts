@@ -25,21 +25,12 @@ test('single-token installer stays simple and responsive', async ({ page }) => {
 
 test('one token automatically provisions and returns admin handoff', async ({ page }) => {
   const installToken = `cf-test-${'x'.repeat(40)}`;
+  const generatedAdminPassword = 'ServerGeneratedPass9';
   let installRequest: Record<string, unknown> | null = null;
+  let verifyRequestCount = 0;
   await page.route('**/api/token/verify', async (route) => {
-    const body = JSON.parse(route.request().postData() || '{}') as Record<string, unknown>;
-    expect(body.token).toBe(installToken);
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ok: true,
-        accounts: [
-          { id: 'acc-1', name: 'Primary account' },
-          { id: 'acc-2', name: 'Secondary account' },
-        ],
-      }),
-    });
+    verifyRequestCount += 1;
+    await route.abort();
   });
   await page.route('**/api/install', async (route) => {
     installRequest = JSON.parse(route.request().postData() || '{}') as Record<string, unknown>;
@@ -53,6 +44,7 @@ test('one token automatically provisions and returns admin handoff', async ({ pa
         workerName: 'tehran-network-edge',
         version: '0.3.0',
         schemaVersion: 1,
+        adminPassword: generatedAdminPassword,
       }),
     });
   });
@@ -72,11 +64,9 @@ test('one token automatically provisions and returns admin handoff', async ({ pa
   );
 
   const request = installRequest as Record<string, unknown>;
-  expect(request.token).toBe(installToken);
-  expect(request.accountId).toBe('acc-1');
-  expect(request.workerName).toBe('tehran-network-edge');
-  expect(request.adminPassword).toMatch(/^[A-Za-z0-9]{18}$/);
-  await expect(page.locator('.result-password code')).toHaveText(String(request.adminPassword));
+  expect(request).toEqual({ token: installToken });
+  expect(verifyRequestCount).toBe(0);
+  await expect(page.locator('.result-password code')).toHaveText(generatedAdminPassword);
   await expect(page.getByLabel('Cloudflare API Token')).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText(installToken);
   const storage = await page.evaluate(() => ({ ...localStorage, ...sessionStorage }));
