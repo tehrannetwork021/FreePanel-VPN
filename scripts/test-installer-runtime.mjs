@@ -117,6 +117,9 @@ try {
   const ui = await get('/');
   const html = await ui.text();
   assert.match(html, /Tehran Network/);
+  const navigationUi = await get('/', navigation);
+  assert.equal(navigationUi.status, 200);
+  assert.equal(await navigationUi.text(), html, 'browser navigation must serve the same installer');
   const assetPaths = [...new Set(html.match(/\/assets\/[A-Za-z0-9_.-]+\.(?:js|css)/g) ?? [])];
   assert.equal(assetPaths.length, 2);
   for (const path of assetPaths) {

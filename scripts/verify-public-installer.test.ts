@@ -43,6 +43,15 @@ describe('public installer production proof', () => {
       ),
     ).rejects.toThrow('installer-health-http-failed');
   });
+  it('rejects passing machine checks when browser navigation fails', async () => {
+    const fetch = async (url: URL, init: RequestInit) =>
+      url.pathname === '/' && new Headers(init.headers).get('sec-fetch-mode') === 'navigate'
+        ? new Response('error code: 1101', { status: 500 })
+        : serve(url);
+    await expect(verifyPublicInstaller('https://stage.workers.dev', fetch)).rejects.toThrow(
+      'installer-ui-http-failed',
+    );
+  });
   it('fails when the deployed embedded Worker differs from the release manifest', async () => {
     await expect(
       verifyPublicInstaller('https://stage.workers.dev', async () =>

@@ -4,11 +4,11 @@
 
 ## Evidence required before promotion
 
-- [x] Latest root format/lint/typecheck/build/unit gate: 50 files / 257 tests; both installer Runtime configurations pass with exact asset bytes.
+- [x] Previously verified root format/lint/typecheck/build gate; latest root unit run: 50 files / 258 tests. Both installer Runtime configurations pass with exact asset bytes and navigated UI parity. The latest checker correction has separate focused lint/format verification; its new CI result must be recorded when available.
 - [x] Current standalone Worker typecheck and unit tests.
 - [x] Current real local protocol and legacy-upgrade smoke, with exit 0.
 - [x] Current real Xray lifecycle and browser E2E final verdicts.
-- [x] Source commit `8a316e9` CI run 38413500188 passed quality, browser and protocol jobs.
+- [x] Source commit `8ca2bca` CI run 38425139626 passed quality, browser and protocol jobs.
 - [x] Owner authorized GitHub App access for FreePanel-VPN only; production Builds remain disabled.
 - [ ] Owner authorizes final production publication after field evidence is ready.
 - [ ] Independent staging installer is deployed and public version/SHA/UI parity is verified.

@@ -16,6 +16,7 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 - All other development branches are behind main. Two bootstrap branches diverge only by a staging Worker name; do not merge older source over current main.
 - Live installer root returned HTTP 200 with `index-fun4E7D7.js`; `/api/health` returned HTTP 404 / `not-found`. Current source UI asset is `index-B13sSiPC.js`.
 - Owner browser access confirmed the existing installer in the Honored Feather account. With explicit owner approval, Cloudflare's GitHub App was authorized for FreePanel-VPN only and the Worker connected to this repository/main. **Disable builds is on**, so connection did not publish over production. Separate staging uploaded successfully but external health/UI return Cloudflare 1101; deployment verification remains RED and runtime/asset routing diagnostics are in progress.
+- Latest verified code `8ca2bca` passed all three jobs in [CI run 38425139626](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38425139626). The owner approved a separate personal-account `tehran-network-installer-staging-e2e`; Hello World worked and the installer briefly passed exact public verification, but subsequent navigation again returned HTTP 500 / 1101. Public stability is unproven. No personal VPN Worker, KV or D1 was changed. [Pinned installer source comparisons](docs/COMPETITOR_GAP_ANALYSIS.md#code-verified-installer-patterns--2026-10-13) guide continuation; speculative deployment changes have stopped.
 
 ## P0 recovery work
 

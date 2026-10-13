@@ -1,14 +1,46 @@
 import { createHash } from 'node:crypto';
+import { Buffer } from 'node:buffer';
+import { request } from 'node:https';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
 
-const { fetch, AbortSignal } = globalThis;
+const { fetch, AbortSignal, Response } = globalThis;
 
 const root = resolve(import.meta.dirname, '..');
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+// Node fetch replaces Sec-Fetch-Mode with cors. Use native HTTPS for the actual
+// browser-navigation check, with no redirects and a bounded HTML response.
+function fetchNavigation(url, init) {
+  return new Promise((resolve, reject) => {
+    const req = request(url, { headers: init.headers, signal: init.signal }, (res) => {
+      const chunks = [];
+      let bytes = 0;
+      res.on('error', reject);
+      res.on('data', (chunk) => {
+        bytes += chunk.length;
+        if (bytes > 1024 * 1024) {
+          req.destroy(new Error('installer-ui-body-too-large'));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      res.on('end', () => {
+        try {
+          const body = [204, 205, 304].includes(res.statusCode) ? null : Buffer.concat(chunks);
+          resolve(new Response(body, { status: res.statusCode }));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
 
 export async function verifyPublicInstaller(base, fetchImpl = fetch) {
   const url = new URL(base);
@@ -21,12 +53,25 @@ export async function verifyPublicInstaller(base, fetchImpl = fetch) {
     url.pathname !== '/'
   )
     throw new Error('invalid-installer-url');
-  const get = (path) =>
-    fetchImpl(new URL(path, url), {
+  const get = (path) => {
+    const navigation = path === '/';
+    const transport = navigation && fetchImpl === fetch ? fetchNavigation : fetchImpl;
+    return transport(new URL(path, url), {
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.timeout(10000),
+      ...(navigation
+        ? {
+            headers: {
+              accept: 'text/html',
+              'cache-control': 'no-store',
+              'sec-fetch-mode': 'navigate',
+              'sec-fetch-dest': 'document',
+            },
+          }
+        : {}),
     });
+  };
   const manifest = JSON.parse(
     await readFile(resolve(root, 'dist/installer-artifacts/edge-worker-manifest.json'), 'utf8'),
   );
