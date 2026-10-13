@@ -12,10 +12,10 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 ## وضعیت بازیابی
 
 - Main still matches the supplied baseline. The latest main CI run [35560644775](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/35560644775) succeeded.
-- GitHub public API returned no open issues or pull requests. Public releases are `v0.3.0` and `v0.3.0-rc.1`; there is no `v0.3.1` release yet.
+- Initial GitHub inspection found no open issues or pull requests. Recovery is now tracked in draft [PR #1](https://github.com/tehrannetwork021/FreePanel-VPN/pull/1), source commit `8a316e9bf8f059c8f1adcef8cc3313990a25cfd9`. Its [CI run 38413500188](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38413500188) passed quality, browser E2E and protocol E2E. Public releases remain `v0.3.0` and `v0.3.0-rc.1`; there is no `v0.3.1` release yet.
 - All other development branches are behind main. Two bootstrap branches diverge only by a staging Worker name; do not merge older source over current main.
 - Live installer root returned HTTP 200 with `index-fun4E7D7.js`; `/api/health` returned HTTP 404 / `not-found`. Current source UI asset is `index-B13sSiPC.js`.
-- Owner browser access confirmed the existing installer in the Honored Feather account. With explicit owner approval, Cloudflare's GitHub App was authorized for FreePanel-VPN only and the Worker connected to this repository/main. **Disable builds is on**, so connection did not publish over production. Command activation and staging/production deployment remain pending.
+- Owner browser access confirmed the existing installer in the Honored Feather account. With explicit owner approval, Cloudflare's GitHub App was authorized for FreePanel-VPN only and the Worker connected to this repository/main. **Disable builds is on**, so connection did not publish over production. Separate staging uploaded successfully but external health/UI return Cloudflare 1101; deployment verification remains RED and runtime/asset routing diagnostics are in progress.
 
 ## P0 recovery work
 

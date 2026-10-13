@@ -19,3 +19,12 @@
 14. Credential-free deployment verifier correctly failed against stale production. Production is still blocked despite green local tests.
 
 Current test evidence and outstanding gates are recorded separately. No real user KV/D1 data, Worker, domain, or security setting has been removed or reset.
+
+## 2026-10-13 — Review and isolated staging
+
+- Pushed recovery source commit `8a316e9bf8f059c8f1adcef8cc3313990a25cfd9`. The GitHub connector could not create a PR (403); the logged-in owner browser successfully created draft PR #1. No merge or production promotion occurred.
+- PR CI run 38413500188 completed all three jobs successfully: quality, browser-e2e and protocol-e2e.
+- Owner explicitly authorized the Cloudflare GitHub App for this repository only. The existing installer is connected with automatic Builds disabled.
+- Prepared a separate `tehran-network-installer-staging` Worker using the existing Workers Builds token. The first build explicitly checks out the tested source SHA before a frozen install and both quality gates. Deploy uses `--name tehran-network-installer-staging`; preview builds are disabled. This temporary source pin must be replaced by the recovery branch after setup. No new API token or broader GitHub grant was requested.
+- Initial staging build completed successfully: root 256 tests and standalone Worker 172 tests, uploaded version `4afbe215-1517-4dfc-81be-1164321a72eb`. External root and health nevertheless return HTTP 500 / Cloudflare 1101; the exact verifier remains RED. Local workerd serves health and UI correctly. The Workers dashboard initially showed the staging workers.dev route disabled; enabling it did not resolve the external failure. Logs were enabled only for staging diagnostics; Quick Edit Preview reports an undefined `ASSETS.fetch` binding. These observations are not a successful field gate.
+- Added an explicit staging Wrangler config, mirroring production except the isolated service name, to probe name-override/asset-binding deployment behavior without modifying the production configuration or application logic. Staging automatic Builds are disabled; its production branch is now the recovery branch. No cause is claimed until the deployed verifier passes.

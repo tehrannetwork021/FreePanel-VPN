@@ -23,4 +23,6 @@ Date: 2026-10-13. Environment: Windows, Node 24.19.0, pinned pnpm 10.15.1. Tests
 
 Initial environment failures were preserved and repaired: pnpm version/build-policy mismatch, omitted standalone Worker dependencies, Windows shell environment syntax, and failure to stop Wrangler descendants before temporary-state cleanup. No important test was skipped to hide these failures.
 
+Post-push field checkpoint: source commit `8a316e9` passed GitHub CI run 38413500188 (quality, browser-e2e, protocol-e2e). Cloudflare staging Build repeated root 256 and standalone 172 passing tests and uploaded version `4afbe215-1517-4dfc-81be-1164321a72eb`. Its external verifier FAILED with `installer-health-http-failed` (HTTP 500 / Cloudflare 1101). Local workerd `/api/health` and `/` both returned 200. These are separate deployment and runtime results; field installation has not passed.
+
 Xray Windows archive SHA-256: `d004c39288ce9ada487c6f398c7c545f7d749e44bdfdd59dbc9f865afba4e1ad`. Source: [official v26.3.27 release](https://github.com/XTLS/Xray-core/releases/tag/v26.3.27).

@@ -8,8 +8,9 @@
 - [x] Current standalone Worker typecheck and unit tests.
 - [x] Current real local protocol and legacy-upgrade smoke, with exit 0.
 - [x] Current real Xray lifecycle and browser E2E final verdicts.
-- [ ] Current branch CI passes, including protocol job.
-- [ ] Owner authorizes limited GitHub App access and final production publication.
+- [x] Source commit `8a316e9` CI run 38413500188 passed quality, browser and protocol jobs.
+- [x] Owner authorized GitHub App access for FreePanel-VPN only; production Builds remain disabled.
+- [ ] Owner authorizes final production publication after field evidence is ready.
 - [ ] Independent staging installer is deployed and public version/SHA/UI parity is verified.
 - [ ] Real clean Cloudflare account installs with one token, produces `/admin`, and accepts the displayed password.
 - [ ] User creation/private subscription and all three protocols pass on Cloudflare with Xray.
