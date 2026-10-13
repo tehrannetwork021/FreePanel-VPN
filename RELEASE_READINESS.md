@@ -4,7 +4,7 @@
 
 ## Evidence required before promotion
 
-- [x] Final root format/lint/typecheck/build/unit gate: 50 files / 256 tests.
+- [x] Latest root format/lint/typecheck/build/unit gate: 50 files / 257 tests; both installer Runtime configurations pass with exact asset bytes.
 - [x] Current standalone Worker typecheck and unit tests.
 - [x] Current real local protocol and legacy-upgrade smoke, with exit 0.
 - [x] Current real Xray lifecycle and browser E2E final verdicts.

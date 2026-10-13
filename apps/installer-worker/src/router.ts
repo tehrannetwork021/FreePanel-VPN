@@ -5,6 +5,7 @@ import type {
 } from '@tehrannetwork/shared';
 import { CloudflareApiError, listAccounts, verifyApiToken } from './cloudflare';
 import type { InstallerEnv } from './env';
+import { serveEmbeddedInstallerAsset } from './embeddedAssets';
 import { defaultProvisionDeps, ProvisionError, provisionPanel } from './provision';
 
 export type RouterDeps = {
@@ -173,7 +174,7 @@ export async function handleInstallerRequest(
     return json({ ok: false, code: 'not-found' }, 404);
   }
   if (request.method === 'GET' || request.method === 'HEAD') {
-    return env.ASSETS.fetch(request);
+    return env.ASSETS ? env.ASSETS.fetch(request) : serveEmbeddedInstallerAsset(request);
   }
   return json({ ok: false, code: 'method-not-allowed' }, 405);
 }

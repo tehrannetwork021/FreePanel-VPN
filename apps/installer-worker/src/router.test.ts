@@ -39,6 +39,16 @@ function post(path: string, body: unknown, headers: Record<string, string> = {})
 afterEach(() => vi.restoreAllMocks());
 
 describe('stateless token installer router', () => {
+  it('serves the installer when the runtime has no ASSETS binding', async () => {
+    const response = await handleInstallerRequest(
+      new Request('https://installer.example/'),
+      {} as InstallerEnv,
+      deps(),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toMatch(/^text\/html/);
+    expect(await response.text()).toContain('Tehran Network');
+  });
   it('exposes the exact edge artifact version without requiring a token', async () => {
     const response = await handleInstallerRequest(
       new Request('https://installer.example/api/health'),

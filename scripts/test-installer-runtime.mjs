@@ -115,7 +115,16 @@ try {
     400,
   );
   const ui = await get('/');
-  assert.match(await ui.text(), /Tehran Network/);
+  const html = await ui.text();
+  assert.match(html, /Tehran Network/);
+  const assetPaths = [...new Set(html.match(/\/assets\/[A-Za-z0-9_.-]+\.(?:js|css)/g) ?? [])];
+  assert.equal(assetPaths.length, 2);
+  for (const path of assetPaths) {
+    const asset = await get(path);
+    assert.equal(asset.status, 200);
+    const expected = await readFile(resolve(worker, 'public', path.slice(1)), 'utf8');
+    assert.equal(await asset.text(), expected, `asset bytes differ: ${path}`);
+  }
   console.log(`PASS installer runtime (${config}): health JSON, navigation, API errors and UI`);
 } catch (error) {
   console.error(output);
