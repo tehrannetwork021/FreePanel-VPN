@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('embedded panel release contract', () => {
@@ -15,11 +17,20 @@ describe('embedded panel release contract', () => {
   });
 
   it('embeds the current real control-plane bundle in the install artifact', () => {
-    execFileSync(process.execPath, ['scripts/build-edge-worker-artifact.mjs']);
-    const source = readFileSync('dist/edge-worker.js', 'utf8');
-    expect(source).toContain('/panel-assets/');
-    expect(source).toContain('Edge Control Plane');
-    expect(source).toContain('Control overview');
-    expect(source).toContain('Logs & Security');
+    const outdir = mkdtempSync(join(tmpdir(), 'tn-panel-artifact-test-'));
+    try {
+      execFileSync(process.execPath, [
+        'scripts/build-edge-worker-artifact.mjs',
+        '--outdir',
+        outdir,
+      ]);
+      const source = readFileSync(join(outdir, 'dist/edge-worker.js'), 'utf8');
+      expect(source).toContain('/panel-assets/');
+      expect(source).toContain('Edge Control Plane');
+      expect(source).toContain('Control overview');
+      expect(source).toContain('Logs & Security');
+    } finally {
+      rmSync(outdir, { recursive: true, force: true });
+    }
   });
 });

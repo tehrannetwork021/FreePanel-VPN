@@ -370,3 +370,14 @@ Current implementation branch: `feat/complete-cloudflare-control-plane`. Older b
 - [x] Cloudflare can manage the Workers Builds deployment token itself; no repository-stored Cloudflare deploy token or Account ID is required for this publishing path.
 - [ ] One-time owner action: connect existing Worker `tehran-network-installer` to `tehrannetwork021/FreePanel-VPN` under **Settings → Builds**, production branch `main`, root `/`, deploy command `pnpm deploy:public-installer`.
 - [ ] After Cloudflare Builds publishes the current main, verify public `/api/health` reports `edgeVersion: 0.3.1`, then run the real single-token clean-account field install before declaring stable.
+
+### P0 recovery checkpoint — 2026-10-13
+
+- Baseline main: `a4050d0c80e7ab1506fcaeccec9c9af509201c1a`; recovery branch `feat/p0-release-recovery-20261013`.
+- Fresh root gate PASS: 50 files / 256 tests, format/lint/typecheck/build including Worker workspace and installer dry-run. Standalone Worker check PASS: 171 tests; protocol/legacy/Xray lifecycle PASS; browser 9 passed / 3 pre-existing project exclusions.
+- Fixed installer false-success, bounded JSON body parsing, stable account selection, artifact publication/test races, alternate local-IP forms, XHTTP backpressure, WebSocket close races and quota chunk bounds.
+- `PROJECT_STATUS.md`, `FEATURE_MATRIX.md`, `WORK_LOG.md`, `TEST_RESULTS.md`, `RELEASE_READINESS.md`, `LIMITATIONS.md` contain current evidence and pending work. Do not repeat historical implementation from scratch.
+- Public installer is still stale: root 200, old `index-fun4E7D7.js`, health 404. New verifier must pass exact version/SHA/assets after authorized deployment.
+- Owner authorized Cloudflare GitHub App access to this repository only. Production publication still requires explicit approval; prepare isolated staging first.
+- End-user installation remains public installer + one scoped Cloudflare token; GitHub account, CLI, VPS and paid domain are not prerequisites.
+- P1–P5 remain planned; no stable/full-mission completion claim is permitted before real Cloudflare acceptance gates.

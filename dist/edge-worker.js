@@ -2617,6 +2617,17 @@ async function handleSubscriptionRoute(request, config, env, now = Date.now()) {
 function normalizeHost(host) {
   return host.trim().toLowerCase().replace(/\.$/, "");
 }
+function canonicalHost(host) {
+  if (!/^[a-z0-9.:-]+$/iu.test(host)) return null;
+  try {
+    return new URL(`http://${host.includes(":") ? `[${host}]` : host}/`).hostname.replace(
+      /^\[|\]$/gu,
+      ""
+    );
+  } catch {
+    return null;
+  }
+}
 function parseIpv4(host) {
   const parts = host.split(".");
   if (parts.length !== 4) return null;
@@ -2644,6 +2655,13 @@ function firstIpv6Hextet(host) {
 function isBlockedIpv6(host) {
   const normalized = host.toLowerCase();
   if (normalized === "::" || normalized === "::1") return true;
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/u.exec(normalized);
+  if (mapped) {
+    const high = Number.parseInt(mapped[1], 16);
+    const low = Number.parseInt(mapped[2], 16);
+    return isBlockedIpv4([high >> 8, high & 255, low >> 8, low & 255]);
+  }
+  if (normalized.startsWith("::")) return true;
   const first = firstIpv6Hextet(normalized);
   if (first === null) return false;
   if ((first & 65024) === 64512) return true;
@@ -2652,8 +2670,9 @@ function isBlockedIpv6(host) {
   return false;
 }
 function validateDestination(destination, selfHost) {
-  const host = normalizeHost(destination.host);
-  const self = normalizeHost(selfHost);
+  const rawHost = normalizeHost(destination.host);
+  const host = canonicalHost(rawHost);
+  const self = canonicalHost(normalizeHost(selfHost));
   if (!host || host.length > 253) return { ok: false, reason: "invalid-host" };
   if (!Number.isInteger(destination.port) || destination.port < 1 || destination.port > 65535) {
     return { ok: false, reason: "invalid-port" };
@@ -2922,6 +2941,12 @@ async function resolveTunnelPrincipal(db, channel, presentedCredential, now) {
 // deploy/worker/src/transport/usageMeter.ts
 var DEFAULT_BYTE_THRESHOLD = 4 * 1024 * 1024;
 var DEFAULT_AGE_MS = 6e4;
+var MAX_FORWARD_SLICE_BYTES = 64 * 1024;
+function* forwardSlices(bytes) {
+  for (let offset = 0; offset < bytes.byteLength; offset += MAX_FORWARD_SLICE_BYTES) {
+    yield bytes.subarray(offset, offset + MAX_FORWARD_SLICE_BYTES);
+  }
+}
 function checkedBytes(value) {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error("invalid-usage-bytes");
   return value;
@@ -3007,10 +3032,12 @@ function runWebSocketTunnel(options) {
   let usageMeter = null;
   let stopped = false;
   let queue = Promise.resolve();
+  let queuedBytes = 0;
+  const maxQueuedBytes = 1024 * 1024;
   const stop = (code = 1e3, reason = "closed") => {
     if (stopped) return;
     stopped = true;
-    void usageMeter?.close();
+    void usageMeter?.close().catch(() => void 0);
     try {
       socket?.close();
     } catch {
@@ -3025,25 +3052,25 @@ function runWebSocketTunnel(options) {
     try {
       while (!stopped) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || stopped) break;
         if (value?.byteLength) {
-          webSocket.send(value);
-          usageMeter?.addDownload(value.byteLength);
-          if (usageMeter) {
-            await usageMeter.flush();
-            if (usageMeter.exhausted()) {
-              stop(1008, "quota");
-              break;
+          for (const slice of forwardSlices(value)) {
+            if (stopped) break;
+            webSocket.send(slice);
+            usageMeter?.addDownload(slice.byteLength);
+            if (usageMeter) {
+              await usageMeter.flush();
+              if (usageMeter.exhausted()) {
+                stop(1008, "quota");
+                break;
+              }
             }
           }
         }
       }
       if (!stopped) {
         await usageMeter?.close();
-        try {
-          webSocket.close(1e3, "remote-eof");
-        } catch {
-        }
+        stop(1e3, "remote-eof");
       }
     } catch {
       stop(1011, "remote-error");
@@ -3051,20 +3078,30 @@ function runWebSocketTunnel(options) {
       reader.releaseLock();
     }
   };
+  const writeUpload = async (bytes) => {
+    for (const slice of forwardSlices(bytes)) {
+      if (stopped || !writer) return;
+      await writer.write(slice);
+      usageMeter?.addUpload(slice.byteLength);
+      if (usageMeter) {
+        await usageMeter.flush();
+        if (usageMeter.exhausted()) {
+          stop(1008, "quota");
+          return;
+        }
+      }
+    }
+  };
   const handleMessage = async (data) => {
     if (stopped) return;
     const bytes = await eventBytes(data);
+    if (stopped) return;
     if (!bytes) {
       stop(1003, "binary-required");
       return;
     }
     if (writer) {
-      await writer.write(bytes);
-      usageMeter?.addUpload(bytes.byteLength);
-      if (usageMeter) {
-        await usageMeter.flush();
-        if (usageMeter.exhausted()) stop(1008, "quota");
-      }
+      await writeUpload(bytes);
       return;
     }
     firstPacket = concatBytes(firstPacket, bytes);
@@ -3073,6 +3110,7 @@ function runWebSocketTunnel(options) {
       return;
     }
     const parsed = await parseFirstPacket(firstPacket);
+    if (stopped) return;
     if (parsed.kind === "need-more") return;
     if (parsed.kind === "error") {
       stop(1008, "invalid-handshake");
@@ -3080,19 +3118,16 @@ function runWebSocketTunnel(options) {
     }
     try {
       socket = await connectTcp(parsed.value.destination, selfHost);
+      if (stopped) {
+        socket.close();
+        return;
+      }
       writer = socket.writable.getWriter();
       usageMeter = parsed.value.principal && options.createUsageMeter ? options.createUsageMeter(parsed.value.principal) : null;
       if (parsed.value.responseHeader?.byteLength) webSocket.send(parsed.value.responseHeader);
       if (parsed.value.payload.byteLength) {
-        await writer.write(parsed.value.payload);
-        usageMeter?.addUpload(parsed.value.payload.byteLength);
-        if (usageMeter) {
-          await usageMeter.flush();
-          if (usageMeter.exhausted()) {
-            stop(1008, "quota");
-            return;
-          }
-        }
+        await writeUpload(parsed.value.payload);
+        if (stopped) return;
       }
       firstPacket = new Uint8Array();
       void pumpDownstream(socket);
@@ -3101,13 +3136,22 @@ function runWebSocketTunnel(options) {
     }
   };
   webSocket.addEventListener("message", (event) => {
+    if (stopped) return;
     const data = typeof event === "object" && event !== null && "data" in event ? event.data : void 0;
-    queue = queue.then(() => handleMessage(data)).catch(() => stop(1011, "tunnel-error"));
+    const size = data instanceof Blob ? data.size : data instanceof ArrayBuffer || ArrayBuffer.isView(data) ? data.byteLength : 0;
+    if (queuedBytes + size > maxQueuedBytes) {
+      stop(1009, "queue-too-large");
+      return;
+    }
+    queuedBytes += size;
+    queue = queue.then(() => handleMessage(data)).catch(() => stop(1011, "tunnel-error")).finally(() => {
+      queuedBytes -= size;
+    });
   });
   webSocket.addEventListener("close", () => {
     if (!stopped) {
       stopped = true;
-      void usageMeter?.close();
+      void usageMeter?.close().catch(() => void 0);
       try {
         socket?.close();
       } catch {
@@ -3235,61 +3279,80 @@ async function createXhttpStream(input) {
   const bodyReader = input.body.getReader();
   let handshake = new Uint8Array();
   let parsed;
+  const reject = async (status, message) => {
+    await bodyReader.cancel().catch(() => void 0);
+    bodyReader.releaseLock();
+    return response2(status, message);
+  };
   while (true) {
     const next = await bodyReader.read();
-    if (next.done) return response2(400, "Incomplete XHTTP handshake");
+    if (next.done) return reject(400, "Incomplete XHTTP handshake");
+    if (handshake.byteLength + next.value.byteLength > maxHandshakeBytes)
+      return reject(413, "XHTTP handshake too large");
     handshake = concatBytes(handshake, next.value);
-    if (handshake.byteLength > maxHandshakeBytes) return response2(413, "XHTTP handshake too large");
     parsed = await input.parseFirstPacket(handshake);
     if (parsed.kind === "need-more") continue;
     if (parsed.kind === "error")
-      return response2(parsed.code === "auth" ? 403 : 400, "Invalid XHTTP handshake");
+      return reject(parsed.code === "auth" ? 403 : 400, "Invalid XHTTP handshake");
     break;
   }
   let socket;
   try {
     socket = await input.connectTcp(parsed.value.destination, input.selfHost);
   } catch {
-    return response2(502, "TCP destination unavailable");
+    return reject(502, "TCP destination unavailable");
   }
   const writer = socket.writable.getWriter();
   const usageMeter = parsed.value.principal && input.createUsageMeter ? input.createUsageMeter(parsed.value.principal) : null;
-  if (parsed.value.payload.byteLength) {
-    await writer.write(parsed.value.payload);
-    usageMeter?.addUpload(parsed.value.payload.byteLength);
-    if (usageMeter) {
-      await usageMeter.flush();
-      if (usageMeter.exhausted()) {
-        await usageMeter.close();
-        bodyReader.releaseLock();
-        writer.releaseLock();
-        socket.close();
-        return response2(403, "Access unavailable");
+  const remoteReader = socket.readable.getReader();
+  let stopped = false;
+  const cleanup = async () => {
+    if (stopped) return;
+    stopped = true;
+    try {
+      socket.close();
+    } catch {
+    }
+    await Promise.allSettled([bodyReader.cancel(), remoteReader.cancel(), usageMeter?.close()]);
+  };
+  const writeUpload = async (bytes) => {
+    for (const slice of forwardSlices(bytes)) {
+      if (stopped) return;
+      await writer.write(slice);
+      usageMeter?.addUpload(slice.byteLength);
+      if (usageMeter) {
+        await usageMeter.flush();
+        if (usageMeter.exhausted()) {
+          await cleanup();
+          return;
+        }
       }
     }
+  };
+  try {
+    await writeUpload(parsed.value.payload);
+  } catch {
+    await cleanup();
+    bodyReader.releaseLock();
+    writer.releaseLock();
+    return response2(502, "TCP destination unavailable");
+  }
+  if (stopped) {
+    bodyReader.releaseLock();
+    writer.releaseLock();
+    return response2(403, "Access unavailable");
   }
   const pumpUpload = async () => {
     try {
-      while (true) {
+      while (!stopped) {
         const next = await bodyReader.read();
         if (next.done) break;
         if (next.value.byteLength) {
-          await writer.write(next.value);
-          usageMeter?.addUpload(next.value.byteLength);
-          if (usageMeter) {
-            await usageMeter.flush();
-            if (usageMeter.exhausted()) {
-              socket.close();
-              break;
-            }
-          }
+          await writeUpload(next.value);
         }
       }
     } catch {
-      try {
-        socket.close();
-      } catch {
-      }
+      await cleanup();
     } finally {
       bodyReader.releaseLock();
       try {
@@ -3300,44 +3363,47 @@ async function createXhttpStream(input) {
   };
   void pumpUpload();
   const responseHeader = parsed.value.responseHeader ?? new Uint8Array();
+  let pending = new Uint8Array();
+  let pendingOffset = 0;
   const downstream = new ReadableStream({
-    async start(controller) {
+    start(controller) {
       if (responseHeader.byteLength) controller.enqueue(responseHeader);
-      const reader = socket.readable.getReader();
+    },
+    async pull(controller) {
+      if (stopped) {
+        controller.close();
+        return;
+      }
       try {
-        while (true) {
-          const next = await reader.read();
-          if (next.done) break;
-          if (next.value.byteLength) {
-            controller.enqueue(next.value);
-            usageMeter?.addDownload(next.value.byteLength);
-            if (usageMeter) {
-              await usageMeter.flush();
-              if (usageMeter.exhausted()) {
-                socket.close();
-                break;
-              }
-            }
+        while (pendingOffset >= pending.byteLength) {
+          const next = await remoteReader.read();
+          if (stopped) return;
+          if (next.done) {
+            await cleanup();
+            controller.close();
+            return;
+          }
+          pending = next.value;
+          pendingOffset = 0;
+        }
+        const slice = pending.subarray(pendingOffset, pendingOffset + MAX_FORWARD_SLICE_BYTES);
+        pendingOffset += slice.byteLength;
+        controller.enqueue(slice);
+        usageMeter?.addDownload(slice.byteLength);
+        if (usageMeter) {
+          await usageMeter.flush();
+          if (usageMeter.exhausted()) {
+            await cleanup();
+            controller.close();
           }
         }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      } finally {
-        reader.releaseLock();
-        await usageMeter?.close();
-        try {
-          socket.close();
-        } catch {
-        }
+      } catch {
+        await cleanup();
+        controller.error(new Error("transport-failed"));
       }
     },
     cancel() {
-      void usageMeter?.close();
-      try {
-        socket.close();
-      } catch {
-      }
+      return cleanup();
     }
   });
   return new Response(downstream, {

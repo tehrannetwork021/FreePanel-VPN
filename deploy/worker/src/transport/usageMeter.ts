@@ -18,6 +18,14 @@ type UsageMeterOptions = {
 const DEFAULT_BYTE_THRESHOLD = 4 * 1024 * 1024;
 const DEFAULT_AGE_MS = 60_000;
 
+// Bound bytes forwarded between quota checks, even when the runtime gives a large chunk.
+export const MAX_FORWARD_SLICE_BYTES = 64 * 1024;
+export function* forwardSlices(bytes: Uint8Array): Generator<Uint8Array> {
+  for (let offset = 0; offset < bytes.byteLength; offset += MAX_FORWARD_SLICE_BYTES) {
+    yield bytes.subarray(offset, offset + MAX_FORWARD_SLICE_BYTES);
+  }
+}
+
 function checkedBytes(value: number): number {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error('invalid-usage-bytes');
   return value;

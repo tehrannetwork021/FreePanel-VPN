@@ -12,7 +12,7 @@
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm build && pnpm test",
     "test:e2e": "playwright test",
     "build:edge-artifact": "node scripts/build-edge-worker-artifact.mjs",
     "test:protocol": "pnpm --dir deploy/worker test:protocol",
@@ -20,7 +20,8 @@
     "test:phase-a": "pnpm --dir deploy/worker test:phase-a",
     "test:tunnels": "pnpm --dir deploy/worker test:tunnels",
     "build:installer-assets": "pnpm --filter @tehrannetwork/installer build && node scripts/sync-installer-assets.mjs",
-    "deploy:public-installer": "pnpm build:installer-assets && pnpm --filter @tehrannetwork/installer-worker exec wrangler deploy"
+    "verify:public-installer": "node scripts/verify-public-installer.mjs",
+    "deploy:public-installer": "pnpm check && pnpm --dir deploy/worker check && pnpm build:installer-assets && pnpm --filter @tehrannetwork/installer-worker exec wrangler deploy"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

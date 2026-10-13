@@ -33,11 +33,26 @@ describe('destination policy', () => {
     ['fc00::1', 'ipv6'],
     ['fd12::1', 'ipv6'],
     ['fe80::1', 'ipv6'],
+    ['0:0:0:0:0:0:0:1', 'ipv6'],
+    ['::ffff:127.0.0.1', 'ipv6'],
+    ['::ffff:7f00:1', 'ipv6'],
+    ['::ffff:10.0.0.1', 'ipv6'],
+    ['::ffff:c0a8:102', 'ipv6'],
+    ['2130706433', 'domain'],
+    ['127.1', 'domain'],
+    ['0x7f000001', 'domain'],
   ] as const)('rejects private or local destination %s', (host, addressType) => {
     expect(validateDestination(d(host, 443, addressType), 'edge.example.workers.dev').ok).toBe(
       false,
     );
   });
+
+  it.each(['example.com/path', 'user@example.com', 'example.com?x=1', '[::1]', '2001:invalid::1'])(
+    'rejects malformed host %s',
+    (host) => {
+      expect(validateDestination(d(host), 'edge.example.workers.dev').ok).toBe(false);
+    },
+  );
 
   it('rejects the Worker itself and invalid ports', () => {
     expect(validateDestination(d('EDGE.EXAMPLE.WORKERS.DEV.'), 'edge.example.workers.dev').ok).toBe(

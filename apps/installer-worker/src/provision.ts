@@ -86,7 +86,11 @@ export const defaultProvisionDeps: ProvisionDeps = {
   ensureAccountSubdomain,
   enableScriptSubdomain,
   async fetchHealth(url) {
-    const response = await fetch(`${url}/health`, { cache: 'no-store' });
+    const response = await fetch(`${url}/health`, {
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(5000),
+    });
     if (!response.ok) return { ok: false };
     return (await response.json()) as {
       ok: boolean;
@@ -101,8 +105,30 @@ export const defaultProvisionDeps: ProvisionDeps = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password }),
       cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(5000),
     });
-    return response.ok;
+    if (!response.ok || !response.headers.get('content-type')?.startsWith('application/json')) {
+      return false;
+    }
+    let body: { ok?: boolean; expiresAt?: number } | null;
+    try {
+      body = (await response.json()) as typeof body;
+    } catch {
+      return false;
+    }
+    if (body?.ok !== true || typeof body.expiresAt !== 'number' || body.expiresAt <= Date.now()) {
+      return false;
+    }
+    // A proxy error page or unrelated HTTP 200 cannot prove successful login.
+    const cookies = response.headers.getSetCookie();
+    const session = cookies.find((cookie) => /^tn_session=[^;]+;/u.test(cookie));
+    const csrf = cookies.find((cookie) => /^tn_csrf=[^;]+;/u.test(cookie));
+    const secure = (cookie: string | undefined) =>
+      cookie !== undefined &&
+      /;\s*Secure(?:;|$)/iu.test(cookie) &&
+      /;\s*SameSite=Strict(?:;|$)/iu.test(cookie);
+    return secure(session) && /;\s*HttpOnly(?:;|$)/iu.test(session!) && secure(csrf);
   },
   generateInstallGeneration: () => crypto.randomUUID(),
   now: () => Date.now(),

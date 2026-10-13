@@ -4,6 +4,7 @@ import { uuidToBytes } from '../core/uuid';
 import type { TcpSocketLike } from '../network/tcp';
 import { parseVlessRequest } from '../protocols/vless';
 import { createXhttpStream } from './xhttp';
+import { createUsageMeter } from './usageMeter';
 
 const UUID = '27848739-7e62-4138-9fd3-098a63964b6b';
 
@@ -47,6 +48,26 @@ function socket(remote: string) {
 }
 
 describe('XHTTP stream-one transport', () => {
+  it('does not drain TCP when the response consumer is not reading', async () => {
+    const remote = socket('');
+    let pulls = 0;
+    remote.value.readable = new ReadableStream({
+      pull(controller) {
+        pulls++;
+        if (pulls <= 10) controller.enqueue(new Uint8Array(1024));
+        else controller.close();
+      },
+    });
+    const response = await createXhttpStream({
+      body: body([vless()]),
+      parseFirstPacket: (input) => parseVlessRequest(input, UUID),
+      connectTcp: async () => remote.value,
+      selfHost: 'edge.example.dev',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(pulls).toBeLessThanOrEqual(2);
+    await response.body!.cancel();
+  });
   it('reads a fragmented VLESS header, forwards upload and streams response', async () => {
     const packet = vless(new TextEncoder().encode('GET / HTTP/1.0\r\n\r\n'));
     const remote = socket('HTTP/1.1 200 OK\r\n');
@@ -127,6 +148,78 @@ describe('async XHTTP authorization gate', () => {
 });
 
 describe('XHTTP usage checkpoints', () => {
+  it('finishes the response when upload quota stops a pending downstream read', async () => {
+    const remote = socket('');
+    remote.value.readable = new ReadableStream();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const meter = createUsageMeter({
+      byteThreshold: 1,
+      write: async () => {
+        await gate;
+        return { allowed: false, totalUsedBytes: 1, todayUsedBytes: 0 };
+      },
+    });
+    const response = await createXhttpStream({
+      body: body([vless(), new Uint8Array([1])]),
+      parseFirstPacket: (input) => {
+        const parsed = parseVlessRequest(input, UUID);
+        return parsed.kind === 'ok'
+          ? {
+              ...parsed,
+              value: {
+                ...parsed.value,
+                principal: { kind: 'user', userId: 'u-1', channel: 'vless-xhttp' },
+              },
+            }
+          : parsed;
+      },
+      connectTcp: async () => remote.value,
+      selfHost: 'edge.example.dev',
+      createUsageMeter: () => meter,
+    });
+    const consumed = response.arrayBuffer();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    release();
+    const completed = await Promise.race([
+      consumed.then(() => true),
+      new Promise((resolve) => setTimeout(() => resolve(false), 100)),
+    ]);
+    expect(completed).toBe(true);
+  });
+  it('limits a large upload chunk to bounded slices before quota denial', async () => {
+    const remote = socket('');
+    remote.value.readable = new ReadableStream();
+    const meter = createUsageMeter({
+      write: async () => ({ allowed: false, totalUsedBytes: 4 * 1024 * 1024, todayUsedBytes: 0 }),
+    });
+    const response = await createXhttpStream({
+      body: body([vless(), new Uint8Array(16 * 1024 * 1024)]),
+      parseFirstPacket: (input) => {
+        const parsed = parseVlessRequest(input, UUID);
+        return parsed.kind === 'ok'
+          ? {
+              ...parsed,
+              value: {
+                ...parsed.value,
+                principal: { kind: 'user', userId: 'u-1', channel: 'vless-xhttp' },
+              },
+            }
+          : parsed;
+      },
+      connectTcp: async () => remote.value,
+      selfHost: 'edge.example.dev',
+      createUsageMeter: () => meter,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(remote.writes.reduce((total, chunk) => total + chunk.length, 0)).toBeLessThanOrEqual(
+      4 * 1024 * 1024 + 65536,
+    );
+    expect(meter.exhausted()).toBe(true);
+    await response.body!.cancel();
+  });
   it('counts parsed upload and remote download but not the VLESS handshake', async () => {
     const packet = vless(new Uint8Array([5, 6]));
     const remote = socket('abc');

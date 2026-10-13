@@ -3,6 +3,7 @@ import type { InstallResult } from '@tehrannetwork/shared';
 import { CloudflareApiError } from './cloudflare';
 import type { InstallerEnv } from './env';
 import { ProvisionError } from './provision';
+import { EDGE_WORKER_SHA256 } from './generated/edgeWorkerArtifact';
 import { handleInstallerRequest, type RouterDeps } from './router';
 
 const env = {
@@ -46,7 +47,12 @@ describe('stateless token installer router', () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    await expect(response.json()).resolves.toEqual({ ok: true, edgeVersion: '0.3.1' });
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      edgeVersion: '0.3.1',
+      edgeSha256: EDGE_WORKER_SHA256,
+      schemaVersion: 1,
+    });
   });
 
   it('verifies a token and returns every accessible account', async () => {
@@ -97,6 +103,30 @@ describe('stateless token installer router', () => {
     expect(d.verifyApiToken).not.toHaveBeenCalled();
     expect(d.listAccounts).not.toHaveBeenCalled();
   });
+  it('stops reading an oversized streamed request before buffering its full body', async () => {
+    const d = deps();
+    let pulls = 0;
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls++;
+        controller.enqueue(new Uint8Array(16 * 1024 + 1));
+        if (pulls === 4) controller.close();
+      },
+      cancel,
+    });
+    const request = new Request('https://installer.example/api/install', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: stream,
+      duplex: 'half',
+    } as RequestInit);
+    const response = await handleInstallerRequest(request, env, d);
+    expect(response.status).toBe(413);
+    expect(pulls).toBeLessThanOrEqual(2);
+    expect(cancel).toHaveBeenCalled();
+    expect(d.verifyApiToken).not.toHaveBeenCalled();
+  });
   it('maps invalid tokens and insufficient permissions to safe errors', async () => {
     const invalid = await handleInstallerRequest(
       post('/api/token/verify', { token: 'BAD_VALUE' }),
@@ -127,6 +157,33 @@ describe('stateless token installer router', () => {
       stage: 'account',
       code: 'insufficient-scope',
     });
+  });
+  it.each([null, [], 123, true])(
+    'rejects non-object JSON %j without calling Cloudflare',
+    async (body) => {
+      const d = deps();
+      for (const path of ['/api/install', '/api/token/verify']) {
+        const response = await handleInstallerRequest(post(path, body), env, d);
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toEqual({
+          ok: false,
+          stage: 'token',
+          code: 'invalid-request',
+        });
+      }
+      expect(d.verifyApiToken).not.toHaveBeenCalled();
+      expect(d.provisionPanel).not.toHaveBeenCalled();
+    },
+  );
+  it('selects the same account when the API returns a different order', async () => {
+    const d = deps({
+      listAccounts: vi.fn().mockResolvedValue([
+        { id: 'a2', name: 'Two' },
+        { id: 'a1', name: 'One' },
+      ]),
+    });
+    await handleInstallerRequest(post('/api/install', { token: 'TOKEN_VALUE' }), env, d);
+    expect(vi.mocked(d.provisionPanel).mock.calls[0][1].accountId).toBe('a1');
   });
   it('installs from only the token and chooses all hidden settings server-side', async () => {
     const d = deps();

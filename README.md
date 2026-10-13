@@ -58,7 +58,7 @@ Tehran Network Edge Panel تجربه‌ی «کپی اسکریپت و تنظیم 
 1. Installer آماده باز می‌شود؛ نه GitHub account لازم دارید، نه مرحلهٔ Deploy، نه Wrangler و نه ترمینال.
 2. روی **ساخت کلید Cloudflare** بزنید. صفحهٔ رسمی Cloudflare با دسترسی‌های لازم باز می‌شود: Workers Scripts Edit، Workers KV Storage Edit، D1 Write و Account Settings Read.
 3. **Create Token** را بزنید و Token را کپی کنید.
-4. به Installer برگردید، Token را Paste کنید و **نصب با کلید** را بزنید. Installer اولین Account قابل‌دسترسی را خودکار انتخاب می‌کند، Worker ثابت `tehran-network-edge` و یک رمز مدیریت تصادفی می‌سازد.
+4. به Installer برگردید، Token را Paste کنید و **نصب با کلید** را بزنید. Installer حساب، Worker ثابت `tehran-network-edge` و رمز تصادفی را خودکار انتخاب می‌کند. توکن را به حساب مقصد محدود کنید؛ اگر چند حساب مجاز باشد، کوچک‌ترین شناسه در ترتیب متنی انتخاب می‌شود تا تلاش مجدد همیشه همان حساب را هدف بگیرد.
 5. KV + D1 + Worker + Secret + workers.dev خودکار ساخته/reuse می‌شوند و Installer همان رمز را با login واقعی verify می‌کند.
 6. فقط آدرس پنل و رمز مدیریت تحویل داده می‌شود؛ آن را Copy و وارد `/admin` شوید.
 
@@ -76,7 +76,7 @@ Token فقط برای همین درخواست نصب از طریق HTTPS به In
 - **کد ماژولار:** UI، i18n، Installer و Worker از هم جدا هستند.
 - **Security-first:** Artifact نصب‌شده SHA-256 امضادار است و Secretها از هم جدا طراحی می‌شوند.
 - **مولتی‌یوزر واقعی روی D1:** کاربر، انقضا، سهمیه کل/روزانه، لینک خصوصی و credential مستقل بدون VPS نگه‌داری می‌شوند.
-- **اعمال سهمیهٔ دوره‌ای روی Edge:** مصرف واقعی upload/download در checkpointهای ۴ MiB یا ۶۰ ثانیه ثبت می‌شود؛ این سیستم billing دقیقِ هر packet نیست و overshoot حداکثر به اندازهٔ checkpoint × اتصال‌های هم‌زمان است.
+- **اعمال سهمیهٔ دوره‌ای روی Edge:** مصرف در checkpointهای ۴ MiB، ۶۰ ثانیه هنگام فعالیت، یا بستن اتصال ثبت می‌شود. داده در قطعات ۶۴ KiB منتقل می‌شود؛ با فرض موفقیت writeهای D1، خطای محافظه‌کارانه `(4 MiB + 128 KiB) × تعداد اتصال‌های کاربر` است. [محدودیت‌ها و فرض‌های شکست](LIMITATIONS.md) را بخوانید.
 - **Upgrade بدون تعویض credential کاربر:** نصب دوباره با همان Worker name، KV و D1 نام‌دار را reuse می‌کند؛ installation seed و نسخهٔ secretهای کاربران ثابت می‌ماند، اما `INSTALL_GENERATION` جدید رمز ادمین را به رمز تازهٔ نمایش‌داده‌شده در Installer sync می‌کند و sessionهای قبلی را باطل می‌کند.
 - **محدودیت‌های صریح Phase A:** Backup/Restore کامل و speed limiting هنوز آماده نیستند؛ quota فقط با checkpoint اجرا می‌شود.
 
@@ -140,7 +140,7 @@ Step-by-step guide: [English installation guide](docs/INSTALL_EN.md)
 - **Modular codebase** — installer, dashboard, translations and worker core are isolated packages.
 - **Security-oriented boundaries** — the deployed artifact is SHA-256 pinned and secrets are separated by concern.
 - **Real D1 multi-user control** — users, expiry, total/daily quota, private subscriptions and independent credentials stay Cloudflare-only with no VPS.
-- **Periodic edge quota enforcement** — actual upload/download is checkpointed at 4 MiB or 60 seconds; this is not exact per-packet billing, and bounded overshoot is checkpoint size × concurrent connections.
+- **Periodic edge quota enforcement** — upload/download is checkpointed at 4 MiB, 60 seconds on activity, or close. Payload is forwarded in 64 KiB slices; a conservative allowance is `(4 MiB + 128 KiB) × concurrent metered connections` when D1 writes succeed. See [limits and failure assumptions](LIMITATIONS.md).
 - **Credential-stable reinstall** — reinstalling the fixed `tehran-network-edge` Worker reuses named KV/D1 state, preserving the installation seed and per-user secret versions; a fresh `INSTALL_GENERATION` intentionally synchronizes the admin password to the newly displayed installer password and invalidates older admin sessions.
 - **Explicit Phase A limits** — full Backup/Restore and speed limiting are not implemented yet; quota enforcement is checkpoint-based only.
 

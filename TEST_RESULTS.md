@@ -1,0 +1,26 @@
+# Test results / نتایج تست
+
+Date: 2026-10-13. Environment: Windows, Node 24.19.0, pinned pnpm 10.15.1. Tests use independent local workerd/D1 state and synthetic credentials.
+
+| Check                                                 | Observed result                                                                           | Scope                                                                                               |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Initial installer/build/destination regression        | 24 failed / 28 passed, then 52/52 passed                                                  | RED→GREEN, four focused files                                                                       |
+| Isolated artifact generation                          | Missing output RED, then 4/4 passed                                                       | Test outputs no longer race with release artifacts                                                  |
+| Initial root quality gate                             | PASS: format, lint, workspace typecheck, 241 tests, build, installer dry-run              | Before later transport/workspace changes; superseded by final rerun                                 |
+| Transport regression                                  | 5 failures reproduced, then 21/21 passed                                                  | Close races, backpressure and quota slices                                                          |
+| Streamed installer size limit                         | Reads-all-body RED, then router 13/13 passed                                              | Rejects oversized body without Cloudflare calls                                                     |
+| Standalone Worker check                               | PASS: typecheck, 26 files / 171 tests                                                     | Current transport/destination changes                                                               |
+| Real local workerd protocol E2E                       | PASS, exit 0: VLESS-WS, Trojan-WS, XHTTP stream-one, negative auth                        | Real TCP response from example.com; not production                                                  |
+| Legacy upgrade E2E                                    | PASS, exit 0: legacy-upgrade protocols                                                    | Existing protocol config retained in local KV; schema migration                                     |
+| Real Xray-core lifecycle                              | PASS, exit 0                                                                              | Three channels; user, usage, pause/resume, quota, subscription/credential rotation and legacy owner |
+| Browser E2E                                           | PASS: nine executed, three existing desktop/mobile project exclusions                     | APIs mocked; no exclusion added in this recovery                                                    |
+| Final root quality gate                               | PASS, exit 0: format, lint, all workspace typechecks, build/dry-run, 50 files / 256 tests | Build precedes artifact tests; includes standalone Worker                                           |
+| Secret-pattern scan                                   | PASS: 223 tracked/nonignored files; zero GitHub token/AWS/private-key matches             | Path/type-only reporting; limited to specified patterns                                             |
+| Production dependency advisory scan                   | PASS: pnpm audit --prod reported no known vulnerabilities                                 | Registry advisory evidence, not full supply-chain audit                                             |
+| Exact public installer verifier                       | FAIL as expected: installer-health-http-failed                                            | Stale production cannot pass deployment proof                                                       |
+| Public installer HTTP smoke                           | Root 200; `/api/health` 404; old asset `index-fun4E7D7.js`                                | Current production is stale; FAIL for release readiness                                             |
+| Clean-account install, Free CPU, production protocols | Pending                                                                                   | Requires authorized deployment and real account tests                                               |
+
+Initial environment failures were preserved and repaired: pnpm version/build-policy mismatch, omitted standalone Worker dependencies, Windows shell environment syntax, and failure to stop Wrangler descendants before temporary-state cleanup. No important test was skipped to hide these failures.
+
+Xray Windows archive SHA-256: `d004c39288ce9ada487c6f398c7c545f7d749e44bdfdd59dbc9f865afba4e1ad`. Source: [official v26.3.27 release](https://github.com/XTLS/Xray-core/releases/tag/v26.3.27).

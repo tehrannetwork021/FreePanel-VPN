@@ -4,6 +4,7 @@ import type { ParseResult } from '../core/types';
 import type { ConnectTcp } from '../network/tcp';
 import type { TunnelPrincipal } from '../security/tunnelAuth';
 import type { UsageMeter } from './usageMeter';
+import { forwardSlices, MAX_FORWARD_SLICE_BYTES } from './usageMeter';
 
 type XhttpInput = {
   body: ReadableStream<Uint8Array>;
@@ -25,16 +26,22 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
   const bodyReader = input.body.getReader();
   let handshake: Uint8Array = new Uint8Array();
   let parsed: ParseResult<ParsedFirstPacket>;
+  const reject = async (status: number, message: string) => {
+    await bodyReader.cancel().catch(() => undefined);
+    bodyReader.releaseLock();
+    return response(status, message);
+  };
 
   while (true) {
     const next = await bodyReader.read();
-    if (next.done) return response(400, 'Incomplete XHTTP handshake');
+    if (next.done) return reject(400, 'Incomplete XHTTP handshake');
+    if (handshake.byteLength + next.value.byteLength > maxHandshakeBytes)
+      return reject(413, 'XHTTP handshake too large');
     handshake = concatBytes(handshake, next.value);
-    if (handshake.byteLength > maxHandshakeBytes) return response(413, 'XHTTP handshake too large');
     parsed = await input.parseFirstPacket(handshake);
     if (parsed.kind === 'need-more') continue;
     if (parsed.kind === 'error')
-      return response(parsed.code === 'auth' ? 403 : 400, 'Invalid XHTTP handshake');
+      return reject(parsed.code === 'auth' ? 403 : 400, 'Invalid XHTTP handshake');
     break;
   }
 
@@ -42,51 +49,64 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
   try {
     socket = await input.connectTcp(parsed.value.destination, input.selfHost);
   } catch {
-    return response(502, 'TCP destination unavailable');
+    return reject(502, 'TCP destination unavailable');
   }
   const writer = socket.writable.getWriter();
   const usageMeter =
     parsed.value.principal && input.createUsageMeter
       ? input.createUsageMeter(parsed.value.principal)
       : null;
-  if (parsed.value.payload.byteLength) {
-    await writer.write(parsed.value.payload);
-    usageMeter?.addUpload(parsed.value.payload.byteLength);
-    if (usageMeter) {
-      await usageMeter.flush();
-      if (usageMeter.exhausted()) {
-        await usageMeter.close();
-        bodyReader.releaseLock();
-        writer.releaseLock();
-        socket.close();
-        return response(403, 'Access unavailable');
+  const remoteReader = socket.readable.getReader();
+  let stopped = false;
+  const cleanup = async () => {
+    if (stopped) return;
+    stopped = true;
+    try {
+      socket.close();
+    } catch {
+      /* already closed */
+    }
+    await Promise.allSettled([bodyReader.cancel(), remoteReader.cancel(), usageMeter?.close()]);
+  };
+  const writeUpload = async (bytes: Uint8Array) => {
+    for (const slice of forwardSlices(bytes)) {
+      if (stopped) return;
+      await writer.write(slice);
+      usageMeter?.addUpload(slice.byteLength);
+      if (usageMeter) {
+        await usageMeter.flush();
+        if (usageMeter.exhausted()) {
+          await cleanup();
+          return;
+        }
       }
     }
+  };
+  try {
+    await writeUpload(parsed.value.payload);
+  } catch {
+    await cleanup();
+    bodyReader.releaseLock();
+    writer.releaseLock();
+    return response(502, 'TCP destination unavailable');
+  }
+  if (stopped) {
+    bodyReader.releaseLock();
+    writer.releaseLock();
+    return response(403, 'Access unavailable');
   }
 
   const pumpUpload = async () => {
     try {
-      while (true) {
+      while (!stopped) {
         const next = await bodyReader.read();
         if (next.done) break;
         if (next.value.byteLength) {
-          await writer.write(next.value);
-          usageMeter?.addUpload(next.value.byteLength);
-          if (usageMeter) {
-            await usageMeter.flush();
-            if (usageMeter.exhausted()) {
-              socket.close();
-              break;
-            }
-          }
+          await writeUpload(next.value);
         }
       }
     } catch {
-      try {
-        socket.close();
-      } catch {
-        /* best effort */
-      }
+      await cleanup();
     } finally {
       bodyReader.releaseLock();
       try {
@@ -99,46 +119,47 @@ export async function createXhttpStream(input: XhttpInput): Promise<Response> {
   void pumpUpload();
 
   const responseHeader = parsed.value.responseHeader ?? new Uint8Array();
+  let pending: Uint8Array = new Uint8Array();
+  let pendingOffset = 0;
   const downstream = new ReadableStream<Uint8Array>({
-    async start(controller) {
+    start(controller) {
       if (responseHeader.byteLength) controller.enqueue(responseHeader);
-      const reader = socket.readable.getReader();
+    },
+    async pull(controller) {
+      if (stopped) {
+        controller.close();
+        return;
+      }
       try {
-        while (true) {
-          const next = await reader.read();
-          if (next.done) break;
-          if (next.value.byteLength) {
-            controller.enqueue(next.value);
-            usageMeter?.addDownload(next.value.byteLength);
-            if (usageMeter) {
-              await usageMeter.flush();
-              if (usageMeter.exhausted()) {
-                socket.close();
-                break;
-              }
-            }
+        while (pendingOffset >= pending.byteLength) {
+          const next = await remoteReader.read();
+          if (stopped) return;
+          if (next.done) {
+            await cleanup();
+            controller.close();
+            return;
+          }
+          pending = next.value;
+          pendingOffset = 0;
+        }
+        const slice = pending.subarray(pendingOffset, pendingOffset + MAX_FORWARD_SLICE_BYTES);
+        pendingOffset += slice.byteLength;
+        controller.enqueue(slice);
+        usageMeter?.addDownload(slice.byteLength);
+        if (usageMeter) {
+          await usageMeter.flush();
+          if (usageMeter.exhausted()) {
+            await cleanup();
+            controller.close();
           }
         }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      } finally {
-        reader.releaseLock();
-        await usageMeter?.close();
-        try {
-          socket.close();
-        } catch {
-          /* best effort */
-        }
+      } catch {
+        await cleanup();
+        controller.error(new Error('transport-failed'));
       }
     },
     cancel() {
-      void usageMeter?.close();
-      try {
-        socket.close();
-      } catch {
-        /* best effort */
-      }
+      return cleanup();
     },
   });
 
