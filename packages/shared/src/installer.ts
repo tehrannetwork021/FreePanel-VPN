@@ -3,6 +3,7 @@ export type InstallStage =
 
 export type InstallErrorCode =
   | 'token-invalid'
+  | 'cloudflare-api-failed'
   | 'insufficient-scope'
   | 'invalid-account'
   | 'invalid-worker-name'

@@ -16,7 +16,7 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 - All other development branches are behind main. Two bootstrap branches diverge only by a staging Worker name; do not merge older source over current main.
 - Live installer root returned HTTP 200 with `index-fun4E7D7.js`; `/api/health` returned HTTP 404 / `not-found`. Current source UI asset is `index-B13sSiPC.js`.
 - Owner browser access confirmed the existing installer in the Honored Feather account. With explicit owner approval, Cloudflare's GitHub App was authorized for FreePanel-VPN only and the Worker connected to this repository/main. **Disable builds is on**, so connection did not publish over production. Separate staging uploaded successfully but external health/UI return Cloudflare 1101; deployment verification remains RED and runtime/asset routing diagnostics are in progress.
-- Latest verified code `8ca2bca` passed all three jobs in [CI run 38425139626](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38425139626). The owner approved a separate personal-account `tehran-network-installer-staging-e2e`; Hello World worked and the installer briefly passed exact public verification, but subsequent navigation again returned HTTP 500 / 1101. Public stability is unproven. No personal VPN Worker, KV or D1 was changed. [Pinned installer source comparisons](docs/COMPETITOR_GAP_ANALYSIS.md#code-verified-installer-patterns--2026-10-13) guide continuation; speculative deployment changes have stopped.
+- Source `ac5f7fc` passed all three jobs in [CI run 38431048995](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38431048995). The owner approved a separate personal-account `tehran-network-installer-staging-e2e`; Hello World worked and the installer briefly passed exact public verification, but subsequent navigation again returned HTTP 500 / 1101. Public stability is unproven. No personal VPN Worker, KV or D1 was changed. [Pinned source comparisons](docs/COMPETITOR_GAP_ANALYSIS.md#targeted-runtime-source-review--2026-10-13) now cover fifteen runtime/tool repositories and two installer references. A temporary GET-only trace on staging returned no handler marker on failed requests; the owner is preparing fixed-target read-only API/Tail diagnostics. No cause is asserted yet.
 
 ## P0 recovery work
 
@@ -29,6 +29,7 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 - WebSocket termination races, queued input limits, XHTTP downstream backpressure and bounded forwarding slices have regression coverage.
 - Worker is included in the pnpm workspace and frozen root lockfile. Protocol, legacy upgrade and real Xray lifecycle checks are added to CI.
 - Windows E2E process-tree cleanup and legacy-upgrade invocation are repaired. LF checkout rules preserve migration/artifact digests.
+- Cloudflare API operations now have a 30-second deadline covering headers and response bodies, reject redirects and clean up timers. API outages return a sanitized 502 rather than blaming the token. Fresh local root check passed 263 tests and both installer Runtime configurations passed. These changes do not diagnose the public GET failure.
 
 ## Remaining acceptance gates
 

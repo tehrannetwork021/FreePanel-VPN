@@ -95,6 +95,9 @@ function tokenError(error: unknown): Response {
   if (error instanceof CloudflareApiError && error.message === 'insufficient-scope') {
     return json({ ok: false, stage: 'account', code: 'insufficient-scope' }, 403);
   }
+  if (error instanceof CloudflareApiError) {
+    return json({ ok: false, stage: 'token', code: 'cloudflare-api-failed' }, 502);
+  }
   return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
 }
 async function handleVerify(request: Request, deps: RouterDeps): Promise<Response> {

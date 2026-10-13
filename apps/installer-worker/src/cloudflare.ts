@@ -1,6 +1,7 @@
 import type { CloudflareAccountView } from '@tehrannetwork/shared';
 
 const API_ROOT = 'https://api.cloudflare.com/client/v4';
+const API_TIMEOUT_MS = 30_000;
 
 type CfEnvelope<T> = {
   success: boolean;
@@ -20,15 +21,33 @@ export class CloudflareApiError extends Error {
   }
 }
 
-export async function verifyApiToken(token: string): Promise<void> {
-  const headers = new Headers({ authorization: `Bearer ${token}` });
-  const response = await fetch(`${API_ROOT}/user/tokens/verify`, { headers });
-  let body: CfEnvelope<{ status?: string }> | undefined;
+async function readEnvelope<T>(token: string, path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set('authorization', `Bearer ${token}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
-    body = (await response.json()) as CfEnvelope<{ status?: string }>;
+    const response = await fetch(`${API_ROOT}${path}`, {
+      ...init,
+      headers,
+      redirect: 'error',
+      signal: controller.signal,
+    });
+    const body = (await response.json().catch(() => undefined)) as CfEnvelope<T> | undefined;
+    // The deadline covers response consumption as well as receipt of headers.
+    if (controller.signal.aborted) throw new Error('api-timeout');
+    return { response, body };
   } catch {
-    body = undefined;
+    // Never expose transport errors, token-bearing request details or upstream text.
+    throw new CloudflareApiError(502);
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+export async function verifyApiToken(token: string): Promise<void> {
+  const { response, body } = await readEnvelope<{ status?: string }>(token, '/user/tokens/verify');
+  if (response.status >= 500) throw new CloudflareApiError(response.status);
   if (!response.ok || !body?.success || body.result?.status !== 'active') {
     throw new CloudflareApiError(response.status || 401, undefined, 'token-invalid');
   }
@@ -39,15 +58,7 @@ async function cfRequest<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<{ result: T; resultInfo?: CfEnvelope<T>['result_info'] }> {
-  const headers = new Headers(init.headers);
-  headers.set('authorization', `Bearer ${token}`);
-  const response = await fetch(`${API_ROOT}${path}`, { ...init, headers });
-  let body: CfEnvelope<T> | undefined;
-  try {
-    body = (await response.json()) as CfEnvelope<T>;
-  } catch {
-    body = undefined;
-  }
+  const { response, body } = await readEnvelope<T>(token, path, init);
   if (!response.ok || !body?.success) {
     throw new CloudflareApiError(response.status, body?.errors?.[0]?.code);
   }

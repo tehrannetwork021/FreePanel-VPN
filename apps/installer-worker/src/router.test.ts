@@ -168,6 +168,22 @@ describe('stateless token installer router', () => {
       code: 'insufficient-scope',
     });
   });
+  it.each(['/api/token/verify', '/api/install'])(
+    'reports an API outage without blaming the token at %s',
+    async (path) => {
+      const response = await handleInstallerRequest(
+        post(path, { token: 'SECRET_TOKEN_SENTINEL' }),
+        env,
+        deps({ verifyApiToken: vi.fn().mockRejectedValue(new CloudflareApiError(502)) }),
+      );
+      expect(response.status).toBe(502);
+      await expect(response.json()).resolves.toEqual({
+        ok: false,
+        stage: 'token',
+        code: 'cloudflare-api-failed',
+      });
+    },
+  );
   it.each([null, [], 123, true])(
     'rejects non-object JSON %j without calling Cloudflare',
     async (body) => {

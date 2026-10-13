@@ -28,9 +28,69 @@ function fail(status: number, code = 1000) {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 describe('Cloudflare provisioning API', () => {
+  it.each([
+    { name: 'verification', operation: verifyApiToken },
+    { name: 'account discovery', operation: listAccounts },
+  ])('bounds stalled API requests and response bodies for $name', async ({ operation }) => {
+    vi.useFakeTimers();
+    for (const phase of ['headers', 'body']) {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_url: string, init?: RequestInit) => {
+          if (phase === 'headers') {
+            return new Promise<Response>((_resolve, reject) => {
+              init?.signal?.addEventListener('abort', () => reject(new Error('SECRET RAW DETAIL')));
+            });
+          }
+          return Promise.resolve(
+            new Response(
+              new ReadableStream({
+                start(controller) {
+                  init?.signal?.addEventListener('abort', () =>
+                    controller.error(new Error('SECRET RAW DETAIL')),
+                  );
+                },
+              }),
+            ),
+          );
+        }),
+      );
+      let outcome: unknown;
+      void operation('SECRET_TOKEN_SENTINEL').then(
+        () => {
+          outcome = 'unexpected-success';
+        },
+        (error: unknown) => {
+          outcome = error;
+        },
+      );
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(outcome, phase).toBeInstanceOf(CloudflareApiError);
+      expect((outcome as Error).message).toBe('cloudflare-api-failed');
+      expect(String(outcome)).not.toContain('SECRET');
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  });
+
+  it('distinguishes API outages from invalid credentials and releases the timer on success', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('SECRET RAW DETAIL')));
+    await expect(verifyApiToken('SECRET_TOKEN_SENTINEL')).rejects.toThrow('cloudflare-api-failed');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fail(503)));
+    await expect(verifyApiToken('SECRET_TOKEN_SENTINEL')).rejects.toThrow('cloudflare-api-failed');
+    const activeFetch = vi.fn().mockResolvedValue(ok({ status: 'active' }));
+    vi.stubGlobal('fetch', activeFetch);
+    await verifyApiToken('SECRET_TOKEN_SENTINEL');
+    expect(activeFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'error' });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('accepts only active API tokens and sanitizes invalid token failures', async () => {
     const activeFetch = vi.fn().mockResolvedValue(ok({ id: 't1', status: 'active' }));
     vi.stubGlobal('fetch', activeFetch);
