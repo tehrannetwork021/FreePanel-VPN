@@ -58,4 +58,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm --dir deploy/worker check
+      - run: pnpm test:installer-runtime
       - run: pnpm test:tunnels
