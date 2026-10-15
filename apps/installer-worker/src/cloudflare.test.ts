@@ -87,8 +87,22 @@ describe('Cloudflare provisioning API', () => {
     const activeFetch = vi.fn().mockResolvedValue(ok({ status: 'active' }));
     vi.stubGlobal('fetch', activeFetch);
     await verifyApiToken('SECRET_TOKEN_SENTINEL');
-    expect(activeFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'error' });
+    expect(activeFetch.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('rejects API redirects without parsing an active-looking body or forwarding the token', async () => {
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Response(JSON.stringify({ success: true, result: { status: 'active' } }), {
+          status: 302,
+          headers: { location: 'https://unexpected.example/credential-sink' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(verifyApiToken('SECRET_TOKEN_SENTINEL')).rejects.toThrow('cloudflare-api-failed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ redirect: 'manual' });
   });
 
   it('accepts only active API tokens and sanitizes invalid token failures', async () => {

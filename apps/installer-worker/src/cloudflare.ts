@@ -30,9 +30,14 @@ async function readEnvelope<T>(token: string, path: string, init: RequestInit = 
     const response = await fetch(`${API_ROOT}${path}`, {
       ...init,
       headers,
-      redirect: 'error',
+      // workerd supports only manual/follow. Never forward the bearer token.
+      redirect: 'manual',
       signal: controller.signal,
     });
+    if (response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new Error('api-redirect');
+    }
     const body = (await response.json().catch(() => undefined)) as CfEnvelope<T> | undefined;
     // The deadline covers response consumption as well as receipt of headers.
     if (controller.signal.aborted) throw new Error('api-timeout');

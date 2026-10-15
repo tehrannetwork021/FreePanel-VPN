@@ -19,7 +19,7 @@
     "test:legacy-upgrade": "pnpm --dir deploy/worker test:legacy-upgrade",
     "test:phase-a": "pnpm --dir deploy/worker test:phase-a",
     "test:tunnels": "pnpm --dir deploy/worker test:tunnels",
-    "test:installer-runtime": "node scripts/test-installer-runtime.mjs && node scripts/test-installer-runtime.mjs --staging",
+    "test:installer-runtime": "node scripts/test-installer-api-runtime.mjs && node scripts/test-installer-runtime.mjs && node scripts/test-installer-runtime.mjs --staging",
     "build:installer-assets": "pnpm --filter @tehrannetwork/installer build && node scripts/sync-installer-assets.mjs && node scripts/build-installer-embedded-assets.mjs",
     "verify:public-installer": "node scripts/verify-public-installer.mjs",
     "deploy:public-installer": "pnpm check && pnpm --dir deploy/worker check && pnpm test:installer-runtime && pnpm build:installer-assets && pnpm --filter @tehrannetwork/installer-worker exec wrangler deploy"

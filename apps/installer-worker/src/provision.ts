@@ -102,7 +102,7 @@ export const defaultProvisionDeps: ProvisionDeps = {
   async fetchHealth(url) {
     const response = await fetch(`${url}/health`, {
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return { ok: false };
@@ -119,7 +119,7 @@ export const defaultProvisionDeps: ProvisionDeps = {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password }),
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok || !response.headers.get('content-type')?.startsWith('application/json')) {
