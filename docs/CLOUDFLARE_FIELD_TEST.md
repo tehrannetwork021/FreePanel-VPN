@@ -35,12 +35,28 @@ The receiver's `/health` still returned Cloudflare's generic HTTP 500 / 1101 pag
 
 The browser environment reset during the test and cleared its transient key and tab state. No plaintext API token was saved in files, commands, chat or logs. Temporary cross-tool handoff used one-use RSA-OAEP ciphertext with the private key only in process memory; the ciphertext and public-key files were removed after use.
 
-## Remaining field gate
+## Personal-account field test
 
-Use the personal account for an isolated receiver named `freepanel-edge-field-20261015`, preserving its existing live `tehran-network-edge` and associated data. A throwaway test bundle changes only the destination Worker-name literal; an exact reverse replacement reproduces the verified original bundle. It is not the production artifact. Its temporary token requires separate action-time consent because its account scope differs.
+The owner approved and manually created/rolled a token restricted to the personal account, Workers Scripts/KV/D1 Edit and Account Settings Read. The token table showed no expiry, despite the intended date. Its one-time secret was captured directly from the visible result into memory, verified active, and never printed or saved as plaintext. Account discovery returned only the approved personal account. After the checks, the owner explicitly approved deletion of this exact temporary token. The token was deleted through the dashboard; its filtered table then showed no results, and the transient key variable was cleared.
 
-Prepared isolated bundle: 872765 bytes, SHA-256 `33dc2a43d869be6a7a60341d50d5073d2e85d3ca8dd63c603f8e80b5e600207e`. It has not been deployed. Following the environment reset, the token page stayed blank after one reload; its browser console reported `ApiError: Connection blocked` in `cf-shared-auth` and an authorization-policy load failure. The owner was asked to restore the dashboard session. No second token was created or consent requested before an actual token summary was ready.
+The preflight confirmed that `freepanel-edge-field-20261015`, its KV namespace and D1 database were absent. The existing personal `tehran-network-edge` was present and was never modified. The isolated installer bundle (872765 bytes, SHA-256 `33dc2a43d869be6a7a60341d50d5073d2e85d3ca8dd63c603f8e80b5e600207e`) changed only the destination Worker-name literal. Reversing that replacement reproduced the normal installer byte-for-byte.
 
-The prepared Xray harness uses the already installed official Xray 26.3.27 Windows binary. Xray accepts configuration via `stdin:`, so protocol credentials need not be saved in configuration files. The harness will verify admin session/CSRF, a private three-link subscription and actual TLS VLESS-WS, Trojan-WS and VLESS-XHTTP traffic, then disable its own test user. The harness has not yet run against a healthy receiver; do not claim those connections passed.
+After publishing the isolated bundle to the existing recovery installer, public `/api/health` and `/api/token/verify` both returned HTTP 200 (verification Ray `a4b089e26cc2bf9a-ATL`). The actual browser one-token install created the isolated Worker, KV and D1, but failed its receiver-health gate. Initial receiver version: `8d0f2abe-9be8-431f-b864-7800885c7bf1`.
+
+The receiver's `/health` and `/api/status` returned Cloudflare's generic HTTP 500 / 1101 page. The deployed module read back from Cloudflare was 436597 UTF-8 bytes and matched the exact expected SHA-256 `acbd3946eb12397187bd5ea69584c3ec3b6f0b4e6b9bbadbf17e5c76fcf086dc`. Settings confirmed the correct KV namespace, D1 database, `ADMIN_PASSWORD` secret and `INSTALL_GENERATION`, compatibility date `2026-09-19`, and no flags. Its workers.dev route was enabled. Dashboard real-time Tail connected but delivered no event or exception for the failing health request (Ray `a4b09397aca8de55-ATL`). A failed CLI WebSocket transport is not evidence that Worker invocation logging succeeded.
+
+## Controlled isolation and restoration
+
+Only the new isolated receiver was used for these reversible controls. A minimal module with a fixed response first failed with the original bindings. A second minimal control removed KV/D1 and plain-text bindings while retaining the existing secret binding. After ten seconds, the deployments API confirmed control version `9bdaa08e-c5f1-435f-b076-671f59a87168` at 100%; its public health URL still returned HTTP 500 / 1101 instead of the fixed marker (Ray `a4b09eab7f25dce5-ATL`). The original receiver source and storage bindings were restored immediately; the restored health check remained 1101 (Ray `a4b09ec1bf76dce5-ATL`). No KV/D1 data was deleted.
+
+This control narrows the problem beyond the panel's application logic and its storage bindings. It does not establish the internal platform cause or prove a repair. No speculative receiver code change was made on that evidence.
+
+The recovery installer was restored to the normal destination and exact normal bundle SHA-256 `69191cee155e527b1bf3476e111dad97f1adcdcbefd09a94182c3353eb747edb`. Active restored version: `3f7c0d22-1190-4e68-afd8-aea1f846eab4`. Final checks:
+
+- Recovery installer `/api/health`: HTTP 200, `ok=true`, edge version 0.3.1 (Ray `a4b0a07e5efcf5f5-ATL`).
+- Preserved personal `tehran-network-edge` `/health`: HTTP 200, `ok=true`, version 0.2.0 (Ray `a4b0a085a9b3293e-ATL`).
+- Isolated `freepanel-edge-field-20261015` `/health`: HTTP 500 / 1101 (Ray `a4b0a091e9c73ebb-ATL`).
+
+The prepared Xray harness uses the already installed official Xray 26.3.27 Windows binary and configuration through `stdin:`. Admin login, private subscription and real VLESS-WS, Trojan-WS and VLESS-XHTTP field tests remain unexecuted because receiver health failed. No test user was created. Local protocol/CI success does not substitute for these field gates.
 
 No production update, PR merge or stable release has been performed on the strength of these incomplete field results. No support or community message was sent.
