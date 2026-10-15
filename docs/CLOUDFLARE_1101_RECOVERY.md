@@ -6,7 +6,9 @@ The owner-approved fresh staging installer is reachable:
 
 https://freepanel-installer-recovery-20261015.golamirreza19954312.workers.dev
 
-The exact public verifier passed twice, at approximately 10:32 and 10:34 UTC. It checks health version/SHA, native HTTPS navigation, and exact JS/CSS bytes. Real browser navigation and reload also displayed the Persian installer. A public POST with an empty token returned HTTP 401 and JSON `{ok:false,stage:"token",code:"token-invalid"}`. No real Cloudflare token was submitted and no end-user KV/D1/receiver installation occurred.
+The exact public verifier passed three times, at approximately 10:32, 10:34 and 10:40 UTC. It checks health version/SHA, native HTTPS navigation, and exact JS/CSS bytes. Real browser navigation and reload also displayed the Persian installer. A public POST with an empty token returned HTTP 401 and JSON `{ok:false,stage:"token",code:"token-invalid"}`. No real Cloudflare token was submitted and no end-user KV/D1/receiver installation occurred.
+
+Source commit `989b9a2c85dd2adfbd0aa8e20be73a51e637e2e7` passed [CI 38748804379](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38748804379); quality, protocol-e2e and browser-e2e all completed successfully. Subsequent checkpoint changes are documentation only.
 
 This is a recovery smoke result, not long-term stability or a full stable release. The original production URL and the previously failing staging Worker were not replaced. Clean-account installation, field protocols, upgrade preservation, Free CPU measurements and final production authorization remain open.
 

@@ -4,6 +4,8 @@ Latest checkpoint: 2026-10-15. Environment: Windows, Node 24.19.0, pinned pnpm 1
 
 October 15 packaging recovery: targeted RED 2 failures / 11 passes, then 13/13 passed. Fresh root gate PASS: format/lint/all workspace typechecks/build/dry-run and 50 files / 264 tests. Both real installer Runtime configurations PASS. New authorized staging returned Hello World 200 before upload, then passed the unchanged exact public verifier twice (health version/SHA, navigated UI and JS/CSS byte equality), real browser navigation/reload and an empty-token POST with JSON 401. The previous staging and its Hello World Preview still failed; Preview was restored to disabled. No real user token or clean-account installation was exercised. Full [recovery evidence](docs/CLOUDFLARE_1101_RECOVERY.md) records digests, dates and the limits of attributing the cause.
 
+Post-push result for the October 15 source `989b9a2c85dd2adfbd0aa8e20be73a51e637e2e7`: [CI 38748804379](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38748804379) completed successfully; quality, protocol-e2e and browser-e2e all passed. A third exact public verification also passed about eight minutes after the initial success. These results do not replace a real one-token installation or long-term stability measurement.
+
 ## Historical October 13 checks
 
 | Check                                                 | Observed result                                                                           | Scope                                                                                               |

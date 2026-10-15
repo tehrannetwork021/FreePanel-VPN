@@ -9,7 +9,7 @@
 - [x] Current real local protocol and legacy-upgrade smoke, with exit 0.
 - [x] Current real Xray lifecycle and browser E2E final verdicts.
 - [x] Preceding source commit `4c303ed` CI run 38439950483 passed quality, browser and protocol jobs.
-- [ ] Packaging recovery candidate CI passes after publication to the feature branch.
+- [x] Packaging source `989b9a2` passed [CI 38748804379](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38748804379): quality, protocol-e2e and browser-e2e all completed successfully.
 - [x] Owner authorized GitHub App access for FreePanel-VPN only; production Builds remain disabled.
 - [ ] Owner authorizes final production publication after field evidence is ready.
 - [x] Independent staging installer `freepanel-installer-recovery-20261015` is deployed and public version/SHA/UI parity passed twice plus real browser navigation/reload on October 15. This is smoke evidence, not a long-term stability guarantee.

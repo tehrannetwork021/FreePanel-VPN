@@ -33,7 +33,7 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 
 ## October 15 — peer-backed packaging recovery
 
-The owner approved a Base64-data packaging change and the fresh `freepanel-installer-recovery-20261015` Worker. Fresh root checks passed 264 tests plus format/lint/all typechecks/build; both workerd installer configurations passed. The new staging's exact public verifier passed twice and real browser navigation/reload worked; an empty-token POST returned the expected JSON 401. Edge payload bytes/SHA are unchanged. See [recovery evidence](docs/CLOUDFLARE_1101_RECOVERY.md). The combined packaging/new-resource result does not prove the provider's internal cause. The original production and previous staging Worker remain unchanged; stable release acceptance is still not met.
+The owner approved a Base64-data packaging change and the fresh `freepanel-installer-recovery-20261015` Worker. Fresh root checks passed 264 tests plus format/lint/all typechecks/build; both workerd installer configurations passed. Source `989b9a2` passed all three jobs in CI run 38748804379. The new staging's exact public verifier passed three times over approximately eight minutes and real browser navigation/reload worked; an empty-token POST returned the expected JSON 401. Edge payload bytes/SHA are unchanged. See [recovery evidence](docs/CLOUDFLARE_1101_RECOVERY.md). The combined packaging/new-resource result does not prove the provider's internal cause. The original production and previous staging Worker remain unchanged; stable release acceptance is still not met.
 
 ## Remaining acceptance gates
 
