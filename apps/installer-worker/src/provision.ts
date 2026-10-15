@@ -17,7 +17,7 @@ import {
 } from './cloudflare';
 import {
   EDGE_WORKER_SHA256,
-  EDGE_WORKER_SOURCE,
+  EDGE_WORKER_SOURCE_BASE64,
   EDGE_WORKER_VERSION,
 } from './generated/edgeWorkerArtifact';
 
@@ -67,15 +67,29 @@ async function sha256Hex(source: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function verifyArtifact(artifact: Artifact): Promise<void> {
-  if ((await sha256Hex(artifact.source)) !== artifact.sha256) {
+async function verifyArtifact(artifact: Artifact): Promise<string> {
+  const source = artifact.source;
+  if ((await sha256Hex(source)) !== artifact.sha256) {
     throw new Error('artifact-integrity-failed');
   }
+  return source;
+}
+
+// Cache only immutable source text. No request, promise, token or I/O object is retained.
+let decodedEdgeSource: string | undefined;
+function readEdgeSource(): string {
+  if (decodedEdgeSource === undefined) {
+    const bytes = Uint8Array.from(atob(EDGE_WORKER_SOURCE_BASE64), (char) => char.charCodeAt(0));
+    decodedEdgeSource = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+  }
+  return decodedEdgeSource;
 }
 
 export const defaultProvisionDeps: ProvisionDeps = {
   artifact: {
-    source: EDGE_WORKER_SOURCE,
+    get source() {
+      return readEdgeSource();
+    },
     sha256: EDGE_WORKER_SHA256,
     version: EDGE_WORKER_VERSION,
   },
@@ -167,8 +181,9 @@ export async function provisionPanel(
     throw new ProvisionError('account', 'invalid-account');
   }
 
+  let source: string;
   try {
-    await verifyArtifact(deps.artifact);
+    source = await verifyArtifact(deps.artifact);
   } catch {
     throw new ProvisionError('worker', 'worker-upload-failed');
   }
@@ -187,7 +202,7 @@ export async function provisionPanel(
       worker.value,
       kv.id,
       d1.uuid,
-      deps.artifact.source,
+      source,
       request.adminPassword,
       installGeneration,
     ),

@@ -8,6 +8,22 @@ import {
 
 afterEach(() => vi.unstubAllGlobals());
 
+describe('packaged edge artifact', () => {
+  it('decodes data lazily once and preserves the exact deployable UTF-8 bytes', async () => {
+    const decode = vi.fn(atob);
+    vi.stubGlobal('atob', decode);
+    const source = defaultProvisionDeps.artifact.source;
+    expect(decode).toHaveBeenCalledTimes(1);
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
+    const actualSha = Array.from(new Uint8Array(hash), (byte) =>
+      byte.toString(16).padStart(2, '0'),
+    ).join('');
+    expect(actualSha).toBe(defaultProvisionDeps.artifact.sha256);
+    expect(defaultProvisionDeps.artifact.source).toBe(source);
+    expect(decode).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('real login success contract', () => {
   it.each([
     new Response('<html>Login</html>', { status: 200, headers: { 'content-type': 'text/html' } }),

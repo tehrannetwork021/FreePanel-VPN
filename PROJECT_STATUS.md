@@ -31,6 +31,10 @@ An empty Cloudflare account is sufficient for the intended user flow. GitHub int
 - Windows E2E process-tree cleanup and legacy-upgrade invocation are repaired. LF checkout rules preserve migration/artifact digests.
 - Cloudflare API operations now have a 30-second deadline covering headers and response bodies, reject redirects and clean up timers. API outages return a sanitized 502 rather than blaming the token. Fresh local root check passed 263 tests and both installer Runtime configurations passed. These changes do not diagnose the public GET failure.
 
+## October 15 — peer-backed packaging recovery
+
+The owner approved a Base64-data packaging change and the fresh `freepanel-installer-recovery-20261015` Worker. Fresh root checks passed 264 tests plus format/lint/all typechecks/build; both workerd installer configurations passed. The new staging's exact public verifier passed twice and real browser navigation/reload worked; an empty-token POST returned the expected JSON 401. Edge payload bytes/SHA are unchanged. See [recovery evidence](docs/CLOUDFLARE_1101_RECOVERY.md). The combined packaging/new-resource result does not prove the provider's internal cause. The original production and previous staging Worker remain unchanged; stable release acceptance is still not met.
+
 ## Remaining acceptance gates
 
 See [TEST_RESULTS.md](TEST_RESULTS.md), [FEATURE_MATRIX.md](FEATURE_MATRIX.md), and [RELEASE_READINESS.md](RELEASE_READINESS.md).

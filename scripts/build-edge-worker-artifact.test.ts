@@ -50,7 +50,8 @@ describe('edge Worker install artifact', () => {
       const manifestPath = join(outdir, 'dist/installer-artifacts/edge-worker-manifest.json');
 
       const generated = readFileSync(generatedPath, 'utf8');
-      const source = extractJsonString(generated, 'EDGE_WORKER_SOURCE');
+      const encoded = extractJsonString(generated, 'EDGE_WORKER_SOURCE_BASE64');
+      const source = Buffer.from(encoded, 'base64').toString('utf8');
       const hash = extractJsonString(generated, 'EDGE_WORKER_SHA256');
       const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
         version: string;
@@ -59,6 +60,9 @@ describe('edge Worker install artifact', () => {
       };
 
       const actualHash = createHash('sha256').update(source).digest('hex');
+      expect(source).toBe(readFileSync(join(outdir, 'dist/edge-worker.js'), 'utf8'));
+      expect(generated).not.toContain('cloudflare:sockets');
+      expect(generated).not.toContain('// deploy/worker/src/');
       expect(hash).toBe(actualHash);
       expect(manifest.sha256).toBe(actualHash);
       expect(manifest.bytes).toBe(Buffer.byteLength(source));
