@@ -15,6 +15,7 @@ All three requests now use `manual`. API 3xx responses are explicitly rejected a
 - New regression test bundles the actual API/provisioning functions into real local workerd through Wrangler's installed Miniflare. Before the fix, `/verify` returned 502 before reaching the mocked upstream (expected 200). After the fix, verification, account discovery, health and login all reach upstream; all four reject a redirect without fetching its target.
 - Full `pnpm@10.15.1 check`: format, lint, all workspace typechecks, complete build and **50 files / 265 tests passed**. An initial sandbox run failed on Vitest temporary module files; the unchanged command passed outside that sandbox.
 - Full `test:installer-runtime`: API runtime regression plus default and binding-free staging UI/API checks passed, exit 0.
+- Source commit `34bfd745927a441e0f79dfff231408465213c9f0` also passed every [CI job in run 38772987749](https://github.com/tehrannetwork021/FreePanel-VPN/actions/runs/38772987749): quality, browser-e2e and protocol-e2e (including the new real-workerd regression).
 - Tested binding-free installer bundle: **872755 bytes**, SHA-256 `69191cee155e527b1bf3476e111dad97f1adcdcbefd09a94182c3353eb747edb`.
 - Uploaded to approved `freepanel-installer-recovery-20261015`; editor copy-back matched the exact bundle SHA. Active version prefix `bb4c719f`.
 - Same real scoped token then passed public `/api/token/verify` with HTTP 200, `ok=true` (Ray `a4afa1d86953f3b1-ATL`). This confirms the installer outbound-request failure was fixed on Cloudflare.
@@ -37,6 +38,8 @@ The browser environment reset during the test and cleared its transient key and 
 ## Remaining field gate
 
 Use the personal account for an isolated receiver named `freepanel-edge-field-20261015`, preserving its existing live `tehran-network-edge` and associated data. A throwaway test bundle changes only the destination Worker-name literal; an exact reverse replacement reproduces the verified original bundle. It is not the production artifact. Its temporary token requires separate action-time consent because its account scope differs.
+
+Prepared isolated bundle: 872765 bytes, SHA-256 `33dc2a43d869be6a7a60341d50d5073d2e85d3ca8dd63c603f8e80b5e600207e`. It has not been deployed. Following the environment reset, the token page stayed blank after one reload; its browser console reported `ApiError: Connection blocked` in `cf-shared-auth` and an authorization-policy load failure. The owner was asked to restore the dashboard session. No second token was created or consent requested before an actual token summary was ready.
 
 The prepared Xray harness uses the already installed official Xray 26.3.27 Windows binary. Xray accepts configuration via `stdin:`, so protocol credentials need not be saved in configuration files. The harness will verify admin session/CSRF, a private three-link subscription and actual TLS VLESS-WS, Trojan-WS and VLESS-XHTTP traffic, then disable its own test user. The harness has not yet run against a healthy receiver; do not claim those connections passed.
 
