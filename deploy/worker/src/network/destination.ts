@@ -6,6 +6,19 @@ function normalizeHost(host: string): string {
   return host.trim().toLowerCase().replace(/\.$/, '');
 }
 
+function canonicalHost(host: string): string | null {
+  // Only accept a host, never URL syntax, credentials, a port, or a zone ID.
+  if (!/^[a-z0-9.:-]+$/iu.test(host)) return null;
+  try {
+    return new URL(`http://${host.includes(':') ? `[${host}]` : host}/`).hostname.replace(
+      /^\[|\]$/gu,
+      '',
+    );
+  } catch {
+    return null;
+  }
+}
+
 function parseIpv4(host: string): number[] | null {
   const parts = host.split('.');
   if (parts.length !== 4) return null;
@@ -36,6 +49,14 @@ function firstIpv6Hextet(host: string): number | null {
 function isBlockedIpv6(host: string): boolean {
   const normalized = host.toLowerCase();
   if (normalized === '::' || normalized === '::1') return true;
+  // WHATWG URL normalizes dotted mapped IPv4 into two hex hextets.
+  const mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/u.exec(normalized);
+  if (mapped) {
+    const high = Number.parseInt(mapped[1]!, 16);
+    const low = Number.parseInt(mapped[2]!, 16);
+    return isBlockedIpv4([high >> 8, high & 255, low >> 8, low & 255]);
+  }
+  if (normalized.startsWith('::')) return true; // deprecated IPv4-compatible / reserved range
   const first = firstIpv6Hextet(normalized);
   if (first === null) return false;
   if ((first & 0xfe00) === 0xfc00) return true; // fc00::/7
@@ -48,8 +69,9 @@ export function validateDestination(
   destination: Destination,
   selfHost: string,
 ): DestinationValidation {
-  const host = normalizeHost(destination.host);
-  const self = normalizeHost(selfHost);
+  const rawHost = normalizeHost(destination.host);
+  const host = canonicalHost(rawHost);
+  const self = canonicalHost(normalizeHost(selfHost));
   if (!host || host.length > 253) return { ok: false, reason: 'invalid-host' };
   if (!Number.isInteger(destination.port) || destination.port < 1 || destination.port > 65535) {
     return { ok: false, reason: 'invalid-port' };

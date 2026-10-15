@@ -10,5 +10,7 @@ describe('GitHub CI contract', () => {
     expect(pkg.scripts.check).toContain('format:check');
     expect(workflow).toContain('pnpm test:e2e');
     expect(workflow).toContain('playwright install --with-deps chromium');
+    expect(workflow).toContain('pnpm --dir deploy/worker check');
+    expect(workflow).toContain('pnpm test:tunnels');
   });
 });

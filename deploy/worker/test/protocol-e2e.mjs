@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
 import WebSocket from 'ws';
+import { stopTestProcess } from './stop-process.mjs';
 
 let PORT = 0;
 let BASE = '';
@@ -21,7 +22,8 @@ async function freePort() {
   });
 }
 const ADMIN_PASSWORD = 'task10-local-admin-password-2026';
-const LEGACY_UPGRADE = process.env.LEGACY_UPGRADE === '1';
+const LEGACY_UPGRADE =
+  process.env.LEGACY_UPGRADE === '1' || process.argv.includes('--legacy-upgrade');
 const LEGACY_FIXTURE_URL = new URL('./fixtures/legacy-protocol-config.json', import.meta.url);
 const TARGET_HOST = 'example.com';
 const TARGET_PORT = 80;
@@ -235,7 +237,12 @@ async function main() {
       '--var',
       `ADMIN_PASSWORD:${ADMIN_PASSWORD}`,
     ],
-    { cwd: new URL('..', import.meta.url), stdio: ['ignore', 'pipe', 'pipe'], detached: true },
+    {
+      cwd: new URL('..', import.meta.url),
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
+      windowsHide: true,
+    },
   );
   let logs = '';
   child.stdout.on('data', (d) => {
@@ -297,13 +304,8 @@ async function main() {
     console.error(logs.slice(-5000));
     throw error;
   } finally {
-    try {
-      process.kill(-child.pid, 'SIGTERM');
-    } catch {
-      // Process may already have exited cleanly.
-    }
-    await new Promise((r) => setTimeout(r, 500));
-    await rm(state, { recursive: true, force: true });
+    await stopTestProcess(child);
+    await rm(state, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 

@@ -1,4 +1,5 @@
 node_modules/
+.wrangler/
 dist/*
 !dist/installer-artifacts/
 !dist/edge-worker.js

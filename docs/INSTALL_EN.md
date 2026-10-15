@@ -24,7 +24,7 @@ Do not use the Global API Key. Cloudflare displays the token once; copy it and r
 ### Step 3 — Paste and install
 
 1. Paste the token and click **Install with key**.
-2. The installer automatically selects the first accessible Cloudflare account.
+2. Scope the token to the intended Cloudflare account. If several accounts are accessible, the installer selects the lexicographically smallest account ID so retries always choose the same account.
 3. The Worker name is fixed to `tehran-network-edge`; there is nothing to configure.
 4. A secure random 18-character admin password is generated automatically; no password form is shown before installation.
 5. The installer creates or reuses KV + D1, uploads the Worker, sets secrets and enables `workers.dev`.
@@ -52,7 +52,7 @@ A subscription URL is a **credential**. Do not publish it. The old URL returns t
 
 Per-user upload/download is checkpointed to D1 in coarse batches: by default at `4 MiB`, after `60 seconds`, or when a connection closes. This keeps D1 writes bounded for the free plan.
 
-This is not exact per-packet billing. With concurrent connections, bounded overshoot can be roughly checkpoint size × concurrent connections before the next checkpoint/start is denied. `NULL` means unlimited quota; numeric `0` means exhausted immediately.
+This is not exact per-packet billing. A conservative allowance is `(4 MiB + 128 KiB) × concurrent metered connections` when D1 checkpoints succeed; payload forwarding uses 64 KiB slices. Failed writes, isolate termination and idle sessions have additional limits documented in [LIMITATIONS.md](../LIMITATIONS.md). `NULL` means unlimited quota; numeric `0` means exhausted immediately.
 
 **Speed limiting is not implemented in Phase A.**
 

@@ -1,3 +1,3 @@
 export interface InstallerEnv {
-  ASSETS: Fetcher;
+  ASSETS?: Fetcher;
 }

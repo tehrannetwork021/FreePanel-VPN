@@ -10,6 +10,10 @@ describe('Cloudflare-native public installer delivery', () => {
     const wrangler = readFileSync('apps/installer-worker/wrangler.jsonc', 'utf8');
 
     expect(command).toContain('build:installer-assets');
+    expect(command).toContain('pnpm check');
+    expect(command).toContain('pnpm --dir deploy/worker check');
+    // The quality gate rebuilds panel + edge artifact before any upload.
+    expect(command.indexOf('pnpm check')).toBeLessThan(command.indexOf('wrangler deploy'));
     expect(command).toContain('@tehrannetwork/installer-worker');
     expect(command).toContain('wrangler deploy');
     expect(command.toLowerCase()).not.toContain('ssh');

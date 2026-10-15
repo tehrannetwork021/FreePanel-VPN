@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import net from 'node:net';
+import { stopTestProcess } from './stop-process.mjs';
 
 const ADMIN_PASSWORD = 'phase-a-e2e-admin-password-2026';
 const INSTALL_GENERATION = 'phase-a-e2e-generation-1';
@@ -484,7 +485,12 @@ async function main() {
       '--var',
       `INSTALL_GENERATION:${INSTALL_GENERATION}`,
     ],
-    { cwd: new URL('..', import.meta.url), stdio: ['ignore', 'pipe', 'pipe'], detached: true },
+    {
+      cwd: new URL('..', import.meta.url),
+      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
+      windowsHide: true,
+    },
   );
   let logs = '';
   worker.stdout.on('data', (chunk) => {
@@ -505,13 +511,8 @@ async function main() {
     console.error(safeLogs);
     throw error;
   } finally {
-    try {
-      process.kill(-worker.pid, 'SIGTERM');
-    } catch {
-      /* already stopped */
-    }
-    await sleep(500);
-    await rm(state, { recursive: true, force: true });
+    await stopTestProcess(worker);
+    await rm(state, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 

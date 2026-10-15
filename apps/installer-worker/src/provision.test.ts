@@ -1,5 +1,62 @@
-import { describe, expect, it, vi } from 'vitest';
-import { ProvisionError, provisionPanel, type ProvisionDeps } from './provision';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  defaultProvisionDeps,
+  ProvisionError,
+  provisionPanel,
+  type ProvisionDeps,
+} from './provision';
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('packaged edge artifact', () => {
+  it('decodes data lazily once and preserves the exact deployable UTF-8 bytes', async () => {
+    const decode = vi.fn(atob);
+    vi.stubGlobal('atob', decode);
+    const source = defaultProvisionDeps.artifact.source;
+    expect(decode).toHaveBeenCalledTimes(1);
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(source));
+    const actualSha = Array.from(new Uint8Array(hash), (byte) =>
+      byte.toString(16).padStart(2, '0'),
+    ).join('');
+    expect(actualSha).toBe(defaultProvisionDeps.artifact.sha256);
+    expect(defaultProvisionDeps.artifact.source).toBe(source);
+    expect(decode).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('real login success contract', () => {
+  it.each([
+    new Response('<html>Login</html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+    Response.json({ ok: false }),
+    Response.json({ ok: true, expiresAt: Date.now() + 60000 }),
+    Response.json(
+      { ok: true, expiresAt: Date.now() + 60000 },
+      { headers: { 'set-cookie': 'tn_session=value; Secure; HttpOnly; SameSite=Strict' } },
+    ),
+  ])('does not accept an HTTP 200 without a real authenticated session', async (response) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+    await expect(
+      defaultProvisionDeps.verifyAdminLogin('https://panel.example', 'test-password'),
+    ).resolves.toBe(false);
+  });
+  it('accepts the Worker login JSON only with both secure session cookies', async () => {
+    const headers = new Headers();
+    headers.append(
+      'set-cookie',
+      'tn_session=session-value; Path=/; Secure; HttpOnly; SameSite=Strict',
+    );
+    headers.append('set-cookie', 'tn_csrf=csrf-value; Path=/; Secure; SameSite=Strict');
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(Response.json({ ok: true, expiresAt: Date.now() + 60000 }, { headers })),
+    );
+    await expect(
+      defaultProvisionDeps.verifyAdminLogin('https://panel.example', 'test-password'),
+    ).resolves.toBe(true);
+  });
+});
 
 const accessToken = 'test-token';
 const request = {

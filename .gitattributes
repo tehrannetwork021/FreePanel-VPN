@@ -1,0 +1,5 @@
+# Migration and artifact digests must not depend on the checkout platform.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.zip binary

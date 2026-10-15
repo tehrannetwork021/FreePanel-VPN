@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const generatedPath = 'apps/installer-worker/src/generated/edgeWorkerArtifact.ts';
@@ -33,33 +35,57 @@ describe('edge Worker install artifact', () => {
   });
 
   it('generates a deterministic bundled artifact with matching SHA-256', () => {
-    rmSync(generatedPath, { force: true });
-    rmSync(manifestPath, { force: true });
-    execFileSync(process.execPath, ['scripts/build-edge-worker-artifact.mjs']);
+    const outdir = mkdtempSync(join(tmpdir(), 'tn-artifact-test-'));
+    const before = readFileSync(generatedPath, 'utf8');
+    try {
+      execFileSync(process.execPath, [
+        'scripts/build-edge-worker-artifact.mjs',
+        '--outdir',
+        outdir,
+      ]);
+      const generatedPath = join(
+        outdir,
+        'apps/installer-worker/src/generated/edgeWorkerArtifact.ts',
+      );
+      const manifestPath = join(outdir, 'dist/installer-artifacts/edge-worker-manifest.json');
 
-    const generated = readFileSync(generatedPath, 'utf8');
-    const source = extractJsonString(generated, 'EDGE_WORKER_SOURCE');
-    const hash = extractJsonString(generated, 'EDGE_WORKER_SHA256');
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-      version: string;
-      sha256: string;
-      bytes: number;
-    };
+      const generated = readFileSync(generatedPath, 'utf8');
+      const encoded = extractJsonString(generated, 'EDGE_WORKER_SOURCE_BASE64');
+      const source = Buffer.from(encoded, 'base64').toString('utf8');
+      const hash = extractJsonString(generated, 'EDGE_WORKER_SHA256');
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+        version: string;
+        sha256: string;
+        bytes: number;
+      };
 
-    const actualHash = createHash('sha256').update(source).digest('hex');
-    expect(hash).toBe(actualHash);
-    expect(manifest.sha256).toBe(actualHash);
-    expect(manifest.bytes).toBe(Buffer.byteLength(source));
-    expect(manifest.version).toBe(releaseVersion);
-    expect(source).not.toMatch(/from\s+['"]\.\.?\//);
-    expect(source).not.toContain('node_modules/.pnpm/');
-    expect(source).not.toContain('deploy/worker/node_modules/');
-    expect(source).toContain('// node_modules/uqr/dist/index.mjs');
-    const buildScript = readFileSync('scripts/build-edge-worker-artifact.mjs', 'utf8');
-    expect(buildScript).toContain("loader: { '.sql': 'text' }");
+      const actualHash = createHash('sha256').update(source).digest('hex');
+      expect(source).toBe(readFileSync(join(outdir, 'dist/edge-worker.js'), 'utf8'));
+      expect(generated).not.toContain('cloudflare:sockets');
+      expect(generated).not.toContain('// deploy/worker/src/');
+      expect(hash).toBe(actualHash);
+      expect(manifest.sha256).toBe(actualHash);
+      expect(manifest.bytes).toBe(Buffer.byteLength(source));
+      expect(manifest.version).toBe(releaseVersion);
+      expect(source).not.toMatch(/from\s+['"]\.\.?\//);
+      expect(source).not.toContain('node_modules/.pnpm/');
+      expect(source).not.toContain('deploy/worker/node_modules/');
+      expect(source).toContain('// node_modules/uqr/dist/index.mjs');
+      const buildScript = readFileSync('scripts/build-edge-worker-artifact.mjs', 'utf8');
+      expect(buildScript).toContain("loader: { '.sql': 'text' }");
 
-    execFileSync(process.execPath, ['scripts/build-edge-worker-artifact.mjs']);
-    const manifestAgain = readFileSync(manifestPath, 'utf8');
-    expect(manifestAgain).toBe(JSON.stringify(manifest, null, 2) + '\n');
+      execFileSync(process.execPath, [
+        'scripts/build-edge-worker-artifact.mjs',
+        '--outdir',
+        outdir,
+      ]);
+      const manifestAgain = readFileSync(manifestPath, 'utf8');
+      expect(manifestAgain).toBe(JSON.stringify(manifest, null, 2) + '\n');
+      expect(
+        readFileSync('apps/installer-worker/src/generated/edgeWorkerArtifact.ts', 'utf8'),
+      ).toBe(before);
+    } finally {
+      rmSync(outdir, { recursive: true, force: true });
+    }
   });
 });

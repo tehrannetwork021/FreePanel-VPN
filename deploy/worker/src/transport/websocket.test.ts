@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Destination, ParseResult } from '../core/types';
 import type { TcpSocketLike } from '../network/tcp';
 import { runWebSocketTunnel, type TunnelWebSocket } from './websocket';
+import { createUsageMeter } from './usageMeter';
 
 class FakeWebSocket implements TunnelWebSocket {
   sent: Uint8Array[] = [];
@@ -106,6 +107,7 @@ describe('WebSocket TCP tunnel', () => {
   it('forwards later frames and closes the TCP side when the client closes', async () => {
     const ws = new FakeWebSocket();
     const remote = fakeSocket();
+    remote.socket.readable = new ReadableStream();
     runWebSocketTunnel({
       webSocket: ws,
       parseFirstPacket: okParser,
@@ -138,6 +140,47 @@ describe('WebSocket TCP tunnel', () => {
 });
 
 describe('async WebSocket authorization gate', () => {
+  it('does not connect after the client closes during authorization', async () => {
+    const ws = new FakeWebSocket();
+    let release!: (result: ReturnType<typeof okParser>) => void;
+    const pending = new Promise<ReturnType<typeof okParser>>((resolve) => {
+      release = resolve;
+    });
+    const connectTcp = vi.fn(async () => fakeSocket().socket);
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: () => pending,
+      connectTcp,
+      selfHost: 'worker.example.dev',
+    });
+    ws.emit('message', { data: new Uint8Array([1, 2, 3]).buffer });
+    await tick();
+    ws.emit('close');
+    release(okParser(new Uint8Array([1, 2, 3])));
+    await tick();
+    expect(connectTcp).not.toHaveBeenCalled();
+  });
+  it('closes a late TCP socket without writing after client close', async () => {
+    const ws = new FakeWebSocket();
+    const remote = fakeSocket();
+    let release!: (socket: TcpSocketLike) => void;
+    const pending = new Promise<TcpSocketLike>((resolve) => {
+      release = resolve;
+    });
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: okParser,
+      connectTcp: () => pending,
+      selfHost: 'worker.example.dev',
+    });
+    ws.emit('message', { data: new Uint8Array([1, 2, 3]).buffer });
+    await tick();
+    ws.emit('close');
+    release(remote.socket);
+    await tick();
+    expect(remote.wasClosed()).toBe(true);
+    expect(remote.writes).toEqual([]);
+  });
   it('does not connect TCP until async authorization resolves successfully', async () => {
     const ws = new FakeWebSocket();
     let resolveParser!: (value: ParseResult<any>) => void;
@@ -165,6 +208,49 @@ describe('async WebSocket authorization gate', () => {
 });
 
 describe('WebSocket usage checkpoints', () => {
+  it('bounds pending frames while async authorization is blocked', async () => {
+    const ws = new FakeWebSocket();
+    const connectTcp = vi.fn(async () => fakeSocket().socket);
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: () => new Promise(() => {}),
+      connectTcp,
+      selfHost: 'worker.example.dev',
+    });
+    ws.emit('message', { data: new Uint8Array([1]).buffer });
+    for (let index = 0; index < 3; index++)
+      ws.emit('message', { data: new Uint8Array(512 * 1024).buffer });
+    await tick();
+    expect(ws.closes.at(-1)?.code).toBe(1009);
+    expect(connectTcp).not.toHaveBeenCalled();
+  });
+  it('checks quota between bounded downstream slices instead of forwarding a 16 MiB chunk', async () => {
+    const ws = new FakeWebSocket();
+    const remote = fakeSocket([new Uint8Array(16 * 1024 * 1024)]);
+    const meter = createUsageMeter({
+      write: async () => ({ allowed: false, totalUsedBytes: 4 * 1024 * 1024, todayUsedBytes: 0 }),
+    });
+    runWebSocketTunnel({
+      webSocket: ws,
+      parseFirstPacket: () => ({
+        kind: 'ok',
+        value: {
+          destination,
+          payload: new Uint8Array(),
+          principal: { kind: 'user', userId: 'u-1', channel: 'vless-ws' },
+        },
+      }),
+      connectTcp: async () => remote.socket,
+      selfHost: 'worker.example.dev',
+      createUsageMeter: () => meter,
+    });
+    ws.emit('message', { data: new Uint8Array([1]).buffer });
+    await tick();
+    expect(ws.sent.reduce((total, chunk) => total + chunk.length, 0)).toBeLessThanOrEqual(
+      4 * 1024 * 1024 + 65536,
+    );
+    expect(ws.closes.at(-1)?.reason).toBe('quota');
+  });
   it('counts only proxied payload bytes for a user principal', async () => {
     const ws = new FakeWebSocket();
     const remote = fakeSocket([new Uint8Array([7, 8, 9])]);

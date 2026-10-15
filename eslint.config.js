@@ -22,6 +22,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/node_modules/**',
       '**/.superpowers/**',
+      '**/.wrangler/**',
       'apps/installer-worker/public/**',
     ],
   },

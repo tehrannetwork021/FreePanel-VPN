@@ -3,6 +3,7 @@ import type { Destination, ParseResult } from '../core/types';
 import type { ConnectTcp, TcpSocketLike } from '../network/tcp';
 import type { TunnelPrincipal } from '../security/tunnelAuth';
 import type { UsageMeter } from './usageMeter';
+import { forwardSlices } from './usageMeter';
 
 export type TunnelWebSocket = {
   send(data: ArrayBuffer | ArrayBufferView): void;
@@ -47,11 +48,13 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
   let usageMeter: UsageMeter | null = null;
   let stopped = false;
   let queue = Promise.resolve();
+  let queuedBytes = 0;
+  const maxQueuedBytes = 1024 * 1024;
 
   const stop = (code = 1000, reason = 'closed') => {
     if (stopped) return;
     stopped = true;
-    void usageMeter?.close();
+    void usageMeter?.close().catch(() => undefined);
     try {
       socket?.close();
     } catch {
@@ -69,26 +72,25 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
     try {
       while (!stopped) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done || stopped) break;
         if (value?.byteLength) {
-          webSocket.send(value);
-          usageMeter?.addDownload(value.byteLength);
-          if (usageMeter) {
-            await usageMeter.flush();
-            if (usageMeter.exhausted()) {
-              stop(1008, 'quota');
-              break;
+          for (const slice of forwardSlices(value)) {
+            if (stopped) break;
+            webSocket.send(slice);
+            usageMeter?.addDownload(slice.byteLength);
+            if (usageMeter) {
+              await usageMeter.flush();
+              if (usageMeter.exhausted()) {
+                stop(1008, 'quota');
+                break;
+              }
             }
           }
         }
       }
       if (!stopped) {
         await usageMeter?.close();
-        try {
-          webSocket.close(1000, 'remote-eof');
-        } catch {
-          /* already closed */
-        }
+        stop(1000, 'remote-eof');
       }
     } catch {
       stop(1011, 'remote-error');
@@ -97,20 +99,31 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
     }
   };
 
+  const writeUpload = async (bytes: Uint8Array) => {
+    for (const slice of forwardSlices(bytes)) {
+      if (stopped || !writer) return;
+      await writer.write(slice);
+      usageMeter?.addUpload(slice.byteLength);
+      if (usageMeter) {
+        await usageMeter.flush();
+        if (usageMeter.exhausted()) {
+          stop(1008, 'quota');
+          return;
+        }
+      }
+    }
+  };
+
   const handleMessage = async (data: unknown) => {
     if (stopped) return;
     const bytes = await eventBytes(data);
+    if (stopped) return;
     if (!bytes) {
       stop(1003, 'binary-required');
       return;
     }
     if (writer) {
-      await writer.write(bytes);
-      usageMeter?.addUpload(bytes.byteLength);
-      if (usageMeter) {
-        await usageMeter.flush();
-        if (usageMeter.exhausted()) stop(1008, 'quota');
-      }
+      await writeUpload(bytes);
       return;
     }
 
@@ -120,6 +133,7 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
       return;
     }
     const parsed = await parseFirstPacket(firstPacket);
+    if (stopped) return;
     if (parsed.kind === 'need-more') return;
     if (parsed.kind === 'error') {
       stop(1008, 'invalid-handshake');
@@ -128,6 +142,10 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
 
     try {
       socket = await connectTcp(parsed.value.destination, selfHost);
+      if (stopped) {
+        socket.close();
+        return;
+      }
       writer = socket.writable.getWriter();
       usageMeter =
         parsed.value.principal && options.createUsageMeter
@@ -135,15 +153,8 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
           : null;
       if (parsed.value.responseHeader?.byteLength) webSocket.send(parsed.value.responseHeader);
       if (parsed.value.payload.byteLength) {
-        await writer.write(parsed.value.payload);
-        usageMeter?.addUpload(parsed.value.payload.byteLength);
-        if (usageMeter) {
-          await usageMeter.flush();
-          if (usageMeter.exhausted()) {
-            stop(1008, 'quota');
-            return;
-          }
-        }
+        await writeUpload(parsed.value.payload);
+        if (stopped) return;
       }
       firstPacket = new Uint8Array();
       void pumpDownstream(socket);
@@ -153,16 +164,33 @@ export function runWebSocketTunnel(options: TunnelOptions): void {
   };
 
   webSocket.addEventListener('message', (event) => {
+    if (stopped) return;
     const data =
       typeof event === 'object' && event !== null && 'data' in event
         ? (event as { data: unknown }).data
         : undefined;
-    queue = queue.then(() => handleMessage(data)).catch(() => stop(1011, 'tunnel-error'));
+    const size =
+      data instanceof Blob
+        ? data.size
+        : data instanceof ArrayBuffer || ArrayBuffer.isView(data)
+          ? data.byteLength
+          : 0;
+    if (queuedBytes + size > maxQueuedBytes) {
+      stop(1009, 'queue-too-large');
+      return;
+    }
+    queuedBytes += size;
+    queue = queue
+      .then(() => handleMessage(data))
+      .catch(() => stop(1011, 'tunnel-error'))
+      .finally(() => {
+        queuedBytes -= size;
+      });
   });
   webSocket.addEventListener('close', () => {
     if (!stopped) {
       stopped = true;
-      void usageMeter?.close();
+      void usageMeter?.close().catch(() => undefined);
       try {
         socket?.close();
       } catch {

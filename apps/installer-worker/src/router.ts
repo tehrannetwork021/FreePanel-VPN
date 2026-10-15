@@ -5,6 +5,7 @@ import type {
 } from '@tehrannetwork/shared';
 import { CloudflareApiError, listAccounts, verifyApiToken } from './cloudflare';
 import type { InstallerEnv } from './env';
+import { serveEmbeddedInstallerAsset } from './embeddedAssets';
 import { defaultProvisionDeps, ProvisionError, provisionPanel } from './provision';
 
 export type RouterDeps = {
@@ -49,12 +50,39 @@ async function readJson<T>(request: Request): Promise<T | Response> {
   if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
     return json({ ok: false, stage: 'token', code: 'invalid-request' }, 413);
   }
-  const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > MAX_BODY_BYTES) {
-    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 413);
-  }
+  const reader = request.body?.getReader();
+  if (!reader) return json({ ok: false, stage: 'token', code: 'invalid-request' }, 400);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
   try {
-    return JSON.parse(text) as T;
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      total += next.value.byteLength;
+      if (total > MAX_BODY_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        return json({ ok: false, stage: 'token', code: 'invalid-request' }, 413);
+      }
+      chunks.push(next.value);
+    }
+  } catch {
+    return json({ ok: false, stage: 'token', code: 'invalid-request' }, 400);
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  const text = new TextDecoder().decode(bytes);
+  try {
+    const body: unknown = JSON.parse(text);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return json({ ok: false, stage: 'token', code: 'invalid-request' }, 400);
+    }
+    return body as T;
   } catch {
     return json({ ok: false, stage: 'token', code: 'invalid-request' }, 400);
   }
@@ -66,6 +94,9 @@ function tokenError(error: unknown): Response {
   }
   if (error instanceof CloudflareApiError && error.message === 'insufficient-scope') {
     return json({ ok: false, stage: 'account', code: 'insufficient-scope' }, 403);
+  }
+  if (error instanceof CloudflareApiError) {
+    return json({ ok: false, stage: 'token', code: 'cloudflare-api-failed' }, 502);
   }
   return json({ ok: false, stage: 'token', code: 'token-invalid' }, 401);
 }
@@ -105,7 +136,8 @@ async function handleInstall(request: Request, deps: RouterDeps): Promise<Respon
   try {
     await deps.verifyApiToken(token);
     const accounts = await deps.listAccounts(token);
-    const accountId = accounts[0]?.id;
+    // Account API ordering is not a contract. Use a stable ID order on every retry.
+    const accountId = accounts.map((account) => account.id).sort()[0];
     if (!accountId) throw new ProvisionError('account', 'invalid-account');
     const adminPassword = generateAdminPassword();
     const installRequest: InstallRequest = {
@@ -128,7 +160,12 @@ export async function handleInstallerRequest(
   const url = new URL(request.url);
   if (url.pathname === '/api/health') {
     if (request.method !== 'GET') return json({ ok: false, code: 'method-not-allowed' }, 405);
-    return json({ ok: true, edgeVersion: defaultProvisionDeps.artifact.version });
+    return json({
+      ok: true,
+      edgeVersion: defaultProvisionDeps.artifact.version,
+      edgeSha256: defaultProvisionDeps.artifact.sha256,
+      schemaVersion: 1,
+    });
   }
   if (url.pathname === '/api/token/verify' && request.method === 'POST') {
     return handleVerify(request, deps);
@@ -140,7 +177,7 @@ export async function handleInstallerRequest(
     return json({ ok: false, code: 'not-found' }, 404);
   }
   if (request.method === 'GET' || request.method === 'HEAD') {
-    return env.ASSETS.fetch(request);
+    return env.ASSETS ? env.ASSETS.fetch(request) : serveEmbeddedInstallerAsset(request);
   }
   return json({ ok: false, code: 'method-not-allowed' }, 405);
 }
